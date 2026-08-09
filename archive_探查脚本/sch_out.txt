@@ -1,0 +1,34 @@
+==================== STM32H743VIT6 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鍗ц创USB鍒囨崲涓插彛 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 瀵瑰杩炴帴 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 瀵瑰杩炴帴 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鏉胯浇娓╁害 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鎺㈠ご娓╁害閲囬泦 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鍥涜矾浣庨€烡A ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 楂橀€烝D ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 楂橀€烡A ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鐢垫祦杈撳嚭 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鍩哄噯 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鐢垫簮妗嗗浘 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 绯荤粺妗嗗浘 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== P1 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鐢垫祦杈撳嚭 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== 鐢垫簮妗嗗浘 ====================
+parse error Expecting value: line 1 column 1 (char 0)
+==================== P1 ====================
+parse error Expecting value: line 1 column 1 (char 0)

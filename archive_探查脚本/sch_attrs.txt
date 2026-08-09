@@ -1,0 +1,57 @@
+########## STM32H743VIT6 (sch 696dbd1e7bc847038aef80eaafdf835a) ##########
+  X1:  {"Designator": "X1", "Device": "7637790e95c84de8ae0f46c2cc011158", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge691"}
+  SW1:  {"Symbol": "04e308ed555046fba3b59e8d77bbba8d", "Designator": "SW1", "Device": "c47a60f6107c4306b59e35982e8c5f6e", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge681"}
+  U3:  {"Designator": "U3", "Device": "c5b36f14d17a4dca92185e72dd61ccbb", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Multi-Part Group": "", "Relevance": "[]", "Unique ID": "gge713"}
+  U3:  {"Designator": "U3", "Device": "c5b36f14d17a4dca92185e72dd61ccbb", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Multi-Part Group": "", "Relevance": "[]", "Unique ID": "gge713"}
+  L1:  {"Symbol": "66aa2bff007c4794b885fb91cb7f6062", "Designator": "L1", "Device": "a72f29b83fe84e3ba9d037219fb1896b", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge713_1"}
+  U1:  {"Symbol": "00bfe7f20ce940cc99a1d3c7df48b299", "Designator": "U1", "Device": "007016e9be414b21a13cec6921042feb", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge676"}
+  U2:  {"Symbol": "33ea13692fd6468ebc006551022fc9a6", "Designator": "U2", "Device": "8e65331843134cabbb31b31c3d5ac3da", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge689"}
+  BUZZER1:  {"Symbol": "3dfaa1b18f3a47c2833f20a81389efda", "Designator": "BUZZER1", "Device": "deb7983ddb93468ab6f1f7ccd3fac048", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge640"}
+  CN1:  {"Designator": "CN1", "Device": "8d2ff9bb2546403cbe5f9070b68c895d", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge903"}
+########## 鍗ц创USB鍒囨崲涓插彛 (sch 696dbd1e7bc847038aef80eaafdf835a) ##########
+  U4:  {"Designator": "U4", "Device": "bfaab3471d1341c88dc6b4ec46089aad", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge904"}
+  USBC1:  {"Supplier Part": "\\", "Designator": "USBC1", "Device": "1830b693fe1b4ca0a79e18f6d339bbad", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge905"}
+########## 瀵瑰杩炴帴 (sch 696dbd1e7bc847038aef80eaafdf835a) ##########
+  H1:  {"Symbol": "bec6d4c40ed34bbc951dad0c8c019549", "Designator": "H1", "Device": "abe73cfde71d440898abbf511c68aff9", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge916"}
+  H2:  {"Symbol": "bec6d4c40ed34bbc951dad0c8c019549", "Designator": "H2", "Device": "abe73cfde71d440898abbf511c68aff9", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge916_1"}
+  U5:  {"Designator": "U5", "Device": "1585115c68e44285a85dde27bc46fe4e", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge917"}
+  H3:  {"Symbol": "3ddac18e7ab4430685e4e4140d00d285", "Designator": "H3", "Device": "3f2f39ac73b44e08b644e558d177cdc6", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge918"}
+########## 瀵瑰杩炴帴 (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  H2:  {"Symbol": "c6bdc4a6d2fe44f1b840995f0e4ec4d4", "Designator": "H2", "Device": "d5eb4f916bce401cb22892cd158cdad3", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge36"}
+  H3:  {"Symbol": "242593e03940487497587c5adfa3e8df", "Designator": "H3", "Device": "c968fb9d67614f1087444199d9b80c7b", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge37"}
+  U5:  {"Designator": "U5", "Device": "f4cd7522f5b3430093c810e94a366bba", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge911"}
+  CN2:  {"Designator": "CN2", "Device": "10109bd05be947469ba080fdb97e564d", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge924"}
+########## 鏉胯浇娓╁害 (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  U18:  {"Designator": "U18", "Device": "496d4f18a3bf4d55a0ce2418227e450f", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge31"}
+########## 鎺㈠ご娓╁害閲囬泦 (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  U2:  {"Designator": "U2", "Device": "92683843e9d54caa81a426c2417925da", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge34"}
+  L1:  {"Symbol": "d3a560a5a6dc4064a4cfa0a4c198a219", "Designator": "L1", "Name": "={Manufacturer Part}", "Device": "5acbd624c8b64a61a070cd3e62fb1481", "Unique ID": "gge39"}
+########## 鍥涜矾浣庨€烡A (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  U3:  {"Designator": "U3", "Device": "7ccc9bf615a64e2c8012badf59764a29", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge47"}
+  U4:  {"Designator": "U4", "Device": "7ccc9bf615a64e2c8012badf59764a29", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge48"}
+  L2:  {"Symbol": "d3a560a5a6dc4064a4cfa0a4c198a219", "Designator": "L2", "Device": "5acbd624c8b64a61a070cd3e62fb1481", "Unique ID": "gge39_1", "Reuse Block": "", "Group ID": "", "Channel ID": ""}
+  L3:  {"Symbol": "d3a560a5a6dc4064a4cfa0a4c198a219", "Designator": "L3", "Device": "5acbd624c8b64a61a070cd3e62fb1481", "Unique ID": "gge39_2", "Reuse Block": "", "Group ID": "", "Channel ID": ""}
+########## 楂橀€烝D (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  U26:  {"Designator": "U26", "Device": "386219d7910e4b378affc2ad9be17e0f", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge59"}
+  L4:  {"Symbol": "d3a560a5a6dc4064a4cfa0a4c198a219", "Designator": "L4", "Name": "={Manufacturer Part}", "Device": "5acbd624c8b64a61a070cd3e62fb1481", "Unique ID": "gge60"}
+  H4:  {"Symbol": "f9430958351c4249acb20c95baa73efb", "Designator": "H4", "Device": "61e22cb6df0e4df5a6b04923290cbad1", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge903"}
+########## 楂橀€烡A (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  U27:  {"Designator": "U27", "Device": "95e7db17afd74ac09758daf3bdbba0e7", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge79"}
+  L5:  {"Symbol": "d3a560a5a6dc4064a4cfa0a4c198a219", "Designator": "L5", "Device": "5acbd624c8b64a61a070cd3e62fb1481", "Unique ID": "gge60_1", "Reuse Block": "", "Group ID": "", "Channel ID": ""}
+########## 鐢垫祦杈撳嚭 (sch 16c2d3fb15954389956917f394f7f78f) ##########
+########## 鍩哄噯 (sch 16c2d3fb15954389956917f394f7f78f) ##########
+  U28:  {"Designator": "U28", "Device": "49aac4ff9d4143be9bba8c2860c8ad00", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge98"}
+########## 鐢垫簮妗嗗浘 (sch a054e16a122740a6a1ed3129740ef2f7) ##########
+########## 绯荤粺妗嗗浘 (sch a054e16a122740a6a1ed3129740ef2f7) ##########
+  U1:  {"Name": "", "Designator": "U1", "Device": "7910d9920a5e4d298a0e1138097f8d8f", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": ""}
+  U2:  {"Name": "", "Designator": "U2", "Device": "10b7e273ade54a809d822f14768457f5", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": ""}
+########## P1 (sch 5f4bd7485bef45b5b007d7044bf9adcc) ##########
+########## 鐢垫祦杈撳嚭 (sch 5f4bd7485bef45b5b007d7044bf9adcc) ##########
+  U24:  {"Designator": "U24", "Device": "f96259eabcbf470fafc4c98a3afbb91d", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": ""}
+  U29:  {"Symbol": "1fba0c010a9743bba99667ca0a86f156", "Designator": "U29", "Device": "6fd4c95004e044e6a4755c3cf58f4747", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": ""}
+########## 鐢垫簮妗嗗浘 (sch fbc78fee176a4de6847353b334499162) ##########
+########## P1 (sch a297b20efab54119bcafb09b502ea9e3) ##########
+  U29:  {"Designator": "U29", "Device": "d0df8d6e9ca34ed893743ec8ad5007a0", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge916"}
+  U5:  {"Designator": "U5", "Device": "f4cd7522f5b3430093c810e94a366bba", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge911"}
+  H1:  {"Symbol": "cff91f21d902409d93d069ed510702ca", "Designator": "H1", "Device": "68c730d30c3747e8bf5b9d8309a32c2c", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge952"}
+  U30:  {"Symbol": "85fff4adce8942359dbccea682f897e3", "Designator": "U30", "Device": "ab6cb584d24c4fd49a5e1786bc996c42", "Reuse Block": "", "Group ID": "", "Channel ID": "", "Unique ID": "gge953"}
