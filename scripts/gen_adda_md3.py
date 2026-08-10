@@ -1,21 +1,39 @@
 import io, sys, json, subprocess, os, re
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-TOOL = r'D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\lceda_reader.py'
+
+
+import os as _os
+
+def _repo_root():
+    """从脚本位置向上找含 1_sch/ 的仓库根。"""
+    d = _os.path.dirname(_os.path.abspath(__file__))
+    while True:
+        if _os.path.isdir(_os.path.join(d, '1_sch')):
+            return d
+        p = _os.path.dirname(d)
+        if p == d:
+            return _os.path.dirname(_os.path.abspath(__file__))
+        d = p
+REPO = _repo_root()
+
+TOOL = _os.path.join(REPO, '6_tools', 'lceda_sch_reader', 'lceda_reader.py')
 
 import argparse as _argparse
 _ap = _argparse.ArgumentParser()
 _ap.add_argument("--eprj", default=None, help="立创EDA工程(.eprj2)，默认用脚本内置路径")
 _ap.add_argument("--out", default=None, help="输出 md 路径，默认用脚本内置路径")
-_ap.add_argument("--tool", default=r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\lceda_reader.py", help="lceda_reader.py 路径")
+_ap.add_argument("--tool", default=None, help="lceda_reader.py 路径(默认自动定位)")
 _args = _ap.parse_args()
 if _args.eprj:
     EPRJ = _args.eprj
 if _args.tool:
     TOOL = _args.tool
+elif not _os.path.exists(TOOL):
+    TOOL = _os.path.join(REPO, "6_tools", "lceda_sch_reader", "lceda_reader.py")
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
-V0 = r'D:\WorkDesigns\2_WorkProjects\E_distance\1_sch\涡流传感器.eprj2'
-V11 = r'D:\WorkDesigns\2_WorkProjects\E_distance\1_sch\V1.1版主控原理图\MCU主控-V1.1-2026.05.06.eprj2'
+V0 = _os.path.join(REPO, '1_sch', '涡流传感器.eprj2')
+V11 = _os.path.join(REPO, '1_sch', 'V1.1版主控原理图', 'MCU主控-V1.1-2026.05.06.eprj2')
 
 def run(eprj, *args):
     p = subprocess.run([sys.executable, TOOL, '--eprj', eprj] + list(args),
@@ -109,7 +127,7 @@ for gname, desigs in GROUPS:
             report.append(f'| {des}.{pin} | {net}{tag} | {mcu} | {desc} |')
     report.append('')
 
-out = r'D:\WorkDesigns\2_WorkProjects\E_distance\5_docs\V1.1主控与ADDA板对应关系.md'
+out = _os.path.join(REPO, '5_docs', 'V1.1主控与ADDA板对应关系.md')
 with open(out, 'w', encoding='utf-8') as f:
     f.write('\n'.join(report))
 print('written:', out, 'lines:', len(report))
