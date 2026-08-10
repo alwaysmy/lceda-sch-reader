@@ -1,24 +1,16 @@
 import io, sys, json, subprocess, os, re
+import os as _os
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+# 工具所在目录 = 本脚本上一级（scripts/ -> 工具根）
+TOOL_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+TOOL = _os.path.join(TOOL_DIR, 'lceda_reader.py')
 
-import os as _os
 
-def _repo_root():
-    """从脚本位置向上找含 1_sch/ 的仓库根。"""
-    d = _os.path.dirname(_os.path.abspath(__file__))
-    while True:
-        if _os.path.isdir(_os.path.join(d, '1_sch')):
-            return d
-        p = _os.path.dirname(d)
-        if p == d:
-            return _os.path.dirname(_os.path.abspath(__file__))
-        d = p
-REPO = _repo_root()
 
-TOOL = _os.path.join(REPO, '6_tools', 'lceda_sch_reader', 'lceda_reader.py')
-EPRJ = _os.path.join(REPO, '1_sch', 'V1.1版主控原理图', 'MCU主控-V1.1-2026.05.06.eprj2')
+TOOL = _os.path.join(TOOL_DIR, 'lceda_reader.py')
+EPRJ = _os.getenv('LCEDA_EPRJ', '')  # 通过环境变量或 --eprj 指定
 
 import argparse as _argparse
 _ap = _argparse.ArgumentParser()
@@ -31,7 +23,7 @@ if _args.eprj:
 if _args.tool:
     TOOL = _args.tool
 elif not _os.path.exists(TOOL):
-    TOOL = _os.path.join(REPO, "6_tools", "lceda_sch_reader", "lceda_reader.py")
+    TOOL = _os.path.join(TOOL_DIR, "lceda_reader.py")
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 
 POWER_NETS = re.compile(r'^(GND|AGND|DGND|VCC|VDD|VSS|VBUS|3V3|3\.3V|5V|\+3\.3V|\+5V|VBAT|VREF\+|VDDA|VSSA)$', re.I)
@@ -75,7 +67,7 @@ for page in ('STM32H743VIT6', '卧贴USB切换串口', '对外连接'):
 lines = []
 lines.append('# V1.1 版主控原理图引脚关系（MCU主控-V1.1-2026.05.06）')
 lines.append('')
-lines.append('> 依据 `1_sch/V1.1版主控原理图/MCU主控-V1.1-2026.05.06.eprj2` 自动提取')
+lines.append('> 依据 V1.1 主控原理图工程（.eprj2，--eprj 指定）自动提取')
 lines.append('> （lceda_reader.py pinmap，实例坐标+PIN坐标精确匹配，非近似）。')
 lines.append('> 控制器：**U3 STM32H743VIT6**（LQFP100）。')
 lines.append('')
@@ -141,7 +133,9 @@ for des in include:
         lines.append(f'| {pin} | {v["number"]} | {net} | {mcu} | {wp} |')
     lines.append('')
 
-out_path = _args.out or _os.path.join(REPO, '5_docs', 'V1.1版主控原理图引脚关系.md')
+out_path = _args.out
+if not out_path:
+    sys.exit('需 --out 指定输出路径')
 with open(out_path, 'w', encoding='utf-8') as f:
     f.write('\n'.join(lines))
 print('written:', out_path, 'lines:', len(lines))

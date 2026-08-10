@@ -1,6 +1,6 @@
 ---
 name: lceda-sch-reader
-description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) schematic project (.eprj2 files, e.g. 1_sch/*.eprj2) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool 6_tools/lceda_sch_reader/lceda_reader.py.
+description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) schematic project (.eprj2 files) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool 6_tools/lceda_sch_reader/lceda_reader.py.
 ---
 
 # LCEDA 专业版原理图读取（lceda_sch_reader）

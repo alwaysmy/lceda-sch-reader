@@ -67,11 +67,13 @@ def outj(obj):
 
 
 def find_eprj(path=None):
-    """定位 .eprj2 文件；支持显式路径或工具所在仓库的 1_sch/ 内搜索。"""
+    """定位 .eprj2 文件（通用，不绑定任何工程目录结构）：
+    1) 显式 --eprj 优先；
+    2) 否则搜索当前工作目录及其父目录的 *.eprj2（可选项：子目录 search_dir）。"""
     import glob
     if path:
         return path
-    bases = [os.path.dirname(os.path.abspath(__file__))]
+    bases = [os.getcwd()]
     d = bases[0]
     while True:
         parent = os.path.dirname(d)
@@ -80,11 +82,9 @@ def find_eprj(path=None):
         bases.append(parent)
         d = parent
     for base in bases:
-        for p in (os.path.join(base, "1_sch", "*.eprj2"),
-                  os.path.join(base, "*.eprj2")):
-            hits = glob.glob(p)
-            if hits:
-                return hits[0]
+        hits = glob.glob(os.path.join(base, "*.eprj2"))
+        if hits:
+            return hits[0]
     return None
 
 
@@ -1273,7 +1273,7 @@ def cmd_raw(db, args):
 
 def main():
     ap = argparse.ArgumentParser(description="立创EDA专业版 .eprj2 原理图读取工具")
-    ap.add_argument("--eprj", help=".eprj2 文件路径（默认在 1_sch/ 下自动查找）")
+    ap.add_argument("--eprj", help=".eprj2 文件路径（默认搜索当前目录及父目录 *.eprj2）")
     ap.add_argument("--json", action="store_true",
                     help="结构化 JSON 输出（供脚本消费）")
     sub = ap.add_subparsers(dest="cmd", required=True)

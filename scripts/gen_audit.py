@@ -1,23 +1,15 @@
 import io, sys, json, subprocess, os, re
+import os as _os
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+# 工具所在目录 = 本脚本上一级（scripts/ -> 工具根）
+TOOL_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+TOOL = _os.path.join(TOOL_DIR, 'lceda_reader.py')
 
-import os as _os
 
-def _repo_root():
-    """从脚本位置向上找含 1_sch/ 的仓库根。"""
-    d = _os.path.dirname(_os.path.abspath(__file__))
-    while True:
-        if _os.path.isdir(_os.path.join(d, '1_sch')):
-            return d
-        p = _os.path.dirname(d)
-        if p == d:
-            return _os.path.dirname(_os.path.abspath(__file__))
-        d = p
-REPO = _repo_root()
 
-TOOL = _os.path.join(REPO, '6_tools', 'lceda_sch_reader', 'lceda_reader.py')
+TOOL = _os.path.join(TOOL_DIR, 'lceda_reader.py')
 
 import argparse as _argparse
 _ap = _argparse.ArgumentParser()
@@ -30,10 +22,10 @@ if _args.eprj:
 if _args.tool:
     TOOL = _args.tool
 elif not _os.path.exists(TOOL):
-    TOOL = _os.path.join(REPO, "6_tools", "lceda_sch_reader", "lceda_reader.py")
+    TOOL = _os.path.join(TOOL_DIR, "lceda_reader.py")
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
-V0 = _os.path.join(REPO, '1_sch', '涡流传感器.eprj2')
-V11 = _os.path.join(REPO, '1_sch', 'V1.1版主控原理图', 'MCU主控-V1.1-2026.05.06.eprj2')
+V0 = _os.getenv('LCEDA_EPRJ_V0', '')  # 通过环境变量或 --eprj 指定
+V11 = _os.getenv('LCEDA_EPRJ_V11', '')  # 通过环境变量或 --eprj 指定
 
 def run(eprj, *args):
     p = subprocess.run([sys.executable, TOOL, '--eprj', eprj] + list(args),
@@ -44,8 +36,8 @@ def run(eprj, *args):
 lines = []
 lines.append('# ADDA 板设计审计（基于 lceda_reader 自动提取）')
 lines.append('')
-lines.append('> 数据来源：`1_sch/涡流传感器.eprj2`（ADDA 板=Schematic2）与')
-lines.append('> `1_sch/V1.1版主控原理图/MCU主控-V1.1-2026.05.06.eprj2`（V1.1 主控）。')
+lines.append('> 数据来源：ADDA 板原理图工程（.eprj2，--eprj 指定）与')
+lines.append('> V1.1 主控原理图工程（.eprj2，--eprj 指定）。')
 lines.append('> 方法：pinmap 精确引脚网络（实例坐标+PIN坐标+旋转），链路经串阻/磁珠/0Ω跳线推断。')
 lines.append('')
 lines.append('## 一、板间接线核对（V1.1 主控 ↔ ADDA）')
@@ -96,7 +88,9 @@ lines.append('结论：**V1.1 原理图接线是自洽的**（SCLK↔PD12、MOSI
 lines.append('V0.1 文档记录的反相问题应归因于固件驱动实现，需按此表核对固件 ADT7310.c。')
 lines.append('')
 
-out = _args.out or _os.path.join(REPO, '5_docs', 'ADDA板设计审计.md')
+out = _args.out
+if not out:
+    sys.exit('需 --out 指定输出路径')
 with open(out, 'w', encoding='utf-8') as f:
     f.write('\n'.join(lines))
 print('written:', out, 'lines:', len(lines))
