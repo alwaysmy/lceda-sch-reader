@@ -69,7 +69,7 @@ def outj(obj):
 def find_eprj(path=None):
     """定位 .eprj2 文件（通用，不绑定任何工程目录结构）：
     1) 显式 --eprj 优先；
-    2) 否则搜索当前工作目录及其父目录的 *.eprj2（可选项：子目录 search_dir）。"""
+    2) 否则搜索当前工作目录及其父目录的 *.eprj2。"""
     import glob
     if path:
         return path
@@ -115,7 +115,10 @@ class LcedaDB:
         if not ds:
             return ""
         s = ds[6:] if isinstance(ds, str) and ds.startswith("base64") else ds
-        data = base64.b64decode(s)
+        try:
+            data = base64.b64decode(s)
+        except Exception:
+            return ""
         try:
             return gzip.decompress(data).decode("utf-8")
         except Exception:
@@ -133,6 +136,9 @@ class LcedaDB:
         return text
 
     def sheet_records(self, title, doc_type=1):
+        key = (doc_type, title, "recs")
+        if key in self._text_cache:
+            return self._text_cache[key]
         text = self.sheet_text(title, doc_type)
         if text is None:
             return None
@@ -142,6 +148,7 @@ class LcedaDB:
                 arrs.append(json.loads(ln))
             except Exception:
                 continue
+        self._text_cache[key] = arrs
         return arrs
 
     def device_map(self):
@@ -362,9 +369,6 @@ def cmd_list(db, args):
         out(f"  [sch={d:12s}] {title}")
     out("\n== 非原理图文档 ==")
     for uuid, title, sch, dt in db.sheets():
-        if dt != 1:
-            continue
-    for uuid, title, sch, dt in db.sheets():
         if dt == 1:
             continue
         out(f"  [docType={dt}] {title}")
@@ -472,7 +476,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
 
     # 2) 引脚命中点并入连通域
 
-    pin_hit = {}   # (des,pin) -> 命中端点
+    pin_hit = {}   # (des,pin) -> [命中端点...]（重名引脚(如 VDD×5)各保留命中点，不互相覆盖）
     endp_net = {}
     for n in sheet["nets"]:
         if n["net"]:
@@ -482,7 +486,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
         for p in plist:
             for (px, py), nm in endp_net.items():
                 if abs(p["x"] - px) <= 2 and abs(p["y"] - py) <= 2:
-                    pin_hit[(des, p["pin"])] = (px, py)
+                    pin_hit.setdefault((des, p["pin"]), []).append((px, py))
                     parent.setdefault((px, py), (px, py))
                     break
     # 引脚未直接命中命名端点时，与最近 wire 端点相连（容差2，归一化后）
@@ -501,7 +505,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
                 if d2 <= 4 and (best is None or d2 < best[0]):
                     best = (d2, (wx, wy))
             if best:
-                pin_hit[key] = best[1]
+                pin_hit.setdefault(key, []).append(best[1])
                 parent.setdefault(best[1], best[1])
 
     # 3) 0Ω 跳线 + Short Symbol(短接符 symbolType=22) 两脚物理直连合并
@@ -515,7 +519,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
             k0 = (des, plist[0]["pin"])
             k1 = (des, plist[1]["pin"])
             if k0 in pin_hit and k1 in pin_hit:
-                union(pin_hit[k0], pin_hit[k1])
+                union(pin_hit[k0][0], pin_hit[k1][0])
     # Short Symbol（无 title 的合成 SHORT 实例，sym_type=22）：两脚同网络
     for key, plist in list(comp_pins.items()):
         des = key if isinstance(key, str) else key[0]
@@ -523,48 +527,45 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
             k0 = (des, plist[0]["pin"])
             k1 = (des, plist[1]["pin"])
             if k0 in pin_hit and k1 in pin_hit:
-                union(pin_hit[k0], pin_hit[k1])
+                union(pin_hit[k0][0], pin_hit[k1][0])
 
     # 4) 连通域 -> 域内引脚 + 已知网络名
     domain_of_pt = {}
     for p in parent:
         domain_of_pt[p] = find(p)
-    dom_pins = {}   # domain -> set((des,pin))
     dom_nets = {}   # domain -> set(net)
-    for (des, pin), pt in pin_hit.items():
-        d = domain_of_pt[pt]
-        dom_pins.setdefault(d, set()).add((des, pin))
-        nm = endp_net.get(pt)
-        if nm:
-            dom_nets.setdefault(d, set()).add(nm)
+    for (des, pin), pts in pin_hit.items():
+        for pt in pts:
+            d = domain_of_pt[pt]
+            nm = endp_net.get(pt)
+            if nm:
+                dom_nets.setdefault(d, set()).add(nm)
     # 引脚命中点自身所在域的已知网络（若命中点非命名端点）
-    for (des, pin), pt in pin_hit.items():
-        d = domain_of_pt[pt]
-        if d not in dom_nets:
-            for n in sheet["nets"]:
-                if n["net"]:
-                    for px, py in n["points"]:
-                        if (px, py) in parent and find((px, py)) == d:
-                            dom_nets.setdefault(d, set()).add(n["net"])
+    for (des, pin), pts in pin_hit.items():
+        for pt in pts:
+            d = domain_of_pt[pt]
+            if d not in dom_nets:
+                for n in sheet["nets"]:
+                    if n["net"]:
+                        for px, py in n["points"]:
+                            np_ = norm_pt((px, py))
+                            if np_ in parent and find(np_) == d:
+                                dom_nets.setdefault(d, set()).add(n["net"])
 
     # 5) 网络名传播：两脚无源器件桥
     #    器件两脚分属两域，若一脚所在域有名，则另一域继承（仅限两脚器件）
     #    优先级：信号网络名 > 电源/地网络名（避免上拉电阻的 GND 掩盖信号名）
-    POWER_DOM = re.compile(r'^(GND|AGND|DGND|PGND|VCC|VDD|VSS|VBUS|D3V3|3V3|3\.3V|5V|\+3\.3V|\+5V|\+15V|-15V)$', re.I)
+    #    电源/地判定复用模块级 POWER_NET_RE（trace 同源，避免两份正则漂移）
     two_pin_devs = {}
     for des, plist in comp_pins.items():
         if len(plist) == 2:
             two_pin_devs[des] = plist
     # 传播直到稳定（两轮：先信号名，再电源名）
-    def best_nets(d):
-        ns = dom_nets.get(d, set())
-        sig = {n for n in ns if not POWER_DOM.match(n)}
-        return sig if sig else ns
     # 桥传播：仅当本器件"有一脚直接命名(endp_net 命中)"时，从命名脚传到另一脚。
     # 方向单向（命名脚 -> 未命名脚），避免经上拉电阻把信号名污染到 GND 域。
-    pin_named = {}   # (des,pin) -> 是否直接命中命名端点
-    for (des, pin), pt in pin_hit.items():
-        pin_named[(des, pin)] = bool(endp_net.get(pt))
+    pin_named = {}   # (des,pin) -> 是否有直接命中命名端点
+    for (des, pin), pts in pin_hit.items():
+        pin_named[(des, pin)] = any(endp_net.get(pt) for pt in pts)
     changed = True
     while changed:
         changed = False
@@ -580,22 +581,23 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
                 continue  # 两脚都命名或都未命名：不传播（避免串扰）
             ni = named_idx[0]
             ui = 1 - ni
-            d_named = domain_of_pt[pin_hit[keys[ni]]]
-            d_unnamed = domain_of_pt[pin_hit[keys[ui]]]
+            d_named = domain_of_pt[pin_hit[keys[ni]][0]]
+            d_unnamed = domain_of_pt[pin_hit[keys[ui]][0]]
             if d_named == d_unnamed:
                 continue
             s_named = {n for n in dom_nets.get(d_named, set())
-                       if not POWER_DOM.match(n)}
+                       if not POWER_NET_RE.match(n)}
             cur = dom_nets.get(d_unnamed, set())
             if s_named and not s_named <= cur:
                 dom_nets.setdefault(d_unnamed, set()).update(s_named)
                 changed = True
 
-    # 6) 汇总
+    # 6) 汇总（重名引脚多命中点：合并所有命中点的域网络）
     result = {}
-    for (des, pin), pt in pin_hit.items():
-        d = domain_of_pt[pt]
-        ns = dom_nets.get(d, set())
+    for (des, pin), pts in pin_hit.items():
+        ns = set()
+        for pt in pts:
+            ns |= dom_nets.get(domain_of_pt[pt], set())
         result[(des, pin)] = ",".join(sorted(ns))
     return result
 
@@ -610,6 +612,18 @@ def resolve_page(db, page_name, schematic=None):
             d, n = db.schem_map().get(sch, ("?", "?"))
             if target.lower() in (d.lower(), n.lower()):
                 return title
+    return None
+
+
+def _synth_designator(db, c):
+    """无 title/designator 的实例（short 短接符等）用合成 designator 保留。
+    symbol_type=22 短接符无 title 无位号，两脚桥接跨网络（如 H_RESET↔RST）。"""
+    if c.get("designator"):
+        return c["designator"]
+    sym = symbol_of(db, c)
+    sp = db.symbol_pins(sym) if sym else None
+    if sp and sp.get("symbol_type") == 22:
+        return f"SHORT{c['cid']}"
     return None
 
 
@@ -647,15 +661,12 @@ def _collect_pinmap_data(db, sheet, page_name):
                     pt_wires.setdefault(p, set()).add(wid)
     comp_pins = {}
     for c in sheet["components"]:
-        des = c.get("designator")
+        des = _synth_designator(db, c)
+        if not des:
+            continue
         sym = symbol_of(db, c)
         sp = db.symbol_pins(sym) if sym else None
         if not sp or not sp["pins"]:
-            continue
-        # 无 title/designator 的实例（short 短接符等）用合成 designator 保留
-        if not des and sp.get("symbol_type") == 22:
-            des = f"SHORT{c['cid']}"
-        if not des:
             continue
         if not c["title"] and sp.get("symbol_type") != 22:
             continue
@@ -709,13 +720,9 @@ def cmd_pinmap(db, args):
     # 每个引脚 -> 最近 WIRE 端点（容差2）-> net + 同 wire 的其他引脚
     rows = []
     for c in sheet["components"]:
-        des = c.get("designator")
-        # 与 _collect_pinmap_data 一致的合成 designator（short 短接符无 title）
+        des = _synth_designator(db, c)
         if not des:
-            sym_c = symbol_of(db, c)
-            sp_c = db.symbol_pins(sym_c) if sym_c else None
-            if sp_c and sp_c.get("symbol_type") == 22:
-                des = f"SHORT{c['cid']}"
+            continue
         if args.designator and des != args.designator.upper():
             continue
         key = (des, c["cid"])
@@ -732,7 +739,7 @@ def cmd_pinmap(db, args):
                     if hit_pt is None:
                         hit_pt = (wx, wy)
                     hit_wires |= wids
-                    if endp.get((wx, wy)):
+                    if net is None and endp.get((wx, wy)):
                         net = endp[(wx, wy)]
             # 同物理连接点的其他器件引脚 + 同 WIRE 记录的其他端点引脚
             peers = []
@@ -1065,37 +1072,44 @@ def _trace_multi(dbs, args):
                     hops[k] = hop + 1
                     edges.append((f"工程{di}:{nm}", f"{cur}", f"{nxt}"))
                     frontier.append((k, hop + 1))
-        # 跨工程桥
+        # 跨工程桥（双向：当前侧可能是 des_a 或 des_b，--link 写法两种都支持）
         for (di_a, des_a, di_b, des_b) in bridges:
             if di == di_a and cur == des_a:
-                # 查本工程 des_a 的网络 -> 桥到 di_b 的 des_b 所在网络
-                b_net_a = set()
-                for sheet_title, sch in per[di_a]["des_locs"].get(des_a, []):
-                    for nm, e in per[di_a]["net_index"].items():
-                        if sheet_title in e and des_a in e[sheet_title]:
-                            b_net_a.add(nm)
-                for nm in b_net_a:
-                    # 连接器桥只导通同名网络（引脚对齐：TEMP_IN_SCLK<->TEMP_IN_SCLK）
-                    for sheet_title, sch in per[di_b]["des_locs"].get(des_b, []):
-                        for nm2, e in per[di_b]["net_index"].items():
-                            if nm2 != nm:
+                src_i, dst_i = di_a, di_b
+                src_des, dst_des = des_a, des_b
+            elif di == di_b and cur == des_b:
+                src_i, dst_i = di_b, di_a
+                src_des, dst_des = des_b, des_a
+            else:
+                continue
+            # 查源侧连接器所在网络 -> 桥到目标侧同网络
+            b_net = set()
+            for sheet_title, sch in per[src_i]["des_locs"].get(src_des, []):
+                for nm, e in per[src_i]["net_index"].items():
+                    if sheet_title in e and src_des in e[sheet_title]:
+                        b_net.add(nm)
+            for nm in b_net:
+                # 连接器桥只导通同名网络（引脚对齐：TEMP_IN_SCLK<->TEMP_IN_SCLK）
+                for sheet_title, sch in per[dst_i]["des_locs"].get(dst_des, []):
+                    for nm2, e in per[dst_i]["net_index"].items():
+                        if nm2 != nm:
+                            continue
+                        if sheet_title in e and dst_des in e[sheet_title]:
+                            nk = (dst_i, nm2)
+                            if nk in visited_net:
                                 continue
-                            if sheet_title in e and des_b in e[sheet_title]:
-                                nk = (di_b, nm2)
-                                if nk in visited_net:
-                                    continue
-                                if args.no_power and POWER_NET_RE.match(nm2):
-                                    continue
-                                visited_net.add(nk)
-                                for st2, ds2 in e.items():
-                                    for nxt in ds2:
-                                        k = gkey(di_b, nxt)
-                                        if k in visited:
-                                            continue
-                                        visited.add(k)
-                                        hops[k] = hop + 1
-                                        edges.append((f"桥{nm}->{nm2}", f"工程{di_a}:{des_a}", f"{nxt}"))
-                                        frontier.append((k, hop + 1))
+                            if args.no_power and POWER_NET_RE.match(nm2):
+                                continue
+                            visited_net.add(nk)
+                            for st2, ds2 in e.items():
+                                for nxt in ds2:
+                                    k = gkey(dst_i, nxt)
+                                    if k in visited:
+                                        continue
+                                    visited.add(k)
+                                    hops[k] = hop + 1
+                                    edges.append((f"桥{nm}->{nm2}", f"工程{src_i}:{src_des}", f"{nxt}"))
+                                    frontier.append((k, hop + 1))
 
     rows = [{"designator": d, "eprj": di, "hops": hops[(di, d)]}
             for (di, d) in sorted(visited, key=lambda x: (hops[x], x[1]))]
@@ -1113,7 +1127,6 @@ def _trace_multi(dbs, args):
 def cmd_netlist(db, args):
     """跨页网络归并：网络名 -> 出现的页与归属元件（连通域精确方案）。"""
     sn = db.schem_map()
-    dev = db.device_map()
     agg = {}
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
@@ -1335,6 +1348,7 @@ def cmd_search(db, args):
     except re.error as e:
         out(f"正则无效: {e}")
         return
+    rows = []
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
@@ -1348,11 +1362,13 @@ def cmd_search(db, args):
         if hits:
             d, n = sn.get(sch, ("?", "?"))
             if args.json:
-                outj({"sheet": title, "schematic": d, "hits": sorted(hits)})
+                rows.append({"sheet": title, "schematic": d, "hits": sorted(hits)})
             else:
                 out(f"== {title} (sch={d}) ==")
                 for h in sorted(hits):
                     out(f"  {h}")
+    if args.json:
+        outj(rows)
 
 
 def cmd_bom(db, args):
@@ -1371,10 +1387,11 @@ def cmd_bom(db, args):
             continue
         board = sheet["attrs"].get("@Board Name", "")
         if args.board:
-            if board == args.board:
+            # 统一不区分大小写（@Board Name 与 schematic 名兜底一致）
+            if board.lower() == args.board.lower():
                 pass
             elif not board:
-                # 标题块未填 @Board Name 时按 schematic 名兜底（通用，相等匹配）
+                # 标题块未填 @Board Name 时按 schematic 名兜底（不区分大小写）
                 disp, name = sn.get(sch, ("", ""))
                 if args.board.lower() != disp.lower() and \
                         args.board.lower() != name.lower():
@@ -1511,6 +1528,12 @@ def cmd_raw(db, args):
 
 
 def main():
+    # Windows 下固定 stdout 编码为 UTF-8（配合 PYTHONIOENCODING 或重定向到文件时中文不乱码）
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
     ap = argparse.ArgumentParser(description="立创EDA专业版 .eprj2 原理图读取工具")
     ap.add_argument("--eprj", action="append", default=None, help=".eprj2 文件路径，可多次(单工程或关联多工程)")
     ap.add_argument("--json", action="store_true",
@@ -1537,7 +1560,7 @@ def main():
                    help="不做连通域网络名推断(仅原始网络名)")
     p.set_defaults(fn=cmd_pinmap)
 
-    p = p = sub.add_parser("pins", help="引脚级网络表(designator→网络,连通域精确方案)")
+    p = sub.add_parser("pins", help="引脚级网络表(designator→网络,连通域精确方案)")
     p.add_argument("sheet")
     p.add_argument("--schematic", default=None, help="指定板名解决同名页")
     p.set_defaults(fn=cmd_pins)
@@ -1602,7 +1625,11 @@ def main():
     if not paths:
         out("未找到 .eprj2，请用 --eprj 指定路径")
         sys.exit(1)
-    dbs = [LcedaDB(p) for p in paths]
+    try:
+        dbs = [LcedaDB(p) for p in paths]
+    except Exception as e:
+        out(f"无法打开工程: {e}")
+        sys.exit(1)
     if len(dbs) == 1:
         args.fn(dbs[0], args)
     else:
