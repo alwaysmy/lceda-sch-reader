@@ -9,16 +9,14 @@ TOOL = _os.path.join(TOOL_DIR, 'lceda_reader.py')
 
 
 
-TOOL = _os.path.join(TOOL_DIR, 'lceda_reader.py')
 
 import argparse as _argparse
 _ap = _argparse.ArgumentParser()
 _ap.add_argument("--eprj", default=None, help="立创EDA工程(.eprj2)，默认用脚本内置路径")
+_ap.add_argument("--eprj2", default=None, help="第二工程(.eprj2)，与 --eprj 配套")
 _ap.add_argument("--out", default=None, help="输出 md 路径，默认用脚本内置路径")
 _ap.add_argument("--tool", default=None, help="lceda_reader.py 路径(默认自动定位)")
 _args = _ap.parse_args()
-if _args.eprj:
-    EPRJ = _args.eprj
 if _args.tool:
     TOOL = _args.tool
 elif not _os.path.exists(TOOL):
@@ -26,6 +24,10 @@ elif not _os.path.exists(TOOL):
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 V0 = _os.getenv('LCEDA_EPRJ_V0', '')  # 通过环境变量或 --eprj 指定
 V11 = _os.getenv('LCEDA_EPRJ_V11', '')  # 通过环境变量或 --eprj 指定
+if _args.eprj:
+    V0 = _args.eprj
+if _args.eprj2:
+    V11 = _args.eprj2
 
 def run(eprj, *args):
     p = subprocess.run([sys.executable, TOOL, '--eprj', eprj] + list(args),
