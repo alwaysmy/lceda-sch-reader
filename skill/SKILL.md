@@ -38,6 +38,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 引脚级网络表（designator→网络+引脚名） | `lceda_reader.py pins "页名"` |
    | 跨页网络归并 | `lceda_reader.py netlist` |
    | 全局同网络查询(引脚级,等效网络高亮) | `lceda_reader.py netfind <网络名>` |
+   | 多工程连接器对核对(候选) | `lceda_reader.py link-check` |
+   | 多工程链路(经连接器桥跨工程) | `lceda_reader.py trace U1 --link "0:H2<->1:H2"` |
    | 链路追踪（沿网络BFS多跳，跨页） | `lceda_reader.py trace U1 [--no-power] [--depth N]` |
    | Designator 反查（页/板/型号/网络） | `lceda_reader.py find U1` |
    | 跨页搜器件/关键字 | `lceda_reader.py search "正则"` |

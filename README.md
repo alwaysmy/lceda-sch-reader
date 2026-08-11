@@ -29,7 +29,9 @@ python lceda_reader.py devmap               rem 导出 devices/components 表（
 python lceda_reader.py raw <页名> [-o 文件]  rem 输出页的原始NDJSON（调试用）
 
 python lceda_reader.py --json <命令>         rem 结构化 JSON 输出（供脚本消费）
-python lceda_reader.py --eprj <路径> <命令>  rem 指定工程文件（默认搜索当前目录及父目录 *.eprj2）
+python lceda_reader.py --eprj <路径> <命令>  rem 指定工程文件（可多次，支持单工程或多工程关联）
+python lceda_reader.py link-check           rem 多工程连接器对核对（网络逐pin一致候选）
+python lceda_reader.py trace U1 --link "0:H2<->1:H2"  rem 多工程链路（经连接器桥跨工程）
 ```
 
 示例（通用形式）：

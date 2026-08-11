@@ -875,15 +875,21 @@ POWER_NET_RE = re.compile(r"^(GND|AGND|DGND|PGND|VCC|VDD|VSS|VBUS|D3V3|3V3|3\.3V
                           re.I)
 
 
-def cmd_trace(db, args):
-    """链路追踪（BFS）：从指定设计符出发，沿网络展开所有相连元件，
-    跨页跨板归并。--depth 限制跳数，--no-power 跳过电源/地网络，
-    --json 输出结构化路径。"""
+def cmd_trace(db_or_dbs, args):
+    """链路追踪（BFS）：从指定设计符出发，沿网络展开所有相连元件。
+    单工程：跨页跨板归并；多工程（--eprj 多次 + --link 连接器对）：
+    跨工程沿连接器桥展开。--depth 限制跳数，--no-power 跳过电源网络。"""
+    dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
+    if len(dbs) == 1:
+        db = dbs[0]
+        return _trace_one(db, args, 0, {})
+    # 多工程：构建 网络->元件 索引（按工程隔离），--link 指定桥
+    return _trace_multi(dbs, args)
+
+def _trace_one(db, args, eprj_idx=0, link_map=None):
+    """单工程链路追踪（原 cmd_trace 逻辑）。"""
     sn = db.schem_map()
     dev = db.device_map()
-
-    # 1) 预构建全工程 网络->{页,元件} 索引（用 pinmap 连通域精确方案，
-    #    替代旧 BBOX 近似——后者对经串阻连接的引脚链路不全）
     net_index = {}   # net -> {sheet: set(designators)}
     des_locs = {}    # designator -> [(sheet, schematic)]
     for uuid, title, sch, dt in db.sheets():
@@ -963,6 +969,145 @@ def cmd_trace(db, args):
         locs = ",".join(f"{s}({sn.get(sch, ('?','?'))[1]})"
                         for s, sch in des_locs.get(r["designator"], []))
         out(f"  跳{r['hops']}  {r['designator']:10s}  {locs}")
+
+
+
+def _trace_multi(dbs, args):
+    """多工程链路追踪：各工程独立建网络索引；--link 指定连接器对作为跨工程桥。
+    --link 格式: 工程索引:设计符<->工程索引:设计符（如 0:H2<->1:H2）。
+    未指定 --link 时仅提示，不做跨工程合并（网络名跨工程不自动匹配）。"""
+    # 1) 各工程建索引
+    per = []   # [{net_index, des_locs, sn}]
+    for di, db in enumerate(dbs):
+        net_index = {}
+        des_locs = {}
+        for uuid, title, sch, dt in db.sheets():
+            if dt != 1:
+                continue
+            sheet = parse_sheet(db, title)
+            if sheet is None:
+                continue
+            pinc = _collect_pinmap_data(db, sheet, title)
+            if pinc is None:
+                continue
+            comp_pins, wires, pt_wires, endp = pinc
+            dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+            pin_net_of = {}
+            for (des, pin), net in dom.items():
+                if net:
+                    for tok in net.split(","):
+                        pin_net_of.setdefault(tok, set()).add(des.upper())
+            for net, des_set in pin_net_of.items():
+                e = net_index.setdefault(net, {})
+                e.setdefault(title, set()).update(des_set)
+            for c in sheet["components"]:
+                if c.get("designator"):
+                    des_locs.setdefault(c["designator"].upper(), []).append((title, sch))
+        per.append({"net_index": net_index, "des_locs": des_locs,
+                    "sn": db.schem_map()})
+
+    # 2) --link 解析连接器对（工程索引:设计符）
+    bridges = []   # (di_a, des_a, di_b, des_b)
+    if args.link:
+        for spec in args.link:
+            m = re.match(r"(\d+):([A-Za-z0-9_]+)\s*<->\s*(\d+):([A-Za-z0-9_]+)", spec)
+            if not m:
+                out(f"--link 格式无效: {spec}（应为 0:H2<->1:H2）")
+                return
+            di_a, des_a, di_b, des_b = int(m.group(1)), m.group(2).upper(), int(m.group(3)), m.group(4).upper()
+            if di_a >= len(dbs) or di_b >= len(dbs):
+                out(f"--link 工程索引越界: {spec}")
+                return
+            bridges.append((di_a, des_a, di_b, des_b))
+
+    # 3) BFS：全局 des 集合（前缀工程索引避免跨工程误合并）
+    def gkey(di, des):
+        return (di, des)
+
+    start = args.designator.upper()
+    starts = []
+    for di, p in enumerate(per):
+        if start in p["des_locs"]:
+            starts.append(di)
+    if not starts:
+        out(f"未找到 {args.designator}")
+        return
+
+    visited = {gkey(di, start) for di in starts}
+    visited_net = set()
+    frontier = [(gkey(di, start), 0) for di in starts]
+    hops = {gkey(di, start): 0 for di in starts}
+    edges = []   # (net, from, to)
+
+    while frontier:
+        (di, cur), hop = frontier.pop(0)
+        if hop >= args.depth:
+            continue
+        p = per[di]
+        cur_nets = set()
+        for sheet_title, sch in p["des_locs"].get(cur, []):
+            for nm, e in p["net_index"].items():
+                if sheet_title in e and cur in e[sheet_title]:
+                    cur_nets.add(nm)
+        for nm in cur_nets:
+            nk = (di, nm)
+            if nk in visited_net:
+                continue
+            if args.no_power and POWER_NET_RE.match(nm):
+                continue
+            visited_net.add(nk)
+            for sheet_title, des_set in p["net_index"][nm].items():
+                for nxt in des_set:
+                    k = gkey(di, nxt)
+                    if k in visited:
+                        continue
+                    visited.add(k)
+                    hops[k] = hop + 1
+                    edges.append((f"工程{di}:{nm}", f"{cur}", f"{nxt}"))
+                    frontier.append((k, hop + 1))
+        # 跨工程桥
+        for (di_a, des_a, di_b, des_b) in bridges:
+            if di == di_a and cur == des_a:
+                # 查本工程 des_a 的网络 -> 桥到 di_b 的 des_b 所在网络
+                b_net_a = set()
+                for sheet_title, sch in per[di_a]["des_locs"].get(des_a, []):
+                    for nm, e in per[di_a]["net_index"].items():
+                        if sheet_title in e and des_a in e[sheet_title]:
+                            b_net_a.add(nm)
+                for nm in b_net_a:
+                    # 连接器桥只导通同名网络（引脚对齐：TEMP_IN_SCLK<->TEMP_IN_SCLK）
+                    for sheet_title, sch in per[di_b]["des_locs"].get(des_b, []):
+                        for nm2, e in per[di_b]["net_index"].items():
+                            if nm2 != nm:
+                                continue
+                            if sheet_title in e and des_b in e[sheet_title]:
+                                nk = (di_b, nm2)
+                                if nk in visited_net:
+                                    continue
+                                if args.no_power and POWER_NET_RE.match(nm2):
+                                    continue
+                                visited_net.add(nk)
+                                for st2, ds2 in e.items():
+                                    for nxt in ds2:
+                                        k = gkey(di_b, nxt)
+                                        if k in visited:
+                                            continue
+                                        visited.add(k)
+                                        hops[k] = hop + 1
+                                        edges.append((f"桥{nm}->{nm2}", f"工程{di_a}:{des_a}", f"{nxt}"))
+                                        frontier.append((k, hop + 1))
+
+    rows = [{"designator": d, "eprj": di, "hops": hops[(di, d)]}
+            for (di, d) in sorted(visited, key=lambda x: (hops[x], x[1]))]
+    if args.json:
+        outj(rows)
+        return
+    out(f"== {args.designator} 链路追踪（多工程, 最大{args.depth}跳） ==")
+    for nm, f, t in edges:
+        out(f"  [{nm:26s}] {f:8s} -> {t}")
+    out("== 到达的元件 ==")
+    for r in rows:
+        out(f"  工程{r['eprj']} 跳{r['hops']}  {r['designator']}")
 
 
 def cmd_netlist(db, args):
@@ -1045,13 +1190,44 @@ def cmd_find(db, args):
             out(f"    nets: {','.join(uniq)}")
 
 
-def cmd_netfind(db, args):
+def cmd_netfind(db_or_dbs, args):
     """全局同网络查询（引脚级）：网络名 -> 所有页的 (器件, 引脚)。
     与立创EDA"网络高亮"等效——遍历全工程连通域解析，输出该网络的全部连接点。
+    支持多工程（--eprj 多次）：每个工程独立查询，输出标注工程来源，不跨工程合并。
     --json 输出结构化。"""
+    dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
+    rows_all = []
+    for di, db in enumerate(dbs):
+        rows = _netfind_one(db, args.net)
+        if len(dbs) > 1:
+            for r in rows:
+                r["eprj"] = f"#{di}"
+            rows_all.extend(rows)
+        else:
+            rows_all = rows
+    if not rows_all:
+        out(f"未找到网络: {args.net}")
+        return
+    if args.json:
+        outj(rows_all)
+        return
+    n = len(rows_all)
+    out(f"== 网络 {args.net} ({n} 个连接点" + (", 多工程" if len(dbs) > 1 else "") + ") ==")
+    cur = None
+    for r in rows_all:
+        key = (r.get("eprj"), r["sheet"], r["schematic"])
+        if key != cur:
+            cur = key
+            tag = f"工程{r['eprj']} " if r.get("eprj") else ""
+            out(f"  [{tag}{r['sheet']} (sch={r['schematic']})]")
+        out(f"    {r['designator']}.{r['pin']}")
+
+
+def _netfind_one(db, net_name):
+    """单工程网络查询，返回 rows。"""
     sn = db.schem_map()
-    target = args.net.upper()
-    found = {}   # (sheet, schematic) -> [(designator, pin)]
+    target = net_name.upper()
+    found = {}
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
@@ -1068,26 +1244,89 @@ def cmd_netfind(db, args):
             if net and target in [t.upper() for t in net.split(",")]:
                 key = (title, d)
                 found.setdefault(key, []).append((des, pin))
-    if not found:
-        out(f"未找到网络: {args.net}")
-        return
     rows = []
     for (sheet, d) in sorted(found):
         for des, pin in sorted(found[(sheet, d)], key=lambda x: (x[0], str(x[1]))):
             rows.append({"sheet": sheet, "schematic": d,
                          "designator": des, "pin": pin})
-    if args.json:
-        outj(rows)
-        return
-    out(f"== 网络 {args.net} ({len(rows)} 个连接点) ==")
-    cur = None
-    for r in rows:
-        key = (r["sheet"], r["schematic"])
-        if key != cur:
-            cur = key
-            out(f"  [{r['sheet']} (sch={r['schematic']})]")
-        out(f"    {r['designator']}.{r['pin']}")
+    return rows
 
+
+def cmd_link_check(dbs, args):
+    """多工程连接器对核对：对每对工程，找出网络名逐 pin 一致的连接器候选。"""
+    if not isinstance(dbs, list) or len(dbs) < 2:
+        out("link-check 需至少两个工程（--eprj 多次）")
+        return
+    results = []
+    for i in range(len(dbs)):
+        for j in range(i + 1, len(dbs)):
+            pairs = _conn_pairs(dbs[i], dbs[j])
+            for (des_a, des_b, common, diff, total) in pairs:
+                results.append({
+                    "eprj_a": i, "eprj_b": j,
+                    "connector_a": des_a, "connector_b": des_b,
+                    "pin_common": common, "pin_diff": diff, "pin_total": total,
+                })
+    if not results:
+        out("未找到网络名逐 pin 一致的连接器对")
+        return
+    if args.json:
+        outj(results)
+        return
+    out("== 连接器对候选（网络名逐 pin 一致） ==")
+    for r in results:
+        status = "一致" if r["pin_diff"] == 0 else f"有{r['pin_diff']}差异"
+        out(f"  工程{r['eprj_a']} {r['connector_a']} <-> 工程{r['eprj_b']} {r['connector_b']}: "
+            f"{r['pin_common']}/{r['pin_total']} pin 网络一致 ({status})")
+
+
+def _conn_pairs(db_a, db_b):
+    """两工程间连接器网络映射对比，返回候选 (des_a, des_b, common, diff, total)。"""
+    def conn_nets(db):
+        """收集全工程连接器（designator 以 H/CN/J 开头且多 pin）的网络映射。"""
+        res = {}
+        for uuid, title, sch, dt in db.sheets():
+            if dt != 1:
+                continue
+            sheet = parse_sheet(db, title)
+            if sheet is None:
+                continue
+            pinc = _collect_pinmap_data(db, sheet, title)
+            if pinc is None:
+                continue
+            comp_pins, wires, pt_wires, endp = pinc
+            dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+            for (des, pin), net in dom.items():
+                # 连接器：H/J/P 开头或 CN 前缀；排除 C（电容）、R、U、L 等
+                if des and (des[0] in ("H", "J", "P") or des.startswith("CN")) \
+                        and len(pin) <= 3:
+                    res.setdefault(des, {}).setdefault(pin, set()).add(net or "")
+        return res
+
+    na = conn_nets(db_a)
+    nb = conn_nets(db_b)
+    pairs = []
+    for des_a, pins_a in na.items():
+        for des_b, pins_b in nb.items():
+            # 需同 pin 数（对插连接器 pin 数一致）
+            if len(pins_a) != len(pins_b):
+                continue
+            common = 0
+            diff = 0
+            total = 0
+            for pin in pins_a:
+                if pin not in pins_b:
+                    continue
+                total += 1
+                nets_a = pins_a[pin]
+                nets_b = pins_b[pin]
+                if nets_a == nets_b and nets_a != {""}:
+                    common += 1
+                else:
+                    diff += 1
+            if total >= len(pins_a) // 2:
+                pairs.append((des_a, des_b, common, diff, total))
+    return pairs
 
 def cmd_search(db, args):
     sn = db.schem_map()
@@ -1273,7 +1512,7 @@ def cmd_raw(db, args):
 
 def main():
     ap = argparse.ArgumentParser(description="立创EDA专业版 .eprj2 原理图读取工具")
-    ap.add_argument("--eprj", help=".eprj2 文件路径（默认搜索当前目录及父目录 *.eprj2）")
+    ap.add_argument("--eprj", action="append", default=None, help=".eprj2 文件路径，可多次(单工程或关联多工程)")
     ap.add_argument("--json", action="store_true",
                     help="结构化 JSON 输出（供脚本消费）")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1314,7 +1553,12 @@ def main():
     p.add_argument("--depth", type=int, default=5)
     p.add_argument("--no-power", action="store_true",
                    help="跳过电源/地网络(GND/AGND/VCC/3.3V等)")
+    p.add_argument("--link", action="append", default=None,
+                   help="跨工程连接器对，格式 0:H2<->1:H2 (工程索引:设计符)，可多次")
     p.set_defaults(fn=cmd_trace)
+
+    p = sub.add_parser("link-check", help="多工程连接器对核对(网络逐pin一致候选)")
+    p.set_defaults(fn=cmd_link_check)
 
     p = sub.add_parser("find", help="Designator 反查(元件所在页/板/网络)")
     p.add_argument("designator")
@@ -1350,12 +1594,26 @@ def main():
     p.set_defaults(fn=cmd_raw)
 
     args = ap.parse_args()
-    path = find_eprj(args.eprj)
-    if not path:
+    if args.eprj:
+        paths = args.eprj
+    else:
+        p0 = find_eprj(None)
+        paths = [p0] if p0 else []
+    if not paths:
         out("未找到 .eprj2，请用 --eprj 指定路径")
         sys.exit(1)
-    db = LcedaDB(path)
-    args.fn(db, args)
+    dbs = [LcedaDB(p) for p in paths]
+    if len(dbs) == 1:
+        args.fn(dbs[0], args)
+    else:
+        # 多工程：命令需支持多工程（netfind/link-check/trace/find/search 等）
+        multi = getattr(args, 'fn', None)
+        if multi in (cmd_netfind, cmd_link_check, cmd_trace, cmd_find, cmd_search):
+            args.dbs = dbs
+            multi(dbs, args)
+        else:
+            out(f"多工程模式仅支持 netfind/link-check/trace/find/search，当前命令不支持")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
