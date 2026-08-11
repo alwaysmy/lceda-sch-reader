@@ -97,6 +97,27 @@ description: Use when the user asks to read, query, search, extract, or verify c
   已记录在 README（单工具双后端，按扩展名自动判断），暂未实现——备份文件
   仅作历史归档，读取主工程请用 .eprj2。
 
+## 多工程使用（关联工程分析）
+
+`--eprj` 可多次指定（如主控板工程 ↔ ADDA 板工程）：
+
+1. **netfind 多工程**：分工程输出，标注 `工程#N`，**不跨工程合并网络名**
+   （跨工程同名网络是独立命名空间）。
+2. **link-check**：列出两工程间"网络名逐 pin 一致"的连接器对候选。
+   **注意**：多个同型号连接器（如两 H1/H2 都 40/40 一致）会全部列出，
+   需人工判断实际对插——连接器物理关系是设计知识，工具只能给候选。
+3. **trace 跨工程**：必须 `--link "0:H2<->1:H2"` 显式声明连接器对；
+   **仅同名网络经桥导通**（连接器引脚对齐语义）。未指定 --link 时只在
+   本工程内展开（跨工程不自动匹配）。
+
+```bat
+python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 netfind <网络名>
+python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 link-check
+python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H2"
+```
+
+多工程支持：netfind/link-check/trace/find/search；其余命令单工程运行。
+
 ## 器件联通审查方法（LLM 引导，非脚本自动化）
 
 对指定器件做连通性/外围电路审查（如芯片电源去耦、基准输出负载、输入链拓扑），

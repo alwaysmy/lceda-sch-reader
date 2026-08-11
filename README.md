@@ -70,6 +70,30 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 
 找不到工程时会提示 `未找到 .eprj2，请用 --eprj 指定路径`。
 
+### 命令速查
+
+| 命令 | 用途 | 关键参数 | 典型输出 |
+| --- | --- | --- | --- |
+| `list` | 板与页清单 | --json | 板(schematic)列表 + 每页 |
+| `boards` | 页标题块 | --json | 每页 @Board Name/@Page Name/Version |
+| `components [页]` | 页内元件 | --json | 设计符/型号/参数描述 |
+| `nets <页>` | 页网络 | --schematic, --json | 网络名 → 归属元件 |
+| `pinmap <页>` | 精确引脚网络表 | --designator, --schematic, --no-domain, --json | 引脚→网络(peers/wire_peers/symbol_type/pin_type) |
+| `pins <页>` | 引脚级网络 | --schematic, --json | 设计符.引脚 → 网络 |
+| `netlist` | 跨页网络归并 | --json | 网络名 → 页/元件 |
+| `netfind <网络>` | 全局同网络(引脚级) | --json, 多工程 | 页/板/器件.引脚 全连接点 |
+| `trace <器件>` | 链路追踪 | --depth, --no-power, --link(多工程), --json | BFS 边 + 到达元件 |
+| `find <器件>` | 反查 | --raw, --json | 页/板/型号/网络 |
+| `search <正则>` | 全文搜索 | --case, --json | 页内命中行 |
+| `bom` | 物料清单 | --board, --bom-only, --json | 器件→值/供应商/板/页 |
+| `datasheets` | Datasheet URL | --json | 器件→数据手册链接 |
+| `attrs <页>` | 页属性 | --schematic, --json | 标题块@项 + 元件属性 |
+| `devmap` | uuid→器件 | --json | uuid/型号/描述 |
+| `raw <页>` | 原始 NDJSON | -o | 调试用原始数据 |
+| `link-check` | 连接器对候选(多工程) | --json | 工程A 连接器 ↔ 工程B 连接器 逐pin一致数 |
+
+通用参数：`--json`（结构化输出）、`--eprj`（工程路径，可多次）。
+
 ## 二、文件格式（与官方规范一致）
 
 本工具基于官方《嘉立创EDA文件格式》规范实现，规范文档见 `reference/` 目录
@@ -164,6 +188,32 @@ python lceda_reader.py trace U1 --no-power
 - **跨板链路输出应带标记**：若工具自动输出跨板连接（按同名网络归并），应标记
   "经连接器同名网络假设相连，需校验两侧连接器对应关系"，避免 agent 误当作
   已验证事实。
+
+**6. 多工程使用（关联工程分析）**
+
+工具支持一次指定多个 `.eprj2`（如主控板工程 ↔ ADDA 板工程）。多工程时：
+- **跨工程网络名不自动匹配**：两个工程是独立命名空间（同名网络是不同网络），
+  netfind 分工程输出并标注 `工程#N`，不合并。
+- **连接器对由用户指定**（`--link`）：跨工程导通只发生在用户声明的连接器对
+  （如 `0:H2<->1:H2`），且**仅同名网络导通**（连接器引脚对齐语义，TEMP_IN_SCLK
+  只会连到对端工程的 TEMP_IN_SCLK，不会错连到 I_ALARM）。
+- **`link-check` 提供候选**：自动列出两工程间"网络名逐 pin 一致"的连接器对
+  （供确认哪个插哪个）；多个同型号连接器（如两 H1/H2 都 40/40 一致）会全部
+  列出，需人工判断实际对插。
+
+```bat
+rem 多工程查询（各工程独立，标注来源）
+python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 netfind <网络名>
+
+rem 连接器对候选核对
+python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 link-check
+
+rem 跨工程链路（显式指定连接器对）
+python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H2"
+```
+
+多工程模式下支持的命令：`netfind`/`link-check`/`trace`/`find`/`search`；
+其余命令（bom/components 等）需单工程运行。
 
 ## 四、注意事项（通用坑）
 
