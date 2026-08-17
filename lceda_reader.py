@@ -54,6 +54,8 @@ import os
 import re
 import sqlite3
 import sys
+import zipfile
+from pathlib import Path
 
 
 # ---------------------------------------------------------------- 基础层
@@ -67,9 +69,9 @@ def outj(obj):
 
 
 def find_eprj(path=None):
-    """定位 .eprj2 文件（通用，不绑定任何工程目录结构）：
+    """定位工程文件（通用，不绑定任何工程目录结构）：
     1) 显式 --eprj 优先；
-    2) 否则搜索当前工作目录及其父目录的 *.eprj2。"""
+    2) 否则搜索当前工作目录及其父目录的 *.eprj2，再退化为 *.epro。"""
     import glob
     if path:
         return path
@@ -81,10 +83,11 @@ def find_eprj(path=None):
             break
         bases.append(parent)
         d = parent
-    for base in bases:
-        hits = glob.glob(os.path.join(base, "*.eprj2"))
-        if hits:
-            return hits[0]
+    for pattern in ("*.eprj2", "*.epro"):
+        for base in bases:
+            hits = glob.glob(os.path.join(base, pattern))
+            if hits:
+                return hits[0]
     return None
 
 
@@ -229,6 +232,173 @@ class LcedaDB:
         return {"pins": list(pins.values()), "bbox": bbox, "parts": sorted(
             {p["part"] for p in pins.values()}),
             "symbol_type": symbol_type}
+
+
+class EproDB:
+    """Minimal LCEDA ``.epro`` (ZIP export) backend.
+
+    Implements the same duck-typed interface as :class:`LcedaDB` so the CLI
+    commands (list/boards/components/nets/pinmap/pins/netfind/trace/...) can
+    transparently read a ZIP export as well as the SQLite ``.eprj2`` format.
+    """
+
+    def __init__(self, path):
+        self.path = Path(path)
+        self.zip = zipfile.ZipFile(self.path)
+        self.obj = json.loads(self.zip.read("project.json"))
+        self.devices = self.obj.get("devices", {})
+        self.symbols = self.obj.get("symbols", {})
+        self.boards = self.obj.get("boards", {})
+        self.schematics = self.obj.get("schematics", {})
+        self._names = set(self.zip.namelist())
+        self._page_index = {}      # unique_title -> (schematic uuid, page id)
+        self._records_cache = {}
+        self._symbol_pin_cache = {}
+        self._build_page_index()
+
+    def _build_page_index(self):
+        for board_name, board in self.boards.items():
+            sch_uuid = board.get("schematic")
+            if not sch_uuid:
+                continue
+            sch = self.schematics.get(sch_uuid, {})
+            for page in sch.get("sheets", []):
+                page_name = page.get("display_title") or page.get("name") or str(page.get("id"))
+                self._page_index[f"{board_name}::{page_name}"] = (sch_uuid, int(page["id"]))
+        # CBB module schematics are also reachable through their own namespace.
+        for sch_uuid, sch in self.schematics.items():
+            sch_name = sch.get("name", sch_uuid)
+            for page in sch.get("sheets", []):
+                page_name = page.get("display_title") or page.get("name") or str(page.get("id"))
+                self._page_index[f"CBBMOD::{sch_name}::{page_name}"] = (sch_uuid, int(page["id"]))
+
+    def decompress(self, ds):
+        return ds
+
+    # -- lceda_reader-compatible API ----------------------------------------
+    def schematics(self):
+        return [(name, name, name) for name in self.boards]
+
+    def schem_map(self):
+        return {name: (name, name) for name in self.boards}
+
+    def sheets(self, doc_type=1):
+        rows = []
+        for board_name, board in self.boards.items():
+            sch_uuid = board.get("schematic")
+            sch = self.schematics.get(sch_uuid, {})
+            for page in sch.get("sheets", []):
+                title = f"{board_name}::{page.get('display_title') or page.get('name') or page['id']}"
+                rows.append((page.get("uuid"), title, board_name, 1))
+        return rows
+
+    def sheet_records(self, title, doc_type=1):
+        if title in self._records_cache:
+            return self._records_cache[title]
+        key = self._page_index.get(title)
+        if key is None:
+            return None
+        sch_uuid, page_id = key
+        fname = f"SHEET/{sch_uuid}/{page_id}.esch"
+        if fname not in self._names:
+            return None
+        text = self.zip.read(fname).decode("utf-8", errors="replace")
+        records = []
+        for line in text.splitlines():
+            try:
+                records.append(json.loads(line))
+            except Exception:
+                continue
+        self._records_cache[title] = records
+        return records
+
+    def device_map(self):
+        out = {}
+        for uuid, dev in self.devices.items():
+            if not isinstance(dev, dict):
+                continue
+            attrs = dev.get("attributes") or {}
+            out[uuid] = (dev.get("title") or "",
+                         attrs.get("Supplier Part") or "",
+                         attrs.get("Description") or dev.get("description") or "")
+        for uuid, sym in self.symbols.items():
+            if not isinstance(sym, dict) or uuid in out:
+                continue
+            out[uuid] = (sym.get("title") or "", "", "")
+        return out
+
+    def device_attrs(self, device_uuid):
+        dev = self.devices.get(device_uuid)
+        if isinstance(dev, dict):
+            return dict(dev.get("attributes") or {})
+        return {}
+
+    def symbol_of_device(self, device_uuid):
+        if not device_uuid:
+            return None
+        dev = self.devices.get(device_uuid)
+        if isinstance(dev, dict) and isinstance(dev.get("attributes"), dict):
+            return dev["attributes"].get("Symbol")
+        return None
+
+    def symbol_pins(self, symbol_uuid):
+        """Parse SYMBOL/<uuid>.esym into lceda_reader's dict shape.
+
+        ``HEAD.originX/Y`` is the symbol-local origin; instance coordinates are
+        origin-relative, so pin coordinates subtract it.
+        """
+        if not symbol_uuid:
+            return None
+        if symbol_uuid in self._symbol_pin_cache:
+            return self._symbol_pin_cache[symbol_uuid]
+        fname = f"SYMBOL/{symbol_uuid}.esym"
+        if fname not in self._names:
+            return None
+        text = self.zip.read(fname).decode("utf-8", errors="replace")
+        pins, names, numbers, pin_types = {}, {}, {}, {}
+        bbox = None
+        cur_part = None
+        symbol_type = None
+        origin_x = origin_y = 0.0
+        for line in text.splitlines():
+            try:
+                a = json.loads(line)
+            except Exception:
+                continue
+            if not isinstance(a, list) or len(a) < 2:
+                continue
+            if a[0] == "HEAD" and len(a) > 1 and isinstance(a[1], dict):
+                symbol_type = a[1].get("symbolType")
+                origin_x = float(a[1].get("originX", 0) or 0)
+                origin_y = float(a[1].get("originY", 0) or 0)
+            elif a[0] == "PART" and len(a) > 2 and isinstance(a[2], dict):
+                cur_part = a[1]
+                b = a[2].get("BBOX")
+                if b and len(b) == 4:
+                    bbox = [min(b[0], b[2]), min(b[1], b[3]),
+                            max(b[0], b[2]), max(b[1], b[3])]
+            elif a[0] == "PIN" and len(a) >= 8:
+                pins[a[1]] = {"id": a[1], "x": (a[4] or 0) - origin_x,
+                              "y": (a[5] or 0) - origin_y,
+                              "rot": a[7] if a[7] is not None else 0,
+                              "part": cur_part, "name": None,
+                              "number": None, "pin_type": None}
+            elif a[0] == "ATTR" and len(a) >= 5 and a[2] in pins:
+                if a[3] == "NAME":
+                    names[a[2]] = a[4]
+                elif a[3] == "NUMBER":
+                    numbers[a[2]] = str(a[4])
+                elif a[3] == "Pin Type":
+                    pin_types[a[2]] = a[4]
+        for pid, p in pins.items():
+            p["name"] = names.get(pid)
+            p["number"] = numbers.get(pid)
+            p["pin_type"] = pin_types.get(pid)
+        result = {"pins": list(pins.values()), "bbox": bbox,
+                  "parts": sorted({p["part"] for p in pins.values()}),
+                  "symbol_type": symbol_type}
+        self._symbol_pin_cache[symbol_uuid] = result
+        return result
 
 
 # ---------------------------------------------------------------- 解析层
@@ -426,19 +596,24 @@ def cmd_components(db, args):
 
 
 def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
-    """基于走线连通域的网络名解析（完善方案）。
-    规则：
+    """基于走线连通域的网络名解析。
+
+    规则（修订版）：
       1) 同 WIRE 记录端点相接 = 同一连通域（物理网络）
-      2) 0Ω 跳线两脚 = 连通域合并（物理直连）
-      3) 两脚无源器件(串阻/磁珠) = 网络名传播桥：有名脚 -> 无名脚所在域
+      2) 0Ω 跳线 / SHORT 短接符 = 两脚连通域合并（脚本可识别的物理直连）
+      3) 其他两脚无源器件（电阻/磁珠/LED...）**不自动合并**：每个引脚保留
+         自己所在域的名字，器件本身保留为中间 hop，交给人/LLM 判断
       4) 芯片多引脚不参与"另一脚取网络"
-    返回 {(des,pin): net}（含已直接命名的引脚）。
+    返回 ``{(designator, pin_key): net}``；重名引脚使用 ``name#number``。
     注意：comp_pins 键为 (des, cid) 时先按 des 合并（连通域只看坐标）。"""
     if comp_pins and not isinstance(next(iter(comp_pins)), str):
         merged = {}
         for (des, cid), plist in comp_pins.items():
             merged.setdefault(des, []).extend(plist)
         comp_pins = merged
+
+    def pin_key(p):
+        return p.get("key") or p.get("pin")
     # 并查集
     parent = {}
     # 立创EDA 格式保证引脚端点与 WIRE 端点精确重合（0.01 inch 网格）；
@@ -486,7 +661,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
         for p in plist:
             for (px, py), nm in endp_net.items():
                 if abs(p["x"] - px) <= 2 and abs(p["y"] - py) <= 2:
-                    pin_hit.setdefault((des, p["pin"]), []).append((px, py))
+                    pin_hit.setdefault((des, pin_key(p)), []).append((px, py))
                     parent.setdefault((px, py), (px, py))
                     break
     # 引脚未直接命中命名端点时，与最近 wire 端点相连（容差2，归一化后）
@@ -496,7 +671,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
             all_wpts.add(norm_pt(pt))
     for des, plist in comp_pins.items():
         for p in plist:
-            key = (des, p["pin"])
+            key = (des, pin_key(p))
             if key in pin_hit:
                 continue
             best = None
@@ -516,16 +691,16 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
     for des in jumpers:
         plist = comp_pins.get(des, [])
         if len(plist) == 2:
-            k0 = (des, plist[0]["pin"])
-            k1 = (des, plist[1]["pin"])
+            k0 = (des, pin_key(plist[0]))
+            k1 = (des, pin_key(plist[1]))
             if k0 in pin_hit and k1 in pin_hit:
                 union(pin_hit[k0][0], pin_hit[k1][0])
     # Short Symbol（无 title 的合成 SHORT 实例，sym_type=22）：两脚同网络
     for key, plist in list(comp_pins.items()):
         des = key if isinstance(key, str) else key[0]
         if len(plist) == 2 and any(p.get("sym_type") == 22 for p in plist):
-            k0 = (des, plist[0]["pin"])
-            k1 = (des, plist[1]["pin"])
+            k0 = (des, pin_key(plist[0]))
+            k1 = (des, pin_key(plist[1]))
             if k0 in pin_hit and k1 in pin_hit:
                 union(pin_hit[k0][0], pin_hit[k1][0])
 
@@ -556,41 +731,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
     #    器件两脚分属两域，若一脚所在域有名，则另一域继承（仅限两脚器件）
     #    优先级：信号网络名 > 电源/地网络名（避免上拉电阻的 GND 掩盖信号名）
     #    电源/地判定复用模块级 POWER_NET_RE（trace 同源，避免两份正则漂移）
-    two_pin_devs = {}
-    for des, plist in comp_pins.items():
-        if len(plist) == 2:
-            two_pin_devs[des] = plist
-    # 传播直到稳定（两轮：先信号名，再电源名）
-    # 桥传播：仅当本器件"有一脚直接命名(endp_net 命中)"时，从命名脚传到另一脚。
-    # 方向单向（命名脚 -> 未命名脚），避免经上拉电阻把信号名污染到 GND 域。
-    pin_named = {}   # (des,pin) -> 是否有直接命中命名端点
-    for (des, pin), pts in pin_hit.items():
-        pin_named[(des, pin)] = any(endp_net.get(pt) for pt in pts)
-    changed = True
-    while changed:
-        changed = False
-        for des, plist in two_pin_devs.items():
-            if des in jumpers:
-                continue  # 跳线已在连通域合并处理
-            keys = [(des, p["pin"]) for p in plist]
-            if not all(k in pin_hit for k in keys):
-                continue
-            # 找命名脚与未命名脚
-            named_idx = [i for i, k in enumerate(keys) if pin_named[k]]
-            if len(named_idx) != 1:
-                continue  # 两脚都命名或都未命名：不传播（避免串扰）
-            ni = named_idx[0]
-            ui = 1 - ni
-            d_named = domain_of_pt[pin_hit[keys[ni]][0]]
-            d_unnamed = domain_of_pt[pin_hit[keys[ui]][0]]
-            if d_named == d_unnamed:
-                continue
-            s_named = {n for n in dom_nets.get(d_named, set())
-                       if not POWER_NET_RE.match(n)}
-            cur = dom_nets.get(d_unnamed, set())
-            if s_named and not s_named <= cur:
-                dom_nets.setdefault(d_unnamed, set()).update(s_named)
-                changed = True
+    # 5) 普通两脚无源器件不再传播网络名；两侧网络保持独立，器件作为中间 hop。
 
     # 6) 汇总（重名引脚多命中点：合并所有命中点的域网络）
     result = {}
@@ -600,6 +741,74 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
             ns |= dom_nets.get(domain_of_pt[pt], set())
         result[(des, pin)] = ",".join(sorted(ns))
     return result
+
+
+def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
+    """输出所有两脚中间器件，连通性分析不再吞掉这些器件。
+
+    返回 ``[{designator, kind, direct, pin_a, number_a, net_a, pin_b,
+    number_b, net_b, device}]``。
+    ``kind``: short|jumper|passive；``direct`` 表示脚本可识别的物理直连
+    （symbolType=22 SHORT，或器件 title 为 0000/0R 的 0Ω 跳线）。
+    若提供 ``endp``（坐标->网络名），优先用该引脚自己的物理端点网络名，
+    避免桥接后两侧都显示 alias 串。
+    """
+    rows = []
+    if not comp_pins:
+        return rows
+
+    def _key(p):
+        return p.get("key") or p.get("pin")
+
+    def _direct_net(p):
+        if not endp:
+            return pinmap.get((des, _key(p)), "")
+        ax, ay = p.get("x"), p.get("y")
+        if (ax, ay) in endp:
+            return endp[(ax, ay)] or ""
+        for ox in (-1, 0, 1):
+            for oy in (-1, 0, 1):
+                if (ax + ox, ay + oy) in endp and endp[(ax + ox, ay + oy)]:
+                    return endp[(ax + ox, ay + oy)]
+        return pinmap.get((des, _key(p)), "")
+
+    dev_map = db.device_map() if hasattr(db, "device_map") else {}
+    for key, plist in comp_pins.items():
+        des = key if isinstance(key, str) else key[0]
+        if len(plist) != 2:
+            continue
+        a, b = plist
+        sym_types = {p.get("sym_type") for p in plist}
+        title = ""
+        for c in sheet.get("components", []):
+            if c.get("designator") == des:
+                title = c.get("title") or ""
+                break
+        is_short = 22 in sym_types
+        is_zero = bool(title and re.search(r"0000|0R|0Ω|0RΩ", str(title), re.I))
+        kind = "short" if is_short else ("jumper" if is_zero else "passive")
+        net_a = _direct_net(a)
+        net_b = _direct_net(b)
+        device = ""
+        for c in sheet.get("components", []):
+            if c.get("designator") == des:
+                uuid = c.get("device_uuid") or c.get("symbol_uuid") or ""
+                d = dev_map.get(uuid)
+                device = (d[0] if d else "") or title
+                break
+        rows.append({
+            "designator": des,
+            "kind": kind,
+            "direct": is_short or is_zero,
+            "device": device or title,
+            "title": title,
+            "pin_a": _key(a), "number_a": a.get("number"),
+            "net_a": net_a, "pos_a": [a.get("x"), a.get("y")],
+            "pin_b": _key(b), "number_b": b.get("number"),
+            "net_b": net_b, "pos_b": [b.get("x"), b.get("y")],
+        })
+    rows.sort(key=lambda r: (not r["direct"], r["kind"], natkey(r["designator"])))
+    return rows
 
 
 def resolve_page(db, page_name, schematic=None):
@@ -673,17 +882,34 @@ def _collect_pinmap_data(db, sheet, page_name):
         # 连接会被静默漏掉。
         if not c["title"] and sp.get("symbol_type") not in (17, 22):
             continue
-        part = None
-        m = re.search(r"\.(\d+)$", c["title"])
-        if m:
-            part = c["title"][:-len(m.group(0))] + "." + m.group(1)
-            if part not in sp["parts"]:
-                part = sp["parts"][0] if len(sp["parts"]) == 1 else None
-        if not part and len(sp["parts"]) == 1:
-            part = sp["parts"][0]
-        if part not in sp["parts"]:
+        # Part 名不限于 ".1/.2" 数字后缀：支持完整 PART 名、字母名
+        # （XC7A35T....B0/B14/GTP/POWER）以及大小写差异。
+        title = c.get("title") or ""
+        parts = sp["parts"]
+        part = title if title in parts else None
+        if part is None:
+            m = re.search(r"\.(\d+)$", title)
+            if m:
+                candidate = title[:-len(m.group(0))] + "." + m.group(1)
+                if candidate in parts:
+                    part = candidate
+        if part is None:
+            for candidate in parts:
+                if str(candidate).lower() == title.lower():
+                    part = candidate
+                    break
+        if part is None and len(parts) == 1:
+            part = parts[0]
+        if part is None:
+            # 最后一个兜底：title 的尾段（.后）能匹配某个 PART 名。
+            for candidate in parts:
+                if str(candidate).endswith(title) or title.endswith(str(candidate)):
+                    part = candidate
+                    break
+        if part not in parts:
             continue
         key = (des, c["cid"])
+        plist = []
         for p in sp["pins"]:
             if p["part"] != part:
                 continue
@@ -694,11 +920,22 @@ def _collect_pinmap_data(db, sheet, page_name):
             for _ in range(int(rot // 90)):
                 rx, ry = -ry, rx
             ax, ay = c["x"] + rx, c["y"] + ry
-            comp_pins.setdefault(key, []).append({
+            plist.append({
                 "pin": p["name"], "number": p["number"],
+                "key": p["name"],
                 "x": ax, "y": ay,
                 "pin_type": p.get("pin_type"),
                 "sym_type": sp.get("symbol_type")})
+        # 同一器件内重名引脚必须用 name#number 区分（SHORT 的 Pin1/Pin1、
+        # ESD 保护件的 IN/IN、NC/NC），否则下游按 (designator, pin-name)
+        # 键会错误合并两个物理网络。
+        name_count = {}
+        for p in plist:
+            name_count[p["pin"]] = name_count.get(p["pin"], 0) + 1
+        for p in plist:
+            if name_count[p["pin"]] > 1:
+                p["key"] = f"{p['pin']}#{p['number']}"
+        comp_pins[key] = plist
     return comp_pins, wires, pt_wires, endp
 
 
@@ -754,7 +991,7 @@ def cmd_pinmap(db, args):
                     for op in plist:
                         if abs(op["x"] - hit_pt[0]) <= 2 and \
                                 abs(op["y"] - hit_pt[1]) <= 2:
-                            peers.append(f"{odes}.{op['pin']}")
+                            peers.append(f"{odes}.{op.get('key') or op['pin']}")
             if hit_wires:
                 wire_pts = set()
                 for wid in hit_wires:
@@ -770,11 +1007,11 @@ def cmd_pinmap(db, args):
                         continue
                     for op in plist:
                         if (round(op["x"], 1), round(op["y"], 1)) in wire_pts:
-                            tag = f"{odes}.{op['pin']}"
+                            tag = f"{odes}.{op.get('key') or op['pin']}"
                             if tag not in peers:
                                 wire_peers.append(tag)
             pinmap.append({
-                "pin": p["pin"], "number": p["number"],
+                "pin": p.get("key") or p["pin"], "number": p["number"],
                 "net": net or "",
                 "pin_type": p.get("pin_type"),
                 "peers": sorted(set(peers)),
@@ -1538,7 +1775,8 @@ def main():
         except Exception:
             pass
     ap = argparse.ArgumentParser(description="立创EDA专业版 .eprj2 原理图读取工具")
-    ap.add_argument("--eprj", action="append", default=None, help=".eprj2 文件路径，可多次(单工程或关联多工程)")
+    ap.add_argument("--eprj", action="append", default=None,
+                    help="工程文件路径（.eprj2 SQLite 或 .epro ZIP），可多次(单工程或关联多工程)")
     ap.add_argument("--json", action="store_true",
                     help="结构化 JSON 输出（供脚本消费）")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1628,8 +1866,15 @@ def main():
     if not paths:
         out("未找到 .eprj2，请用 --eprj 指定路径")
         sys.exit(1)
+    def open_db(p):
+        if str(p).lower().endswith(".epro"):
+            out(f"[lceda_reader] 检测到 .epro ZIP 导出包，自动解包读取：{p}")
+            out("[lceda_reader] 读取 project.json / SHEET/*.esch / SYMBOL/*.esym / DEVICE 数据 ...")
+            return EproDB(p)
+        return LcedaDB(p)
+
     try:
-        dbs = [LcedaDB(p) for p in paths]
+        dbs = [open_db(p) for p in paths]
     except Exception as e:
         out(f"无法打开工程: {e}")
         sys.exit(1)
