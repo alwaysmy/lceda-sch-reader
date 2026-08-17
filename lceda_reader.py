@@ -668,7 +668,10 @@ def _collect_pinmap_data(db, sheet, page_name):
         sp = db.symbol_pins(sym) if sym else None
         if not sp or not sp["pins"]:
             continue
-        if not c["title"] and sp.get("symbol_type") != 22:
+        # symbol_type=22: Short 短接符；17: CBB 复用模块。CBB 实例没有
+        # title，但其引脚必须参与连通域分析，否则 CBB 与母图之间的
+        # 连接会被静默漏掉。
+        if not c["title"] and sp.get("symbol_type") not in (17, 22):
             continue
         part = None
         m = re.search(r"\.(\d+)$", c["title"])
