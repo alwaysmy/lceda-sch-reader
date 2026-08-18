@@ -460,7 +460,8 @@ def parse_sheet(db, doc_key):
     recs = db.sheet_records(doc_key)
     if recs is None:
         return None
-    sheet = {"title": doc_key, "components": [], "nets": [], "attrs": {}}
+    sheet = {"title": doc_key, "components": [], "nets": [], "attrs": {},
+             "no_connect": set()}
     comps = {}      # cid -> component dict
     net_of = {}     # wire/comp id -> net name
     wires = []      # (net, segs)
@@ -479,6 +480,9 @@ def parse_sheet(db, doc_key):
                           "attrs": {}}
         elif kind == "ATTR" and len(a) >= 5:
             cid, name, val = a[2], a[3], a[4]
+            if name == "NO_CONNECT" and str(val).lower() in ("yes", "1"):
+                # parentId 为 compId+pinId 复合编号（如 e130e198 = 实例 e130 + PIN e198）
+                sheet["no_connect"].add(cid)
             if cid in comps:
                 comps[cid]["attrs"][name] = val
             if name in ("NET", "Global Net Name"):
@@ -714,6 +718,8 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
                 endp_net.setdefault(norm_pt((px, py)), n["net"])
     for des, plist in comp_pins.items():
         for p in plist:
+            if p.get("no_connect"):
+                continue
             for (px, py), nm in endp_net.items():
                 if abs(p["x"] - px) <= 2 and abs(p["y"] - py) <= 2:
                     pin_hit.setdefault((des, pin_key(p)), []).append((px, py))
@@ -726,6 +732,8 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
             all_wpts.add(norm_pt(pt))
     for des, plist in comp_pins.items():
         for p in plist:
+            if p.get("no_connect"):
+                continue
             key = (des, pin_key(p))
             if key in pin_hit:
                 continue
@@ -881,14 +889,17 @@ def resolve_page(db, page_name, schematic=None):
 
 
 def _synth_designator(db, c):
-    """无 title/designator 的实例（short 短接符等）用合成 designator 保留。
-    symbol_type=22 短接符无 title 无位号，两脚桥接跨网络（如 H_RESET↔RST）。"""
+    """无 title/designator 的实例用合成 designator 保留。
+    symbol_type=22 短接符无 title 无位号，两脚桥接跨网络（如 H_RESET↔RST）；
+    symbol_type=18 NetFlag / 19 NetPort 为网络命名符号（端口名=网络名）。"""
     if c.get("designator"):
         return c["designator"]
     sym = symbol_of(db, c)
     sp = db.symbol_pins(sym) if sym else None
     if sp and sp.get("symbol_type") == 22:
         return f"SHORT{c['cid']}"
+    if sp and sp.get("symbol_type") in (18, 19):
+        return f"PORT{c['cid']}"
     return None
 
 
@@ -933,10 +944,11 @@ def _collect_pinmap_data(db, sheet, page_name):
         sp = db.symbol_pins(sym) if sym else None
         if not sp or not sp["pins"]:
             continue
-        # symbol_type=22: Short 短接符；17: CBB 复用模块。CBB 实例没有
-        # title，但其引脚必须参与连通域分析，否则 CBB 与母图之间的
-        # 连接会被静默漏掉。
-        if not c["title"] and sp.get("symbol_type") not in (17, 22):
+        # symbol_type=22: Short 短接符；17: CBB 复用模块；18/19: NetFlag/NetPort
+        # 网络命名符号。CBB 实例没有 title，但其引脚必须参与连通域分析，否则
+        # CBB 与母图之间的连接会被静默漏掉；NetFlag/NetPort 引脚参与连通域，
+        # 网络名以 Global Net Name 补充（见下方端口命名）。
+        if not c["title"] and sp.get("symbol_type") not in (17, 18, 19, 22):
             continue
         # Part 名不限于 ".1/.2" 数字后缀：支持完整 PART 名、字母名
         # （XC7A35T....B0/B14/GTP/POWER）以及大小写差异。
@@ -981,7 +993,8 @@ def _collect_pinmap_data(db, sheet, page_name):
                 "key": p["name"],
                 "x": ax, "y": ay,
                 "pin_type": p.get("pin_type"),
-                "sym_type": sp.get("symbol_type")})
+                "sym_type": sp.get("symbol_type"),
+                "no_connect": (c["cid"] + (p.get("id") or "")) in sheet["no_connect"]})
         # 同一器件内重名引脚必须用 name#number 区分（SHORT 的 Pin1/Pin1、
         # ESD 保护件的 IN/IN、NC/NC），否则下游按 (designator, pin-name)
         # 键会错误合并两个物理网络。
@@ -992,6 +1005,33 @@ def _collect_pinmap_data(db, sheet, page_name):
             if name_count[p["pin"]] > 1:
                 p["key"] = f"{p['pin']}#{p['number']}"
         comp_pins[key] = plist
+    # NetFlag/NetPort 端口命名：Global Net Name 挂在实例 cid 上，若其引脚
+    # 命中端点无 wire 网络名，则以端口名补充（防御 wire 无 NET 仅靠端口命名的
+    # 场景；补进 sheet["nets"] 使连通域解析与 pinmap 同时生效）。
+    inst_cids = {c["cid"] for c in sheet["components"]}
+    port_nets = {cid: nm for cid, nm in net_of.items()
+                 if nm and cid in inst_cids}
+    if port_nets:
+        have = set()
+        for n in sheet["nets"]:
+            have.update((round(px, 1), round(py, 1)) for px, py in n["points"])
+        by_net = {}
+        for (des, cid), plist in comp_pins.items():
+            nm = port_nets.get(cid)
+            if not nm:
+                continue
+            for p in plist:
+                if p.get("no_connect"):
+                    continue
+                pt = (round(p["x"], 1), round(p["y"], 1))
+                if pt in have or endp.get(pt) is not None:
+                    continue
+                by_net.setdefault(nm, set()).add(pt)
+        for nm, pts in by_net.items():
+            sheet["nets"].append({"net": nm, "points": sorted(pts)})
+            for pt in pts:
+                endp[pt] = nm
+                pt_wires.setdefault(pt, set())
     return comp_pins, wires, pt_wires, endp
 
 
@@ -1068,6 +1108,7 @@ def cmd_pinmap(db, args):
             pinmap.append({
                 "pin": p.get("key") or p["pin"], "number": p["number"],
                 "net": net or "",
+                "not_connected": bool(p.get("no_connect")),
                 "pin_type": p.get("pin_type"),
                 "peers": sorted(set(peers)),
                 "wire_peers": sorted(set(wire_peers))})
@@ -1082,6 +1123,8 @@ def cmd_pinmap(db, args):
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
         for row in rows:
             for pm in row["pins"]:
+                if pm["not_connected"]:
+                    continue
                 if not pm["net"]:
                     key = (row["designator"], pm["pin"])
                     n = dom.get(key, "")
@@ -1095,7 +1138,8 @@ def cmd_pinmap(db, args):
                 peer = f"  <- {','.join(pm['peers'])}" if pm["peers"] else ""
                 wp = f"  [wire: {','.join(pm['wire_peers'])}]" if pm["wire_peers"] else ""
                 tag = "*" if pm.get("net_inferred") else ""
-                out(f"  {pm['pin']:12s} (#{pm['number']:>3})  {pm['net'] or '(未命名)'}{tag}{peer}{wp}")
+                nc = " [X]" if pm["not_connected"] else ""
+                out(f"  {pm['pin']:12s} (#{pm['number']:>3})  {pm['net'] or '(未命名)'}{tag}{nc}{peer}{wp}")
     if args.json:
         outj(rows)
 
@@ -1167,6 +1211,19 @@ def cmd_pins(db, args):
         rows.append({"designator": des, "pin": pin, "net": net})
         if not args.json:
             out(f"{des:10s} {pin:12s} {net or '(未命名)'}")
+    # NO_CONNECT 引脚：不参与连通域，单独列出（标记 X，net 恒为空）
+    for (des, cid), plist in sorted(comp_pins.items()):
+        for p in plist:
+            if not p.get("no_connect"):
+                continue
+            key = (des, p.get("key") or p["pin"])
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append({"designator": des, "pin": p.get("key") or p["pin"],
+                         "net": "", "not_connected": True})
+            if not args.json:
+                out(f"{des:10s} {p.get('key') or p['pin']:12s} [X] NO_CONNECT")
     if args.json:
         outj(rows)
 
