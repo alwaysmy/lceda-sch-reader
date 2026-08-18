@@ -528,7 +528,8 @@ def cmd_list(db, args):
     if args.json:
         return outj([{"uuid": u, "name": n, "display": d}
                      for u, n, d in db.schematics()])
-    out("== SCHEMATICS（板） ==")
+    ep = getattr(args, "eprj_paths", None)
+    out(f"== SCHEMATICS（板） [工程: {ep[0] if ep else ''}] ==")
     for uuid, name, disp in db.schematics():
         out(f"  {disp:12s} ({name})")
     out("\n== SHEETS（页） ==")
@@ -546,6 +547,8 @@ def cmd_list(db, args):
 
 def cmd_boards(db, args):
     sn = db.schem_map()
+    ep = getattr(args, "eprj_paths", None)
+    ep_s = os.path.basename(ep[0]) if ep else ""
     rows = []
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
@@ -561,7 +564,7 @@ def cmd_boards(db, args):
         d, n = sn.get(sch, ("?", "?"))
         rows.append({"sheet": title, "schematic": d, "attrs": info})
         if not args.json:
-            out(f"[{d:12s}] {title:16s} {json.dumps(info, ensure_ascii=False)}")
+            out(f"[{ep_s:20s}] [{d:12s}] {title:16s} {json.dumps(info, ensure_ascii=False)}")
     if args.json:
         outj(rows)
 
@@ -1878,6 +1881,7 @@ def main():
     except Exception as e:
         out(f"无法打开工程: {e}")
         sys.exit(1)
+    args.eprj_paths = paths
     if len(dbs) == 1:
         args.fn(dbs[0], args)
     else:
@@ -1885,6 +1889,9 @@ def main():
         multi = getattr(args, 'fn', None)
         if multi in (cmd_netfind, cmd_link_check, cmd_trace, cmd_find, cmd_search):
             args.dbs = dbs
+            if not args.json:
+                for i, p in enumerate(paths):
+                    out(f"工程{i} = {p}")
             multi(dbs, args)
         else:
             out(f"多工程模式仅支持 netfind/link-check/trace/find/search，当前命令不支持")
