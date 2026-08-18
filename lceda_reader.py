@@ -127,22 +127,28 @@ class LcedaDB:
         except Exception:
             return data.decode("utf-8", errors="replace")
 
-    def sheet_text(self, title, doc_type=1):
-        key = (doc_type, title)
+    def sheet_text(self, doc_key, doc_type=1):
+        """取一页原始文本。doc_key 优先按 document uuid 精确查（同名页唯一）；
+        查不到则回退按 display_title（兼容旧调用/旧工程）。"""
+        key = (doc_type, doc_key)
         if key in self._text_cache:
             return self._text_cache[key]
         row = self.cur.execute(
-            "SELECT dataStr FROM documents WHERE docType=? AND display_title=?",
-            (doc_type, title)).fetchone()
+            "SELECT dataStr FROM documents WHERE uuid=?", (doc_key,)).fetchone()
+        if row is None:
+            row = self.cur.execute(
+                "SELECT dataStr FROM documents WHERE docType=? AND display_title=?",
+                (doc_type, doc_key)).fetchone()
         text = self.decompress(row[0]) if row else None
         self._text_cache[key] = text
         return text
 
-    def sheet_records(self, title, doc_type=1):
-        key = (doc_type, title, "recs")
+    def sheet_records(self, doc_key, doc_type=1):
+        """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，title 回退）。"""
+        key = (doc_type, doc_key, "recs")
         if key in self._text_cache:
             return self._text_cache[key]
-        text = self.sheet_text(title, doc_type)
+        text = self.sheet_text(doc_key, doc_type)
         if text is None:
             return None
         arrs = []
@@ -264,13 +270,21 @@ class EproDB:
             sch = self.schematics.get(sch_uuid, {})
             for page in sch.get("sheets", []):
                 page_name = page.get("display_title") or page.get("name") or str(page.get("id"))
-                self._page_index[f"{board_name}::{page_name}"] = (sch_uuid, int(page["id"]))
+                key = f"{board_name}::{page_name}"
+                self._page_index[key] = (sch_uuid, int(page["id"]))
+                pu = page.get("uuid")
+                if pu:
+                    self._page_index.setdefault(pu, (sch_uuid, int(page["id"])))
         # CBB module schematics are also reachable through their own namespace.
         for sch_uuid, sch in self.schematics.items():
             sch_name = sch.get("name", sch_uuid)
             for page in sch.get("sheets", []):
                 page_name = page.get("display_title") or page.get("name") or str(page.get("id"))
-                self._page_index[f"CBBMOD::{sch_name}::{page_name}"] = (sch_uuid, int(page["id"]))
+                key = f"CBBMOD::{sch_name}::{page_name}"
+                self._page_index[key] = (sch_uuid, int(page["id"]))
+                pu = page.get("uuid")
+                if pu:
+                    self._page_index.setdefault(pu, (sch_uuid, int(page["id"])))
 
     def decompress(self, ds):
         return ds
@@ -292,24 +306,41 @@ class EproDB:
                 rows.append((page.get("uuid"), title, board_name, 1))
         return rows
 
-    def sheet_records(self, title, doc_type=1):
-        if title in self._records_cache:
-            return self._records_cache[title]
-        key = self._page_index.get(title)
+    def sheet_text(self, doc_key, doc_type=1):
+        """取一页原始文本。doc_key 优先按 document uuid 精确查（同名页唯一）；
+        查不到则回退按 "板名::页名" 复合标题查。"""
+        ck = ("text", doc_key)
+        if ck in self._records_cache:
+            return self._records_cache[ck]
+        key = self._page_index.get(doc_key)
         if key is None:
+            self._records_cache[ck] = None
             return None
         sch_uuid, page_id = key
         fname = f"SHEET/{sch_uuid}/{page_id}.esch"
         if fname not in self._names:
+            self._records_cache[ck] = None
             return None
         text = self.zip.read(fname).decode("utf-8", errors="replace")
+        self._records_cache[ck] = text
+        return text
+
+    def sheet_records(self, doc_key, doc_type=1):
+        """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，复合标题回退）。"""
+        if doc_key in self._records_cache:
+            cached = self._records_cache[doc_key]
+            if isinstance(cached, list):
+                return cached
+        text = self.sheet_text(doc_key, doc_type)
+        if text is None:
+            return None
         records = []
         for line in text.splitlines():
             try:
                 records.append(json.loads(line))
             except Exception:
                 continue
-        self._records_cache[title] = records
+        self._records_cache[doc_key] = records
         return records
 
     def device_map(self):
@@ -403,12 +434,13 @@ class EproDB:
 
 # ---------------------------------------------------------------- 解析层
 
-def parse_sheet(db, title):
-    """把一张原理图页解析为结构化 dict。"""
-    recs = db.sheet_records(title)
+def parse_sheet(db, doc_key):
+    """把一张原理图页解析为结构化 dict。doc_key 为 document uuid（或兼容的
+    复合标题），sheet_records 内部会优先按 uuid 精确查。"""
+    recs = db.sheet_records(doc_key)
     if recs is None:
         return None
-    sheet = {"title": title, "components": [], "nets": [], "attrs": {}}
+    sheet = {"title": doc_key, "components": [], "nets": [], "attrs": {}}
     comps = {}      # cid -> component dict
     net_of = {}     # wire/comp id -> net name
     wires = []      # (net, segs)
@@ -553,7 +585,7 @@ def cmd_boards(db, args):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        sheet = parse_sheet(db, title)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
         info = {}
@@ -576,9 +608,9 @@ def cmd_components(db, args):
     for uuid, st, sch, dt in db.sheets():
         if dt != 1:
             continue
-        if args.sheet and st != args.sheet:
+        if args.sheet and st != args.sheet and not st.endswith("::" + args.sheet):
             continue
-        sheet = parse_sheet(db, st)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
         d, n = sn.get(sch, ("?", "?"))
@@ -815,15 +847,16 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
 
 
 def resolve_page(db, page_name, schematic=None):
-    """按页名（+可选板名）解析页：解决同名页歧义。返回页标题或 None。"""
+    """按页名（+可选板名）解析页：解决同名页歧义。返回文档 uuid 或 None。
+    EproDB 的页标题是 "板名::页名" 复合格式，这里做兼容匹配。"""
     target = schematic
     for uuid, title, sch, dt in db.sheets():
-        if title == page_name:
+        if title == page_name or title.endswith("::" + page_name):
             if target is None:
-                return title
+                return uuid
             d, n = db.schem_map().get(sch, ("?", "?"))
             if target.lower() in (d.lower(), n.lower()):
-                return title
+                return uuid
     return None
 
 
@@ -952,13 +985,12 @@ def cmd_pinmap(db, args):
     if page is None:
         out(f"未找到页: {args.page}" + (f" (schematic={args.schematic})" if args.schematic else ""))
         return
-    args.page = page
-    sheet = parse_sheet(db, args.page)
+    sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.page}")
         return
     comp_pins, wires, pt_wires, endp = _collect_pinmap_data(
-        db, sheet, args.page)
+        db, sheet, page)
 
     # 每个引脚 -> 最近 WIRE 端点（容差2）-> net + 同 wire 的其他引脚
     rows = []
@@ -1054,12 +1086,11 @@ def cmd_nets(db, args):
     if page is None:
         out(f"未找到页: {args.sheet}")
         return
-    args.sheet = page
-    sheet = parse_sheet(db, args.sheet)
+    sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
         return
-    pinc = _collect_pinmap_data(db, sheet, args.sheet)
+    pinc = _collect_pinmap_data(db, sheet, page)
     if pinc is None:
         out(f"未找到页: {args.sheet}")
         return
@@ -1096,12 +1127,11 @@ def cmd_pins(db, args):
     if page is None:
         out(f"未找到页: {args.sheet}")
         return
-    args.sheet = page
-    sheet = parse_sheet(db, args.sheet)
+    sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
         return
-    pinc = _collect_pinmap_data(db, sheet, args.sheet)
+    pinc = _collect_pinmap_data(db, sheet, page)
     if pinc is None:
         out(f"未找到页: {args.sheet}")
         return
@@ -1145,11 +1175,11 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        sheet = parse_sheet(db, title)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
         # 复用 pinmap 的连通域引脚网络解析
-        pinc = _collect_pinmap_data(db, sheet, title)
+        pinc = _collect_pinmap_data(db, sheet, uuid)
         if pinc is None:
             continue
         comp_pins, wires, pt_wires, endp = pinc
@@ -1234,10 +1264,10 @@ def _trace_multi(dbs, args):
         for uuid, title, sch, dt in db.sheets():
             if dt != 1:
                 continue
-            sheet = parse_sheet(db, title)
+            sheet = parse_sheet(db, uuid)
             if sheet is None:
                 continue
-            pinc = _collect_pinmap_data(db, sheet, title)
+            pinc = _collect_pinmap_data(db, sheet, uuid)
             if pinc is None:
                 continue
             comp_pins, wires, pt_wires, endp = pinc
@@ -1374,10 +1404,10 @@ def cmd_netlist(db, args):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        sheet = parse_sheet(db, title)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
-        pinc = _collect_pinmap_data(db, sheet, title)
+        pinc = _collect_pinmap_data(db, sheet, uuid)
         if pinc is None:
             continue
         comp_pins, wires, pt_wires, endp = pinc
@@ -1411,7 +1441,7 @@ def cmd_find(db, args):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        sheet = parse_sheet(db, title)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
         pinc = None
@@ -1419,7 +1449,7 @@ def cmd_find(db, args):
         if not args.raw:
             # 用 pinmap 连通域精确方案（替代旧 BBOX 近似，后者对经串阻/短接
             # 连接的引脚网络归属不全）
-            pinc = _collect_pinmap_data(db, sheet, title)
+            pinc = _collect_pinmap_data(db, sheet, uuid)
             if pinc:
                 comp_pins, wires, pt_wires, endp = pinc
                 dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
@@ -1487,10 +1517,10 @@ def _netfind_one(db, net_name):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        sheet = parse_sheet(db, title)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
-        pinc = _collect_pinmap_data(db, sheet, title)
+        pinc = _collect_pinmap_data(db, sheet, uuid)
         if pinc is None:
             continue
         comp_pins, wires, pt_wires, endp = pinc
@@ -1544,10 +1574,10 @@ def _conn_pairs(db_a, db_b):
         for uuid, title, sch, dt in db.sheets():
             if dt != 1:
                 continue
-            sheet = parse_sheet(db, title)
+            sheet = parse_sheet(db, uuid)
             if sheet is None:
                 continue
-            pinc = _collect_pinmap_data(db, sheet, title)
+            pinc = _collect_pinmap_data(db, sheet, uuid)
             if pinc is None:
                 continue
             comp_pins, wires, pt_wires, endp = pinc
@@ -1595,7 +1625,7 @@ def cmd_search(db, args):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        text = db.sheet_text(title)
+        text = db.sheet_text(uuid)
         if not text:
             continue
         hits = set()
@@ -1625,7 +1655,7 @@ def cmd_bom(db, args):
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
-        sheet = parse_sheet(db, title)
+        sheet = parse_sheet(db, uuid)
         if sheet is None:
             continue
         board = sheet["attrs"].get("@Board Name", "")
@@ -1713,8 +1743,7 @@ def cmd_attrs(db, args):
     if page is None:
         out(f"未找到页: {args.sheet}")
         return
-    args.sheet = page
-    sheet = parse_sheet(db, args.sheet)
+    sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
         return
@@ -1757,8 +1786,7 @@ def cmd_raw(db, args):
     if page is None:
         out(f"未找到页: {args.sheet}")
         return
-    args.sheet = page
-    text = db.sheet_text(args.sheet)
+    text = db.sheet_text(page)
     if text is None:
         out(f"未找到页: {args.sheet}")
         return
