@@ -72,6 +72,10 @@ description: Use when the user asks to read, query, search, extract, or verify c
   引脚 `pin_type`（Undefined/IN/OUT/BI/Power）用于信号方向。**注意**：V2.2 数组
   格式无官方 V3 的 electric 字段，pin_type 从符号 "Pin Type" ATTR 读取——多数
   芯片符号未标注该属性（实测为 Undefined），**不可依赖它判断信号方向**。
+- **NO_CONNECT（X 不连接）**：文件内为 ATTR `NO_CONNECT=yes`，挂在
+  `实例id+引脚id` 复合编号上（如 `e130e198` = 实例 e130 + PIN e198）。
+  `pins`/`pinmap` 输出 `[X]`（json `not_connected:true`）标记，且**不参与**
+  网络解析。审查时须确认每个 NC 是否真的不需要（见"器件联通审查方法"）。
 - **框图页（系统框图/电源框图）**：pinmap 对框图页返回空（预期——框图器件是
   NoneElec 图形符号无 PIN）。**做架构分析或交叉核对时用 `components 系统框图`/
   `components 电源框图` 读取顶层架构**（块/电源拓扑），并与 pinmap 实际连接
@@ -142,6 +146,14 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 
 **审查原则**：
 - 网络名为空的引脚 ≠ NC——可能是串联链的中间点，需沿 wire_peers 跳转确认
+- **NO_CONNECT（`[X]` 标记）必须逐一确认是否真的需要 NC**：
+  `pins`/`pinmap` 输出中 `[X]`/`not_connected:true` 的引脚是设计者显式标"不连接"
+  （文件内 `NO_CONNECT` ATTR），**不能直接当正常忽略**——NC 可能掩盖设计问题：
+  - 芯片未用功能脚标 X：应核对数据手册该引脚是否需接默认电平（上拉/下拉/
+    去耦），确认"真不需要"才放行；
+  - 疑似"应该接却标 X"（如电源/地引脚、复位、使能、基准输入被标 NC）：
+    **必须向用户报告并提示确认**，不要自行判定合理；
+  - 审查结论中列出全部 NC 引脚清单（器件.引脚）及理由，供用户复核。
 - 连接器（H1/H2 等）是板间桥，跨板审查需先确认两侧对插关系（见连接器边界说明）
 - 结论必须带"哪个板哪个页哪个器件"，同号位器件跨板重复
 
@@ -160,9 +172,10 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 5. **PDN 审查的已知限制**：
    - 去耦电容可能挂在电源网络其他位置而非紧邻芯片引脚（wire_peers 只显示
      同导线记录，跨网络电容需 netlist 该电源网络核对）
-   - 电源符号（NetPort/Power，symbol_type=18）网络名来自其 Name 属性，
-     不参与连通域推断
-   - 跨板电源（如 +5V 从单片机板经连接器到 ADDA）需先确认连接器对插关系
+   - 电源符号（NetPort/Power，symbol_type=18）与 NetFlag(19) 已参与连通域，
+     网络名以 Global Net Name 端口命名补充（工具输出中显示为 `PORTxxx` 合成
+     元件）；但跨板电源（如 +5V 从单片机板经连接器到 ADDA）仍**不自动跨板**
+     归并，需先确认连接器对插关系
 
 ## 输出与编码
 
