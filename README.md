@@ -215,6 +215,13 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 多工程模式下支持的命令：`netfind`/`link-check`/`trace`/`find`/`search`；
 其余命令（bom/components 等）需单工程运行。
 
+> **输出来源标识**：工程文件内 `projects.name` 为立创EDA默认名（`New Project_日期`，
+> 无实际意义），故**项目名以文件名（去扩展名）为准**。多工程时：
+> - 非 json：先打印 `工程N = 完整路径` 映射；
+> - json：顶层为 `{"projects": [{"eprj": 索引, "project": 项目名, "file": 路径}, ...],
+>   "rows": [...]}`，rows 中行内 `eprj` 字段与 projects 索引对应，可据此区分数据来源。
+> 单工程 json 保持原数组结构（向后兼容）。
+
 ## 四、注意事项（通用坑）
 
 1. **工程文件可能被立创EDA编辑器占用**：SQLite 直连会报 "database is locked"，

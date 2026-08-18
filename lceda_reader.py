@@ -68,6 +68,16 @@ def outj(obj):
     print(json.dumps(obj, ensure_ascii=False, indent=1))
 
 
+def _multi_json(dbs, rows):
+    """多工程 json 顶层结构：projects 给出 索引->项目名/文件 映射，
+    rows 为命令结果（行内 eprj 字段与索引对应），供消费方区分数据来源。"""
+    return {
+        "projects": [{"eprj": i, "project": db.project_name(), "file": str(db.path)}
+                     for i, db in enumerate(dbs)],
+        "rows": rows,
+    }
+
+
 def find_eprj(path=None):
     """定位工程文件（通用，不绑定任何工程目录结构）：
     1) 显式 --eprj 优先；
@@ -98,9 +108,15 @@ def natkey(s):
 
 class LcedaDB:
     def __init__(self, path):
+        self.path = Path(path)
         self.conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         self.cur = self.conn.cursor()
         self._text_cache = {}
+
+    def project_name(self):
+        """可读项目名。工程文件内 projects.name 为立创EDA默认名（New Project_日期，
+        无实际意义），故以文件名（去扩展名）作为项目名。"""
+        return self.path.stem
 
     def schematics(self):
         return list(self.cur.execute(
@@ -261,6 +277,10 @@ class EproDB:
         self._records_cache = {}
         self._symbol_pin_cache = {}
         self._build_page_index()
+
+    def project_name(self):
+        """可读项目名：以导出文件名（去扩展名）作为项目名。"""
+        return self.path.stem
 
     def _build_page_index(self):
         for board_name, board in self.boards.items():
@@ -1387,7 +1407,7 @@ def _trace_multi(dbs, args):
     rows = [{"designator": d, "eprj": di, "hops": hops[(di, d)]}
             for (di, d) in sorted(visited, key=lambda x: (hops[x], x[1]))]
     if args.json:
-        outj(rows)
+        outj(_multi_json(dbs, rows))
         return
     out(f"== {args.designator} 链路追踪（多工程, 最大{args.depth}跳） ==")
     for nm, f, t in edges:
@@ -1432,45 +1452,51 @@ def cmd_netlist(db, args):
         outj(rows)
 
 
-def cmd_find(db, args):
-    """Designator 反查：定位元件所在页/板及网络。"""
-    sn = db.schem_map()
-    dev = db.device_map()
+def cmd_find(db_or_dbs, args):
+    """Designator 反查：定位元件所在页/板及网络。支持多工程（--eprj 多次），
+    每条命中带 eprj 索引，json 顶层含 projects 映射。"""
+    dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
+    multi = len(dbs) > 1
     des = args.designator.upper()
     hits = []
-    for uuid, title, sch, dt in db.sheets():
-        if dt != 1:
-            continue
-        sheet = parse_sheet(db, uuid)
-        if sheet is None:
-            continue
-        pinc = None
-        dom = {}
-        if not args.raw:
-            # 用 pinmap 连通域精确方案（替代旧 BBOX 近似，后者对经串阻/短接
-            # 连接的引脚网络归属不全）
-            pinc = _collect_pinmap_data(db, sheet, uuid)
-            if pinc:
-                comp_pins, wires, pt_wires, endp = pinc
-                dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
-        for c in sheet["components"]:
-            if (c.get("designator") or "").upper() == des:
-                d, n = sn.get(sch, ("?", "?"))
-                fr = _fmt_comp(c, dev)
-                nets = []
-                if not args.raw and pinc:
-                    for (dkey, pin), net in dom.items():
-                        if dkey.upper() == des and net:
-                            nets.append(net)
-                hits.append({"sheet": title, "schematic": d, **fr, "nets": nets})
+    for di, db in enumerate(dbs):
+        sn = db.schem_map()
+        dev = db.device_map()
+        for uuid, title, sch, dt in db.sheets():
+            if dt != 1:
+                continue
+            sheet = parse_sheet(db, uuid)
+            if sheet is None:
+                continue
+            pinc = None
+            dom = {}
+            if not args.raw:
+                # 用 pinmap 连通域精确方案（替代旧 BBOX 近似，后者对经串阻/短接
+                # 连接的引脚网络归属不全）
+                pinc = _collect_pinmap_data(db, sheet, uuid)
+                if pinc:
+                    comp_pins, wires, pt_wires, endp = pinc
+                    dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+            for c in sheet["components"]:
+                if (c.get("designator") or "").upper() == des:
+                    d, n = sn.get(sch, ("?", "?"))
+                    fr = _fmt_comp(c, dev)
+                    nets = []
+                    if not args.raw and pinc:
+                        for (dkey, pin), net in dom.items():
+                            if dkey.upper() == des and net:
+                                nets.append(net)
+                    hits.append({"eprj": di, "sheet": title, "schematic": d,
+                                 **fr, "nets": nets})
     if not hits:
         out(f"未找到 {des}")
         return
     if args.json:
-        outj(hits)
+        outj(_multi_json(dbs, hits) if multi else hits)
         return
     for h in hits:
-        out(f"{des}: {h['sheet']} (sch={h['schematic']})  {h['title']}  {h['device']}")
+        tag = f"工程{h['eprj']} " if multi else ""
+        out(f"{tag}{des}: {h['sheet']} (sch={h['schematic']})  {h['title']}  {h['device']}")
         if h.get("nets"):
             uniq = sorted({t for n in h["nets"] for t in n.split(",")})
             out(f"    nets: {','.join(uniq)}")
@@ -1482,10 +1508,19 @@ def cmd_netfind(db_or_dbs, args):
     支持多工程（--eprj 多次）：每个工程独立查询，输出标注工程来源，不跨工程合并。
     --json 输出结构化。"""
     dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
+    multi = len(dbs) > 1
+    if args.json and multi:
+        rows_all = []
+        for di, db in enumerate(dbs):
+            for r in _netfind_one(db, args.net):
+                r["eprj"] = f"#{di}"
+                rows_all.append(r)
+        outj(_multi_json(dbs, rows_all))
+        return
     rows_all = []
     for di, db in enumerate(dbs):
         rows = _netfind_one(db, args.net)
-        if len(dbs) > 1:
+        if multi:
             for r in rows:
                 r["eprj"] = f"#{di}"
             rows_all.extend(rows)
@@ -1557,7 +1592,7 @@ def cmd_link_check(dbs, args):
         out("未找到网络名逐 pin 一致的连接器对")
         return
     if args.json:
-        outj(results)
+        outj(_multi_json(dbs, results))
         return
     out("== 连接器对候选（网络名逐 pin 一致） ==")
     for r in results:
@@ -1614,34 +1649,40 @@ def _conn_pairs(db_a, db_b):
                 pairs.append((des_a, des_b, common, diff, total))
     return pairs
 
-def cmd_search(db, args):
-    sn = db.schem_map()
+def cmd_search(db_or_dbs, args):
+    """跨页正则搜索。支持多工程（--eprj 多次），json 顶层含 projects 映射。"""
+    dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
+    multi = len(dbs) > 1
     try:
         pat = re.compile(args.pattern, re.I if not args.case else 0)
     except re.error as e:
         out(f"正则无效: {e}")
         return
     rows = []
-    for uuid, title, sch, dt in db.sheets():
-        if dt != 1:
-            continue
-        text = db.sheet_text(uuid)
-        if not text:
-            continue
-        hits = set()
-        for ln in text.splitlines():
-            if pat.search(ln):
-                hits.add(ln.strip()[:120])
-        if hits:
-            d, n = sn.get(sch, ("?", "?"))
-            if args.json:
-                rows.append({"sheet": title, "schematic": d, "hits": sorted(hits)})
-            else:
-                out(f"== {title} (sch={d}) ==")
-                for h in sorted(hits):
-                    out(f"  {h}")
+    for di, db in enumerate(dbs):
+        sn = db.schem_map()
+        for uuid, title, sch, dt in db.sheets():
+            if dt != 1:
+                continue
+            text = db.sheet_text(uuid)
+            if not text:
+                continue
+            hits = set()
+            for ln in text.splitlines():
+                if pat.search(ln):
+                    hits.add(ln.strip()[:120])
+            if hits:
+                d, n = sn.get(sch, ("?", "?"))
+                if args.json:
+                    rows.append({"eprj": di, "sheet": title, "schematic": d,
+                                 "hits": sorted(hits)})
+                else:
+                    tag = f"[工程{di}] " if multi else ""
+                    out(f"{tag}== {title} (sch={d}) ==")
+                    for h in sorted(hits):
+                        out(f"  {h}")
     if args.json:
-        outj(rows)
+        outj(_multi_json(dbs, rows) if multi else rows)
 
 
 def cmd_bom(db, args):
