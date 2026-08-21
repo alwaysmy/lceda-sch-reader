@@ -139,17 +139,28 @@ dataStr = "base64" 前缀 + base64(gzip(NDJSON 文本))
   `--json` 时 `value` 字段已结构化解析。
 - 坐标单位：0.01 inch（官方约定）。
 
-### 兼容备份格式（.epro / .epro2 / .epru）
+### 格式识别与路由（内容特征优先）
 
-- **`.epro`（ZIP 工程导出，立创EDA"另存为"产物）已直接支持**：`--eprj x.epro`
-  或自动探测。内部格式与 .eprj2 的差异已在 EproDB 后端归一化：
-  WIRE segs 为平铺点链 `[x1,y1,x2,y2,y3,...]`（相邻点成段）、COMPONENT a[2]
-  为符号 uuid 引用（实例名取 Name 属性）、页标题为 `板名::页名` 复合式。
-  已用 Piezo Driver（5MB，4 板修订+CBB）与 TPS56C230 Buck 两真实导出验证。
-- `.epro2` 备份文件为 zip 容器：内含 `*.epru`（**不压缩**的 `DOCHEAD||body`
-  key-value 式记录序列，文档间以 `|\n` 分隔，docType 含 FOOTPRINT/SYMBOL/DEVICE/
-  BOARD/SCH/SCH_PAGE/PCB/CONFIG）+ `IMAGE/*.webp` 位图。此为官方 V3 key-value
-  式日志格式（与 .eprj2 内的数组式记录不同，但语义一致），暂未支持。
+打开文件时按**内容特征**自动路由（扩展名仅参考）：ZIP 容器→按
+`project.json`(EproDB)/`*.epru`(Epro2DB) 分派；SQLite→`documents` 表非空=
+LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内容加密）
+会明确报错并提示导出为 .epro/.epro2——不会静默返回空结果。
+
+### 兼容导出格式（.epro / .epro2）
+
+- **`.epro`（V2 ZIP 导出）已支持（EproDB）**：内部差异已归一化——WIRE
+  segs 为平铺点链 `[x1,y1,x2,y2,y3,...]`、COMPONENT a[2] 为符号 uuid 引用
+  （实例名取 Name 属性）、页标题 `板名::页名`。CBB 链接原生精确：
+  `project.json.symbols[黑盒uuid].title == 模板板名`。
+- **`.epro2`（V3 ZIP 导出）已支持（Epro2DB）**：`project2.json` + 单个
+  `*.epru` 增量日志（DOCHEAD 开文档，同 uuid 多段按 ticket 合并）+
+  `IMAGE/*.webp`。适配要点：Y 向上坐标取反、CANVAS 原点、partId 即符号内
+  PART 名、符号类型=META.docType（17=CBB/18=电源/19=NetPort/22=Short/
+  25=OffPage）、引脚名键 Pin Name/Pin Number、DEVICE META.attributes 内联
+  属性（含 Symbol 桥与 Datasheet）。CBB 链接原生精确（docType=17）。
+- 全量验证：本机 15 个工程文件（5 官方示例 + 涡流/MCU主控/Piezo/TPS56C230）
+  全部通过；同工程 .eprj2 与 .epro2 交叉对比元件数/网络集合**零差异**
+  （涡流 736 元件/79 网、MCU主控 288/87）。详见 `probes/verify_all_formats.py`。
 
 ## 三、网络查询方法（配对/链路/跨页）
 
@@ -331,15 +342,12 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
   可扩展（参考 archive 中 sch_magic.py 的 zlib 探测思路）。
 - 引脚网络归属（pins/nets/netlist/trace/find/pinmap）统一基于**连通域精确方案**
   （实例坐标+PIN坐标+旋转/镜像 → 绝对坐标 → WIRE 端点精确匹配），非几何近似。
-- **V2.2 / V3 格式兼容（方案记录，暂未实现）**：
-  - 差异：V2.2（.eprj2）= SQLite + 数组式 NDJSON 全量快照；V3（.epro2/.epru）=
-    ZIP + `DOCHEAD||body` 对象式**增量日志**（同一 type+id 多条记录按 ticket 大者
-    保留、client 小者保留的最终一致性合并）。
-  - 方案：单一工具 + 后端抽象（backend）——输入 .eprj2 用 SQLite 后端、.epro2/
-    .epru 用 V3 后端，按文件扩展名/魔数自动判断，命令层复用（连通域/引脚匹配/
-    网络推断与格式无关）。
-  - 优先级：当前 .epro2 仅为历史备份（主工程是 .eprj2），无实际读取需求，搁置；
-    需实现时从"V3 读取+list+components"起步，pinmap 连通域逻辑直接复用。
+- **V2.2 / V3 格式兼容（已实现）**：V2.2（.eprj2）= SQLite + 数组式 NDJSON
+  全量快照；V3（.epro2）= ZIP + `DOCHEAD||body` 对象式**增量日志**（同 uuid
+  多段按 ticket 最终一致合并）。已按"后端抽象（SchemaBackend ABC）+ 内容
+  特征路由（detect_backend，magic/表结构嗅探，扩展名仅参考）"实现三后端，
+  命令层复用全部解析逻辑；新增格式 = 实现 SchemaBackend 子类 + 登记内容
+  特征。新版分支加密 .eprj2 不支持内容读取（打开时明确报错并指引导出）。
 - **pin_type 为尽力而为**：依赖符号是否标注 "Pin Type" ATTR（实测多数芯片为
   Undefined），不作为判断信号方向的依据，也不为其增加复杂度。
 - 官方 API Skill 项目（可在线调试/扩展立创EDA）：https://github.com/easyeda/easyeda-api-skill

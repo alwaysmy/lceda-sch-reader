@@ -224,17 +224,20 @@ class LcedaDB(SchemaBackend):
 
     @staticmethod
     def decompress(ds):
+        """dataStr 解码。两种形态：'base64' 前缀 + base64(gzip(NDJSON))；
+        或直接明文 NDJSON（官方示例工程实测）。"""
         if not ds:
             return ""
-        s = ds[6:] if isinstance(ds, str) and ds.startswith("base64") else ds
-        try:
-            data = base64.b64decode(s)
-        except Exception:
-            return ""
-        try:
-            return gzip.decompress(data).decode("utf-8")
-        except Exception:
-            return data.decode("utf-8", errors="replace")
+        if isinstance(ds, str) and ds.startswith("base64"):
+            try:
+                data = base64.b64decode(ds[6:])
+            except Exception:
+                return ""
+            try:
+                return gzip.decompress(data).decode("utf-8")
+            except Exception:
+                return data.decode("utf-8", errors="replace")
+        return ds
 
     def sheet_text(self, doc_key, doc_type=1):
         """取一页原始文本。doc_key 优先按 document uuid 精确查（同名页唯一）；
@@ -861,7 +864,11 @@ class Epro2DB(SchemaBackend):
         return {}
 
     def symbol_of_device(self, device_uuid):
-        """V3 无 Device->Symbol 桥表：返回 None，实例自带 Symbol 属性。"""
+        """V3 桥接：DEVICE META.attributes['Symbol'] = 符号文档 uuid
+        （部分实例缺 Symbol 属性时，靠此桥接解析引脚）。"""
+        m = self._meta.get(device_uuid)
+        if m:
+            return (m.get("attributes") or {}).get("Symbol") or None
         return None
 
     def datasheet_rows(self):
