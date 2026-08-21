@@ -1,5 +1,18 @@
 # TODO
 
+## 新格式 .eprj2（分支版本化，加密）支持（未实施）
+
+- **状态**：暂不做。2026-08-21 发现新版立创EDA 保存的 .eprj2 采用新存储格式：
+  `documents`/`schematics` 等主表为空，内容在 `history_data`（base64 + 加密，
+  香农熵 8.00 bits/byte，非 gzip/zlib/zstd），工程树在
+  `project_structures.structure`（明文 JSON：boards/schematics/sheets/pcbs/
+  blockSymbols）。branches/projects 行含 branch_uuid。
+- **影响**：当前工具读此类文件得到空结果（无报错）。
+- **可读部分**：structure 明文——已用于 CBB 块符号映射（见
+  docs/epro支持与DNP处理-2026-08-21.md 第八节）。
+- **触发条件**：拿到足够多的样本 + 官方格式说明（或社区逆向成果）后再评估
+  解密/解析。
+
 ## BUS / BUSENTRY 总线支持（未实施）
 
 - **状态**：暂不做。等用户提供一个用到总线的工程例子后再实施。

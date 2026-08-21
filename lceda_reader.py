@@ -1013,6 +1013,44 @@ def _cbb_dom(db, tmpl_uuid):
     return cache[tmpl_uuid]
 
 
+def _cbb_symbol_map(db):
+    """懒构建：实例 Symbol uuid -> 模板板名。
+    来源 = db 同目录下各 .eprj2 的 project_structures.structure.blockSymbols
+    （立创EDA 复用块登记表：uuid=黑盒符号, title=本地模板板名, source=外部
+    CBB 工程引用）。.epro 导出不含该结构，但同目录常留有来源 .eprj2；
+    新格式 .eprj2 的 structure 为明文 JSON，无需解密文档内容。"""
+    m = getattr(db, "_cbb_sym_map", None)
+    if m is not None:
+        return m
+    m = {}
+    db._cbb_sym_map = m
+    try:
+        import glob as _glob
+        d = str(Path(db.path).parent)
+        for f in sorted(_glob.glob(os.path.join(d, "*.eprj2"))):
+            try:
+                conn = sqlite3.connect(f"file:{f}?mode=ro", uri=True)
+                row = conn.execute(
+                    "SELECT structure FROM project_structures").fetchone()
+                conn.close()
+                if not row or not row[0]:
+                    continue
+                st = json.loads(row[0])
+                n0 = len(m)
+                for bs in (st.get("blockSymbols") or {}).values():
+                    if isinstance(bs, dict) and bs.get("uuid") and \
+                            bs.get("title"):
+                        m[bs["uuid"]] = bs["title"]
+                if len(m) > n0:
+                    print(f"[lceda_reader] 从 {Path(f).name} structure 读取 "
+                          f"CBB 块符号映射 {len(m) - n0} 条", file=sys.stderr)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return m
+
+
 def _resolve_cbb_target(db, sig, val):
     """--cbb-map 值解析：支持 页uuid / 页显示标题 / 板名（取其首页）。"""
     if val in sig:
@@ -1049,6 +1087,10 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
         return
     sig = _cbb_sig(db)
     self_uuid = sheet.get("title")
+    # 实例位号 -> Symbol uuid（供 blockSymbols 映射查询）
+    sym_uuid_of = {c.get("designator"): c.get("symbol_uuid")
+                   for c in sheet.get("components", [])
+                   if c.get("designator")}
     for des, pin_names in sorted(insts.items()):
         if not pin_names:
             continue
@@ -1063,7 +1105,14 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
                     print(f"[lceda_reader] CBB {des}: --cbb-map 指定的页 "
                           f"{explicit!r} 不存在", file=sys.stderr)
                 continue
-        else:
+        if tmpl is None:
+            # 立创EDA 自带映射：同目录 .eprj2 的 structure.blockSymbols
+            # （Symbol uuid -> 模板板名），比端口匹配更可靠
+            su = sym_uuid_of.get(des)
+            mapped = _cbb_symbol_map(db).get(su or "") if su else None
+            if mapped:
+                tmpl = _resolve_cbb_target(db, sig, mapped)
+        if tmpl is None:
             cands = {u: v for u, v in sig.items()
                      if v[0] == pin_names and u != self_uuid}
             groups = {}
