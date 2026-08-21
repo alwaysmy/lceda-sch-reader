@@ -769,7 +769,8 @@ def _is_zero_ohm(title, desc=""):
                 ZERO_VALUE_RE.search(d) or ZERO_CODE_RE.search(d))
 
 
-def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
+def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
+                           _cbb_depth=0):
     """基于走线连通域的网络名解析。
 
     规则（修订版）：
@@ -947,7 +948,194 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
         for pt in pts:
             ns |= dom_nets.get(domain_of_pt[pt], set())
         result[(des, pin)] = ",".join(sorted(ns))
+    # 7) CBB（复用块）展开：模板内部电路按端口映射进实例网络
+    if _cbb_depth < 2:
+        _expand_cbb(db, sheet, comp_pins, result, _cbb_depth)
     return result
+
+
+# ---------------------------------------------------------------- CBB 展开
+
+_CBB_MAP = {}   # --cbb-map 显式映射：实例位号 -> 模板页（uuid 或页名）
+
+
+def _set_cbb_map(pairs):
+    for p in pairs or []:
+        if "=" in p:
+            k, v = p.split("=", 1)
+            _CBB_MAP[k.strip()] = v.strip()
+
+
+def _cbb_sig(db):
+    """懒缓存：每页 -> (端口名集合, 内容指纹, 页标题)。
+    端口 = symbol_type 19 且无位号实例的 title；
+    内容指纹 = (位号, title, 器件型号) 排序元组——用语义身份而非 uuid，
+    使内容相同的副本页（如 _old 镜像，uuid 不同）归为等价。"""
+    sig = getattr(db, "_cbb_sig", None)
+    if sig is None:
+        dmap = db.device_map()
+        sig = {}
+        for uuid, title, sch, dt in db.sheets():
+            if dt != 1:
+                continue
+            sh = parse_sheet(db, uuid)
+            ports = set()
+            fp = []
+            for c in sh["components"]:
+                sym = symbol_of(db, c)
+                sp = db.symbol_pins(sym) if sym else None
+                st = sp.get("symbol_type") if sp else None
+                if st == 19 and not c.get("designator") and c.get("title"):
+                    ports.add(c["title"])
+                du = c.get("device_uuid") or c.get("symbol_uuid") or ""
+                fp.append((c.get("designator") or "", c.get("title") or "",
+                           dmap.get(du, ("", "", ""))[1] if du else ""))
+            sig[uuid] = (frozenset(ports), tuple(sorted(fp)), title)
+        db._cbb_sig = sig
+    return sig
+
+
+def _cbb_dom(db, tmpl_uuid):
+    """模板页连通域（懒缓存，嵌套 CBB 限深展开）。"""
+    cache = getattr(db, "_cbb_dom_cache", None)
+    if cache is None:
+        cache = {}
+        db._cbb_dom_cache = cache
+    if tmpl_uuid not in cache:
+        t_sheet = parse_sheet(db, tmpl_uuid)
+        t_pinc = _collect_pinmap_data(db, t_sheet, tmpl_uuid)
+        if t_pinc is None:
+            cache[tmpl_uuid] = {}
+        else:
+            cp, ws, pw, ep = t_pinc
+            cache[tmpl_uuid] = resolve_nets_by_domain(
+                db, t_sheet, cp, ws, pw, ep, _cbb_depth=1)
+    return cache[tmpl_uuid]
+
+
+def _resolve_cbb_target(db, sig, val):
+    """--cbb-map 值解析：支持 页uuid / 页显示标题 / 板名（取其首页）。"""
+    if val in sig:
+        return val
+    u = resolve_page(db, val)
+    if u:
+        return u
+    for uuid, (_ports, _fp, title) in sig.items():
+        if title == val or title.startswith(val + "::"):
+            return uuid
+    return None
+
+
+def _expand_cbb(db, sheet, comp_pins, result, depth=0):
+    """CBB（复用块，symbol_type=17）展开：模板页内部连通域按"端口名"映射
+    进实例引脚所在网络。
+    - 实例→模板匹配：--cbb-map 显式指定优先；否则按"端口名集合相等"匹配
+      全部页——内容指纹唯一组采纳（_old 镜像视为等价取其一），多组歧义则
+      stderr 告警并跳过（.epro 文件内无实例→模板链接字段，实测 Reuse Block/
+      BatchReuse 属性为空、Device 引用悬空）。
+    - 展开条目：位号 "实例位号.模板位号"（如 CBB6.U13），
+      net = 模板内部网络 ∪ 端口对应父网络（逗号并集）——netlist/trace/
+      netfind 的同名归并据此贯通 CBB 内部电路。
+    - 模板内部桥接多端口的域会把多个父网络经展开条目连通（正确语义）。"""
+    if depth >= 2 or not comp_pins:
+        return
+    insts = {}
+    for key, plist in comp_pins.items():
+        des = key if isinstance(key, str) else key[0]
+        for p in plist:
+            if p.get("sym_type") == 17:
+                insts.setdefault(des, set()).add(p.get("pin"))
+    if not insts:
+        return
+    sig = _cbb_sig(db)
+    self_uuid = sheet.get("title")
+    for des, pin_names in sorted(insts.items()):
+        if not pin_names:
+            continue
+        tmpl = None
+        explicit = _CBB_MAP.get(des)
+        if explicit:
+            tmpl = _resolve_cbb_target(db, sig, explicit)
+            if tmpl is None:
+                wk = ("cbb_badmap", des, explicit)
+                if wk not in _WARN_ONCE:
+                    _WARN_ONCE.add(wk)
+                    print(f"[lceda_reader] CBB {des}: --cbb-map 指定的页 "
+                          f"{explicit!r} 不存在", file=sys.stderr)
+                continue
+        else:
+            cands = {u: v for u, v in sig.items()
+                     if v[0] == pin_names and u != self_uuid}
+            groups = {}
+            for u, (ports, fp, title) in cands.items():
+                groups.setdefault(fp, []).append((u, title))
+            if len(groups) == 1:
+                members = sorted(groups.popitem()[1], key=lambda x: x[1])
+                tmpl = members[0][0]
+                if len(members) > 1:
+                    wk = ("cbb_mirror", des, members[0][1])
+                    if wk not in _WARN_ONCE:
+                        _WARN_ONCE.add(wk)
+                        print(f"[lceda_reader] CBB {des}: 多个内容等价模板，"
+                              f"选用 {members[0][1]}（其余: "
+                              f"{','.join(t for _, t in members[1:])}）",
+                              file=sys.stderr)
+            elif len(groups) > 1:
+                wk = ("cbb_ambig", des)
+                if wk not in _WARN_ONCE:
+                    _WARN_ONCE.add(wk)
+                    names = sorted(t for ms in groups.values()
+                                   for _, t in ms)
+                    print(f"[lceda_reader] CBB {des}: 端口匹配到多个不同内容"
+                          f"模板 {names}，未展开；请用 --cbb-map "
+                          f"{des}=<页名> 指定", file=sys.stderr)
+            else:
+                wk = ("cbb_nomatch", des, tuple(sorted(pin_names)))
+                if wk not in _WARN_ONCE:
+                    _WARN_ONCE.add(wk)
+                    print(f"[lceda_reader] CBB {des}: 未找到端口集匹配的"
+                          f"模板页，未展开", file=sys.stderr)
+        if not tmpl:
+            continue
+        t_dom = _cbb_dom(db, tmpl)
+        if not t_dom:
+            continue
+        t_sheet = parse_sheet(db, tmpl)
+        # 模板端口名 -> 内部网络 token 集（经 PORT 合成位号反查）
+        port_titles = {f"PORT{c['cid']}": c["title"]
+                       for c in t_sheet["components"]
+                       if not c.get("designator") and c.get("title")}
+        port_net = {}
+        for (tdes, tpin), net in t_dom.items():
+            t = port_titles.get(tdes)
+            if t:
+                for tok in net.split(","):
+                    if tok:
+                        port_net.setdefault(t, set()).add(tok)
+        # 实例引脚 -> 爐网络 token 集
+        plist = next((v for k, v in comp_pins.items()
+                      if (k if isinstance(k, str) else k[0]) == des), [])
+        pin_parent = {}
+        for p in plist:
+            if p.get("sym_type") != 17:
+                continue
+            k = p.get("key") or p.get("pin")
+            toks = {t for t in result.get((des, k), "").split(",") if t}
+            if toks:
+                pin_parent[p["pin"]] = toks
+        # 展开：模板引脚所在域触及端口内部网络 -> 并入对应父网络
+        for (tdes, tpin), net in t_dom.items():
+            if tdes.startswith(("PORT", "SHORT")):
+                continue
+            toks = {t for t in net.split(",") if t}
+            if not toks:
+                continue
+            hit = set()
+            for pname, ptoks in port_net.items():
+                if (toks & ptoks) and pname in pin_parent:
+                    hit |= pin_parent[pname]
+            if hit:
+                result[(f"{des}.{tdes}", tpin)] = ",".join(sorted(toks | hit))
 
 
 def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
@@ -2114,6 +2302,9 @@ def main():
                     help="工程文件路径（.eprj2 SQLite 或 .epro ZIP），可多次(单工程或关联多工程)")
     ap.add_argument("--json", action="store_true",
                     help="结构化 JSON 输出（供脚本消费）")
+    ap.add_argument("--cbb-map", action="append", default=None,
+                    help="CBB 实例位号=模板页名（如 CBB1=_CBB_LDO_TPS7A3001_2LAYER），"
+                         "端口自动匹配歧义时显式指定，可多次")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("list", help="列出板与页").set_defaults(fn=cmd_list)
@@ -2193,6 +2384,7 @@ def main():
     p.set_defaults(fn=cmd_raw)
 
     args = ap.parse_args()
+    _set_cbb_map(args.cbb_map)
     if args.eprj:
         paths = args.eprj
     else:

@@ -76,6 +76,14 @@ description: Use when the user asks to read, query, search, extract, or verify c
   .epro 时自动选中）。内部格式差异（WIRE 平铺点链、COMPONENT a[2]=符号 uuid、
   页标题 `板名::页名`）已在 EproDB 后端归一化，命令用法与 .eprj2 完全一致。
   `.epro2/.epru`（V3 增量日志备份）暂不支持。
+- **CBB（复用块，symbol_type=17）已支持展开**：黑盒实例位号 CBBn；工具按
+  "端口名集合"自动匹配模板页（内容相同的副本页如 `_old` 归为等价取其一；
+  多个不同内容模板歧义时 stderr 告警并跳过，用 `--cbb-map 位号=板名/页名`
+  显式指定）。展开后 netlist/trace/netfind/nets/pins 出现 `CBBn.内部位号`
+  条目（如 `CBB6.U13`），net 为"内部网络,父网络"并集——链路分析可贯通 CBB
+  内部。注意：`.epro` 文件内**无**实例→模板链接字段（Reuse Block/BatchReuse
+  为空）；`pinmap` 仍是黑盒视图；`find` 不索引展开位号（查内部器件直接查
+  模板页）；CBB 模板页在 .epro 中作为独立"板"列出。
 - **DNP（未贴装）标志已纳入链路分析**：实例属性 `Add into BOM=no` 或
   `Convert to PCB=no` 视为 DNP——**0Ω 跳线/短接符两脚不再合并网络**（物理
   未贴装），pinmap 输出 `dnp:true` + 文本 `[DNP]` 标记。审查时注意：
