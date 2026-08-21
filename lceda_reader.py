@@ -55,10 +55,96 @@ import re
 import sqlite3
 import sys
 import zipfile
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 
 # ---------------------------------------------------------------- 基础层
+
+class UnsupportedFormatError(Exception):
+    """文件格式无法识别或暂不支持（message 面向用户给出可行路径）。"""
+
+
+class SchemaBackend(ABC):
+    """后端接口层（抽象基类）。
+
+    约定：
+    - ``sheets()`` 返回 (uuid, 标题, schematic_uuid, docType) 全量行
+      （含非原理图文档），调用方自行过滤 docType==1；
+    - ``sheet_records(uuid)`` 返回统一 V2 数组模型
+      （COMPONENT/ATTR/WIRE[嵌套段]），格式差异在各自后端内归一化；
+    - ``sheet_text``/``sheet_records`` 的实参一律为文档 uuid（同名页唯一键）；
+    - 坐标统一为 V2 语义（Y 向下、0.01inch 或等效整数网格），格式差异
+      （如 V3 的 Y 向上 mm 浮点）在后端内转换；
+    - 缓存槽（_dmap_cache/_cbb_sym_map/_cbb_sig/_cbb_dom_cache）由基类
+      初始化，通用函数可直接读写，禁止 getattr 动态贴属性。
+    新增格式：继承本类实现全部 @abstractmethod，并在 detect_backend 登记
+    内容特征即可，命令层零改动。"""
+
+    FORMAT_NAME = "abstract"
+
+    def __init__(self, path):
+        self.path = Path(path)
+        self._dmap_cache = None
+        self._cbb_sym_map = None
+        self._cbb_sig = None
+        self._cbb_dom_cache = {}
+
+    def project_name(self):
+        """可读项目名：以文件名（去扩展名）为准——工程内 projects.name 为
+        立创EDA默认名（New Project_日期），无实际意义。"""
+        return self.path.stem
+
+    def decompress(self, ds):
+        """dataStr 解码（ZIP 系后端恒等实现，SQLite 系覆盖）。"""
+        return ds
+
+    def cbb_symbol_board_map(self):
+        """CBB 黑盒精确映射 {键: 模板板名}；键与该格式实例 Symbol 属性值
+        同构（V2=uuid，V3=uuid/标题）。无原生映射的后端返回 {}，
+        _expand_cbb 将回退 同目录.eprj2 blockSymbols > 端口集匹配。"""
+        return {}
+
+    @abstractmethod
+    def schematics(self):
+        """[(uuid, name, display_name)] 板级列表。"""
+
+    @abstractmethod
+    def schem_map(self):
+        """{schematic_uuid: (display, name)}"""
+
+    @abstractmethod
+    def sheets(self, doc_type=1):
+        """[(uuid, 标题, schematic_uuid, docType)] 全文档行。"""
+
+    @abstractmethod
+    def sheet_text(self, doc_key, doc_type=1):
+        """单页原始文本（uuid 优先）；无此页返回 None。"""
+
+    @abstractmethod
+    def sheet_records(self, doc_key, doc_type=1):
+        """单页 V2 数组记录；无此页返回 None。"""
+
+    @abstractmethod
+    def device_map(self):
+        """{uuid: (title, 型号, 描述)}，uuid 含 Device 与 Symbol 两空间。"""
+
+    @abstractmethod
+    def device_attrs(self, device_uuid):
+        """{key: value} 器件级属性。"""
+
+    @abstractmethod
+    def symbol_of_device(self, device_uuid):
+        """Device uuid -> Symbol uuid（无桥接机制的后端返回 None）。"""
+
+    @abstractmethod
+    def symbol_pins(self, symbol_uuid):
+        """符号引脚表 {pins:[{id,name,number,x,y,rot,part,...}], bbox,
+        parts, symbol_type}；坐标为符号相对坐标。"""
+
+    @abstractmethod
+    def datasheet_rows(self):
+        """[{"device": 名, "url": Datasheet URL}]"""
 
 def out(s=""):
     print(s)
@@ -114,18 +200,16 @@ def natkey(s):
     return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", s)]
 
 
-class LcedaDB:
+class LcedaDB(SchemaBackend):
+    """立创EDA 专业版 .eprj2（V2.2 SQLite，旧版保存格式）后端。"""
+
+    FORMAT_NAME = "立创EDA .eprj2（V2.2 SQLite）"
+
     def __init__(self, path):
-        self.path = Path(path)
+        super().__init__(path)
         self.conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         self.cur = self.conn.cursor()
         self._text_cache = {}
-        self._dmap_cache = None
-
-    def project_name(self):
-        """可读项目名。工程文件内 projects.name 为立创EDA默认名（New Project_日期，
-        无实际意义），故以文件名（去扩展名）作为项目名。"""
-        return self.path.stem
 
     def schematics(self):
         return list(self.cur.execute(
@@ -277,16 +361,18 @@ class LcedaDB:
             "symbol_type": symbol_type}
 
 
-class EproDB:
-    """Minimal LCEDA ``.epro`` (ZIP export) backend.
+class EproDB(SchemaBackend):
+    """立创EDA ``.epro``（V2 ZIP 导出）后端。
 
     Implements the same duck-typed interface as :class:`LcedaDB` so the CLI
     commands (list/boards/components/nets/pinmap/pins/netfind/trace/...) can
     transparently read a ZIP export as well as the SQLite ``.eprj2`` format.
     """
 
+    FORMAT_NAME = "立创EDA .epro（V2 ZIP 导出）"
+
     def __init__(self, path):
-        self.path = Path(path)
+        super().__init__(path)
         self.zip = zipfile.ZipFile(self.path)
         self.obj = json.loads(self.zip.read("project.json"))
         self._devices = self.obj.get("devices", {})
@@ -297,13 +383,7 @@ class EproDB:
         self._page_index = {}      # unique_title -> (schematic uuid, page id)
         self._records_cache = {}
         self._symbol_pin_cache = {}
-        self._dmap_cache = None
-        self._cbb_sym_map = None
         self._build_page_index()
-
-    def project_name(self):
-        """可读项目名：以导出文件名（去扩展名）作为项目名。"""
-        return self.path.stem
 
     def _build_page_index(self):
         for board_name, board in self._boards.items():
@@ -328,9 +408,6 @@ class EproDB:
                 pu = page.get("uuid")
                 if pu:
                     self._page_index.setdefault(pu, (sch_uuid, int(page["id"])))
-
-    def decompress(self, ds):
-        return ds
 
     # -- lceda_reader-compatible API ----------------------------------------
     def schematics(self):
@@ -516,20 +593,24 @@ class EproDB:
         return result
 
 
-class Epro2DB:
-    """LCEDA ``.epro2``（V3 导出，project2.json + *.epru 增量日志）后端。
+class Epro2DB(SchemaBackend):
+    """立创EDA ``.epro2``（V3 导出，project2.json + *.epru 增量日志）后端。
 
     epru 行格式 ``{header}||{body}|``：DOCHEAD 开启文档（docType BOARD/SCH/
     SCH_PAGE/SYMBOL/DEVICE/FOOTPRINT/PCB/INSTANCE/CONFIG），同 uuid 多段按
     ticket 最终一致合并。本后端把 V3 记录转换为 V2 数组模型供既有解析层
     复用：COMPONENT(x/y/rotation/isMirror)+ATTR(parentId,key,value)+
-    WIRE(LINE.lineGroup 聚合为嵌套段)；坐标保持原生 mm 浮点。
-    V3 特性：组件→符号靠实例 ATTR ``Symbol``=符号标题（非 uuid）；引脚名/
-    号为 ATTR 键 ``Pin Name``/``Pin Number``；CBB 黑盒 = SYMBOL 文档 META
-    ``docType:17``（title 即模板板名，source 指外部工程）。"""
+    WIRE(LINE.lineGroup 聚合为嵌套段)；坐标统一转换为 V2 语义（减 CANVAS
+    原点 + Y 取反）。
+    V3 特性：实例 ATTR ``Symbol``=符号文档 uuid（兼容按标题解析）；引脚名/
+    号为 ATTR 键 ``Pin Name``/``Pin Number``；符号类型 = META.docType
+    （17=CBB/18=电源/19=NetPort/22=Short/25=OffPage）；CBB 黑盒 title 即
+    模板板名，source 指外部工程。"""
+
+    FORMAT_NAME = "立创EDA .epro2（V3 ZIP 导出）"
 
     def __init__(self, path):
-        self.path = Path(path)
+        super().__init__(path)
         self.zip = zipfile.ZipFile(self.path)
         eprus = [n for n in self.zip.namelist() if n.endswith(".epru")]
         if not eprus:
@@ -544,8 +625,6 @@ class Epro2DB:
         self._rec_cache = {}
         self._text_cache = {}
         self._sym_cache = {}
-        self._dmap_cache = None
-        self._cbb_sym_map = None
         self._index()
 
     # -- 索引 -------------------------------------------------------------
@@ -623,12 +702,6 @@ class Epro2DB:
         return gen()
 
     # -- duck-typed API ----------------------------------------------------
-    def project_name(self):
-        return self.path.stem
-
-    def decompress(self, ds):
-        return ds
-
     def schematics(self):
         return [(u, t, t) for u, t, _ in self._boards]
 
@@ -925,6 +998,69 @@ class Epro2DB:
                     m.setdefault(mt["title"], mt["title"])
             self._cbb_sym_map = m
         return self._cbb_sym_map
+
+
+# ---------------------------------------------------------------- 格式路由
+
+def _sniff_zip_backend(path):
+    """ZIP 容器内容特征 -> 后端类（Epro2DB/EproDB/None）。"""
+    with zipfile.ZipFile(path) as zf:
+        names = set(zf.namelist())
+    if any(n.endswith(".epru") for n in names) or "project2.json" in names:
+        return Epro2DB
+    if "project.json" in names:
+        return EproDB
+    return None
+
+
+def _sniff_sqlite_backend(path):
+    """SQLite 内容特征 -> 后端类（LcedaDB/None）；新版加密格式抛
+    UnsupportedFormatError（带可行路径提示）。"""
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        tables = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        if "documents" not in tables:
+            return None
+        n_docs = conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+        if n_docs:
+            return LcedaDB
+        if "project_structures" in tables:
+            raise UnsupportedFormatError(
+                f"{path}: 新版立创EDA 分支加密格式（documents 表空，内容在"
+                f"加密 history_data 中），暂不支持读取内容。"
+                f"请在立创EDA 中另存为/导出 .epro 或 .epro2 后使用。")
+        return None
+    finally:
+        conn.close()
+
+
+def detect_backend(path):
+    """格式路由：**内容特征优先**（ZIP magic / SQLite magic + 表结构），
+    扩展名仅作参考——同扩展名不同存储（如新版/旧版 .eprj2）也能正确区分。
+    返回后端类；无法识别/不支持时抛 UnsupportedFormatError。
+    新增格式：实现 SchemaBackend 子类 + 在此登记内容特征。"""
+    p = Path(path)
+    if not p.is_file():
+        raise UnsupportedFormatError(f"{p}: 文件不存在")
+    with open(p, "rb") as f:
+        magic = f.read(16)
+    if magic[:4] == b"PK\x03\x04":
+        cls = _sniff_zip_backend(p)
+        if cls:
+            return cls
+        raise UnsupportedFormatError(
+            f"{p}: ZIP 容器但不含立创EDA 工程特征"
+            f"（需要 project.json 或 *.epru）")
+    if magic == b"SQLite format 3\x00":
+        cls = _sniff_sqlite_backend(p)
+        if cls:
+            return cls
+        raise UnsupportedFormatError(
+            f"{p}: SQLite 数据库但不含立创EDA 工程特征（documents 表）")
+    raise UnsupportedFormatError(
+        f"{p}: 无法识别内容特征（magic={magic[:4].hex()}）。支持格式："
+        f".eprj2(V2.2 SQLite) / .epro(V2 ZIP) / .epro2(V3 ZIP)")
 
 
 # ---------------------------------------------------------------- 解析层
@@ -1398,7 +1534,7 @@ def _cbb_sig(db):
     端口 = symbol_type 19 且无位号实例的 title；
     内容指纹 = (位号, title, 器件型号) 排序元组——用语义身份而非 uuid，
     使内容相同的副本页（如 _old 镜像，uuid 不同）归为等价。"""
-    sig = getattr(db, "_cbb_sig", None)
+    sig = db._cbb_sig
     if sig is None:
         dmap = db.device_map()
         sig = {}
@@ -1424,7 +1560,7 @@ def _cbb_sig(db):
 
 def _cbb_dom(db, tmpl_uuid):
     """模板页连通域（懒缓存，嵌套 CBB 限深展开）。"""
-    cache = getattr(db, "_cbb_dom_cache", None)
+    cache = db._cbb_dom_cache
     if cache is None:
         cache = {}
         db._cbb_dom_cache = cache
@@ -1446,7 +1582,7 @@ def _cbb_symbol_map(db):
     （立创EDA 复用块登记表：uuid=黑盒符号, title=本地模板板名, source=外部
     CBB 工程引用）。.epro 导出不含该结构，但同目录常留有来源 .eprj2；
     新格式 .eprj2 的 structure 为明文 JSON，无需解密文档内容。"""
-    m = getattr(db, "_cbb_sym_map", None)
+    m = db._cbb_sym_map
     if m is not None:
         return m
     m = {}
@@ -1537,8 +1673,7 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
             # 键=符号标题），其次同目录 .eprj2 的 structure.blockSymbols
             # （Symbol uuid -> 模板板名）
             su = sym_uuid_of.get(des)
-            getter = getattr(db, "cbb_symbol_board_map", None)
-            mapped = getter().get(su or "") if (getter and su) else None
+            mapped = db.cbb_symbol_board_map().get(su or "") if su else None
             if mapped is None and su:
                 mapped = _cbb_symbol_map(db).get(su)
             if mapped:
@@ -1644,7 +1779,7 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
             return endp[pt] or ""
         return pinmap.get((des, _key(p)), "")
 
-    dev_map = db.device_map() if hasattr(db, "device_map") else {}
+    dev_map = db.device_map()
     for key, plist in comp_pins.items():
         des = key if isinstance(key, str) else key[0]
         if len(plist) != 2:
@@ -2877,19 +3012,16 @@ def main():
         out("未找到 .eprj2，请用 --eprj 指定路径")
         sys.exit(1)
     def open_db(p):
-        if str(p).lower().endswith(".epro2"):
-            print(f"[lceda_reader] 检测到 .epro2（V3 导出）读取：{p}",
-                  file=sys.stderr)
-            return Epro2DB(p)
-        if str(p).lower().endswith(".epro"):
-            # 提示走 stderr：stdout 可能是 --json 消费方的数据通道
-            print(f"[lceda_reader] 检测到 .epro ZIP 导出包，自动解包读取：{p}",
-                  file=sys.stderr)
-            return EproDB(p)
-        return LcedaDB(p)
+        cls = detect_backend(p)   # 内容特征路由，识别失败抛 UnsupportedFormatError
+        print(f"[lceda_reader] 格式: {cls.FORMAT_NAME} | 文件: {p}",
+              file=sys.stderr)
+        return cls(p)
 
     try:
         dbs = [open_db(p) for p in paths]
+    except UnsupportedFormatError as e:
+        out(f"不支持的工程格式: {e}")
+        sys.exit(1)
     except Exception as e:
         out(f"无法打开工程: {e}")
         sys.exit(1)
