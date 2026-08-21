@@ -95,6 +95,27 @@ class SchemaBackend(ABC):
         立创EDA默认名（New Project_日期），无实际意义。"""
         return self.path.stem
 
+    def project_title(self):
+        """工程内部名称（用户命名）；无意义/缺失返回 None。
+        旧版 .eprj2 的 projects.name 为默认名，视为无名称；.epro 无该字段；
+        新版 .eprj2/.epro2 有真实工程名。"""
+        try:
+            row = self.cur.execute("SELECT name FROM projects").fetchone()
+            n = row[0] if row else None
+            if n and not re.match(r"^New Project_\d{4}-\d{2}-\d{2}", n):
+                return n
+        except Exception:
+            pass
+        return None
+
+    def texts_of(self, doc_key):
+        """页内文本注释（TEXT 记录）。"""
+        sh = self.parse_sheet_public(doc_key)
+        return sh["texts"] if sh else []
+
+    def parse_sheet_public(self, doc_key):
+        return parse_sheet(self, doc_key)
+
     def decompress(self, ds):
         """dataStr 解码（ZIP 系后端恒等实现，SQLite 系覆盖）。"""
         return ds
@@ -374,7 +395,8 @@ class LcedaDB(SchemaBackend):
                 for u, t in self.cur.execute(
                     "SELECT uuid, display_title FROM documents "
                     "WHERE docType=3")]
-        return {"project": self.project_name(), "boards": [],
+        return {"project": self.project_name(),
+        "project_title": self.project_title(), "boards": [],
                 "free": {"schematics": sch_order, "pages": [],
                          "pcbs": pcbs}}
 
@@ -589,6 +611,11 @@ class EproDB(SchemaBackend):
                 rows.append({"device": d[1] or d[0] or uuid, "url": url})
         return rows
 
+    def project_title(self):
+        """V2 导出：project.json 无 title 字段（.epro 不含内部工程名），
+        只能靠文件名——返回 None。"""
+        return None
+
     def hierarchy(self):
         """板 → {原理图(页), PCB}；.epro 数据完备（boards 含 schematic+pcb），
         无游离实体时 free 为空。"""
@@ -625,7 +652,8 @@ class EproDB(SchemaBackend):
                     for u in self._schematics if u not in used_sch]
         free_pcb = [{"uuid": u, "title": pcb_title.get(u, u)}
                     for u in pcb_title if u not in used_pcb]
-        return {"project": self.project_name(), "boards": boards,
+        return {"project": self.project_name(),
+        "project_title": self.project_title(), "boards": boards,
                 "free": {"schematics": free_sch, "pages": [],
                          "pcbs": free_pcb}}
 
@@ -726,6 +754,10 @@ class Epro2DB(SchemaBackend):
         if not eprus:
             raise ValueError(f"{path} 内无 .epru 日志")
         self.epru_name = eprus[0]
+        try:
+            self.pj2 = json.loads(self.zip.read("project2.json"))
+        except Exception:
+            self.pj2 = {}
         self._lines = None
         self._docs = {}          # uuid -> {"docType","segs":[(s,e,ticket)]}
         self._meta = {}          # uuid -> 最新 META body
@@ -860,12 +892,13 @@ class Epro2DB(SchemaBackend):
 
     def sheet_records(self, doc_key, doc_type=1):
         """V3 记录 -> V2 数组模型（COMPONENT/ATTR/WIRE 顺序输出，
-        WIRE 段由 LINE.lineGroup 聚合为嵌套 [[x1,y1,x2,y2],...]）。"""
+        WIRE 段由 LINE.lineGroup 聚合为嵌套 [[x1,y1,x2,y2],...]）。
+        TEXT 行（设计注释）一并转换。"""
         if doc_key in self._rec_cache:
             return self._rec_cache[doc_key]
         if doc_key not in self._docs:
             return None
-        comps, attrs, wires = [], [], {}
+        comps, attrs, wires, texts = [], [], {}, []
         # 页 CANVAS 原点（V3 符号/页坐标需先减原点再翻转 Y）
         ox = oy = 0.0
         for ln in self._iter_doc_lines(doc_key):
@@ -918,11 +951,19 @@ class Epro2DB(SchemaBackend):
                          -((b.get("startY") or 0) - oy),
                          (b.get("endX") or 0) - ox,
                          -((b.get("endY") or 0) - oy)])
+            elif t == "TEXT":
+                v = b.get("value")
+                if v:
+                    texts.append(["TEXT", h.get("id") or "",
+                                  (b.get("x") or 0) - ox,
+                                  -((b.get("y") or 0) - oy),
+                                  b.get("rotation") or 0, str(v)])
         recs = comps + attrs
         for wid, segs in wires.items():
             recs.append(["WIRE", wid,
                          [s for s in segs
                           if all(v is not None for v in s)]])
+        recs.extend(texts)
         self._rec_cache[doc_key] = recs
         return recs
 
@@ -1008,6 +1049,10 @@ class Epro2DB(SchemaBackend):
                 rows.append({"device": dm[1] or dm[0] or u, "url": url})
         return rows
 
+    def project_title(self):
+        """V3 导出：project2.json.title 为用户命名工程名。"""
+        return self.pj2.get("title") or None
+
     def hierarchy(self):
         """板 → {原理图(页), PCB}；游离判定：SCH 无 board 且标题匹配不到
         同名 BOARD（CBB 模板按标题归板）；PCB META.board 为空 → 游离。"""
@@ -1053,7 +1098,8 @@ class Epro2DB(SchemaBackend):
         free_pcbs = [{"uuid": u, "title": (m.get("title") or u)}
                      for u, m in sorted(pcb_meta.items())
                      if u not in claimed_pcb]
-        return {"project": self.project_name(), "boards": boards,
+        return {"project": self.project_name(),
+        "project_title": self.project_title(), "boards": boards,
                 "free": {"schematics": free_sch, "pages": [],
                          "pcbs": free_pcbs}}
 
@@ -1321,7 +1367,7 @@ def parse_sheet(db, doc_key):
     if recs is None:
         return None
     sheet = {"title": doc_key, "components": [], "nets": [], "attrs": {},
-             "no_connect": set()}
+             "no_connect": set(), "texts": []}
     comps = {}      # cid -> component dict
     net_of = {}     # wire/comp id -> net name
     wires = []      # (net, segs)
@@ -1349,6 +1395,12 @@ def parse_sheet(db, doc_key):
                 net_of[cid] = val
         elif kind == "WIRE" and len(a) >= 3:
             wires.append((a[1], a[2]))
+        elif kind == "TEXT" and len(a) >= 6:
+            # ["TEXT", id, x, y, rot, "文本", style, flags]——设计注释
+            txt = str(a[5]).strip()
+            if txt:
+                sheet["texts"].append({"id": a[1], "x": a[2], "y": a[3],
+                                       "rot": a[4], "text": txt})
     for c in comps.values():
         a = c["attrs"]
         if a.get("Designator") is not None:
@@ -2354,12 +2406,18 @@ def cmd_pinmap(db, args):
 
 def cmd_tree(db, args):
     """工程层级树：工程 → 板 → {原理图(页), PCB} + 游离实体。
-    对应立创EDA 工程面板语义；--json 输出 hierarchy 结构。"""
+    对应立创EDA 工程面板语义；--json 输出 hierarchy 结构。
+    工程内部名称（title）仅 .epro2/新版 .eprj2 提供，其余格式靠文件名。"""
     h = db.hierarchy()
     if args.json:
+        h["file"] = str(db.path)
         outj(h)
         return
-    out(f"工程: {h['project']}")
+    pt = h.get("project_title")
+    if pt and pt != h["project"]:
+        out(f"工程: {pt}（文件: {h['project']}）")
+    else:
+        out(f"工程: {h['project']}（内部无独立工程名，以文件名为准）")
     for b in h["boards"]:
         out(f"├─ 板: {b['title']}")
         sl = b["schematics"]
@@ -2380,6 +2438,32 @@ def cmd_tree(db, args):
         out("└─ 游离（未归属板）:")
         for kind, title, extra in items:
             out(f"    {kind}: {title}{extra}")
+
+
+def cmd_texts(db, args):
+    """页内文本注释（TEXT 记录）：设计意图/调试备注/网络说明。
+    审查原理图时必须阅读——注释常含关键设计意图（如"OE接VCC或者悬空使能"）。
+    --json 输出 [{id,x,y,rot,text}]。"""
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    if page is None:
+        out(f"未找到页: {args.sheet}")
+        return
+    sheet = parse_sheet(db, page)
+    if sheet is None:
+        out(f"未找到页: {args.sheet}")
+        return
+    texts = sheet.get("texts", [])
+    rows = [{"id": t["id"], "x": t["x"], "y": t["y"],
+             "rot": t["rot"], "text": t["text"]} for t in texts]
+    if args.json:
+        outj(rows)
+        return
+    if not rows:
+        out("(无文本注释)")
+        return
+    for t in rows:
+        pos = f"({t['x']},{t['y']})"
+        out(f"  {pos:16s} {t['text']}")
 
 
 def cmd_nets(db, args):
@@ -3195,6 +3279,11 @@ def main():
     p = sub.add_parser("components", help="列出页内元件(设计符/型号/值)")
     p.add_argument("sheet", nargs="?", default=None)
     p.set_defaults(fn=cmd_components)
+
+    p = sub.add_parser("texts", help="页内文本注释(设计意图/调试备注)")
+    p.add_argument("sheet")
+    p.add_argument("--schematic", default=None, help="指定板名解决同名页")
+    p.set_defaults(fn=cmd_texts)
 
     p = sub.add_parser("nets", help="页内网络连接(stub端点归属元件)")
     p.add_argument("sheet")

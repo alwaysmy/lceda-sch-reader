@@ -33,6 +33,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 需求 | 命令 |
    | ---- | ---- |
    | 某页元件（设计符/型号/参数） | `lceda_reader.py components "页名"` |
+   | 页内文本注释（设计意图/备注） | `lceda_reader.py texts "页名"` |
+   | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
    | 精确引脚网络表（推荐，含同网络关联引脚） | `lceda_reader.py pinmap "页名" [--designator U1]` |
    | 引脚级网络表（designator→网络+引脚名） | `lceda_reader.py pins "页名"` |
@@ -125,6 +127,12 @@ description: Use when the user asks to read, query, search, extract, or verify c
   描述为准（如 0Ω 跳线按型号含 0000 识别，电阻也可能标为 U 或别的位号）。**不要根据
   位号前缀判断器件类型**，用 `components` 的 device 字段。
 - 同号位器件跨板重复：汇报必须带"哪个板哪个页"（见上文汇报规范）。
+- **工程名 vs 文件名**：.epro2/新版 .eprj2 含用户命名工程名（tree 首行
+  双显示"工程: X（文件: Y）"，json hierarchy 含 project_title）；旧版
+  .eprj2 与 .epro 无内部工程名（projects.name 为立创默认名），以文件名为准。
+- **页内文本注释必须审查**：`texts "页名"` 导出设计者手写注释（如
+  "OE接VCC或者悬空使能"、"与测温有关"）——常含关键设计意图、调试结论、
+  未落图约束。审查原理图时先读 texts 再分析连接，避免误判"多余/缺失"。
 - `.epro2` 是 zip（内含 `project2.json` + `.epru` V3 增量日志 + IMAGE 缩略图），
   与 `.eprj2`/`.epro` 语义一致但写法不同（详见 Epro2DB 后端）。三格式
   （.eprj2/.epro/.epro2）均已支持，单文件即可完整读取。
