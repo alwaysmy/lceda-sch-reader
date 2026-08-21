@@ -95,7 +95,7 @@ def find_eprj(path=None):
             break
         bases.append(parent)
         d = parent
-    for pattern in ("*.eprj2", "*.epro"):
+    for pattern in ("*.eprj2", "*.epro2", "*.epro"):
         hits = []
         for base in bases:
             hits.extend(glob.glob(os.path.join(base, pattern)))
@@ -298,6 +298,7 @@ class EproDB:
         self._records_cache = {}
         self._symbol_pin_cache = {}
         self._dmap_cache = None
+        self._cbb_sym_map = None
         self._build_page_index()
 
     def project_name(self):
@@ -412,8 +413,23 @@ class EproDB:
             if not isinstance(sym, dict) or uuid in out:
                 continue
             out[uuid] = (sym.get("title") or "", "", "")
-        self._dmap_cache = out
+            self._dmap_cache = out
         return out
+
+    def cbb_symbol_board_map(self):
+        """CBB 黑盒精确映射（.epro 单文件即可，无需组合文件）：
+        project.json.symbols[黑盒uuid].title == 模板板名（立创EDA 导入时的
+        还原机制）。键 = 实例 Symbol 属性值（uuid），值 = 板名。"""
+        if self._cbb_sym_map is None:
+            m = {}
+            for u, sym in self._symbols.items():
+                if not isinstance(sym, dict):
+                    continue
+                t = sym.get("title") or ""
+                if sym.get("docType") == 17 or (t and t in self._boards):
+                    m[u] = t
+            self._cbb_sym_map = m
+        return self._cbb_sym_map
 
     def datasheet_rows(self):
         rows = []
@@ -498,6 +514,417 @@ class EproDB:
                   "symbol_type": symbol_type}
         self._symbol_pin_cache[symbol_uuid] = result
         return result
+
+
+class Epro2DB:
+    """LCEDA ``.epro2``（V3 导出，project2.json + *.epru 增量日志）后端。
+
+    epru 行格式 ``{header}||{body}|``：DOCHEAD 开启文档（docType BOARD/SCH/
+    SCH_PAGE/SYMBOL/DEVICE/FOOTPRINT/PCB/INSTANCE/CONFIG），同 uuid 多段按
+    ticket 最终一致合并。本后端把 V3 记录转换为 V2 数组模型供既有解析层
+    复用：COMPONENT(x/y/rotation/isMirror)+ATTR(parentId,key,value)+
+    WIRE(LINE.lineGroup 聚合为嵌套段)；坐标保持原生 mm 浮点。
+    V3 特性：组件→符号靠实例 ATTR ``Symbol``=符号标题（非 uuid）；引脚名/
+    号为 ATTR 键 ``Pin Name``/``Pin Number``；CBB 黑盒 = SYMBOL 文档 META
+    ``docType:17``（title 即模板板名，source 指外部工程）。"""
+
+    def __init__(self, path):
+        self.path = Path(path)
+        self.zip = zipfile.ZipFile(self.path)
+        eprus = [n for n in self.zip.namelist() if n.endswith(".epru")]
+        if not eprus:
+            raise ValueError(f"{path} 内无 .epru 日志")
+        self.epru_name = eprus[0]
+        self._lines = None
+        self._docs = {}          # uuid -> {"docType","segs":[(s,e,ticket)]}
+        self._meta = {}          # uuid -> 最新 META body
+        self._boards = []        # (uuid, title, sort)
+        self._schs = {}          # uuid -> {"title","board"}
+        self._pages = {}         # uuid -> {"title","schematic","zIndex"}
+        self._rec_cache = {}
+        self._text_cache = {}
+        self._sym_cache = {}
+        self._dmap_cache = None
+        self._cbb_sym_map = None
+        self._index()
+
+    # -- 索引 -------------------------------------------------------------
+    def _lines_of(self):
+        if self._lines is None:
+            data = self.zip.read(self.epru_name).decode("utf-8",
+                                                        errors="replace")
+            self._lines = data.split("\n")
+        return self._lines
+
+    @staticmethod
+    def _jl(s):
+        try:
+            return json.loads(s)
+        except Exception:
+            return None
+
+    def _index(self):
+        lines = self._lines_of()
+        cur = None
+        for i, ln in enumerate(lines):
+            if '"DOCHEAD"' not in ln[:30] and '"META"' not in ln[:16]:
+                continue
+            head, _, body = ln.partition("||")
+            h = self._jl(head)
+            if not h:
+                continue
+            t = h.get("type")
+            b = self._jl(body.rstrip("|")) if t in ("DOCHEAD", "META") else None
+            if t == "DOCHEAD" and b:
+                u = b.get("uuid")
+                d = self._docs.get(u)
+                if d is None:
+                    d = self._docs[u] = {"docType": b.get("docType"),
+                                         "segs": []}
+                d["segs"].append((i, None, h.get("ticket", 0)))
+                if cur:
+                    self._docs[cur[0]]["segs"][-1] = \
+                        (cur[1], i, cur[2])
+                cur = (u, i, h.get("ticket", 0))
+            elif t == "META" and b is not None and cur:
+                old = self._meta.get(cur[0])
+                if not old or h.get("ticket", 0) >= old.get("_t", 0):
+                    b["_t"] = h.get("ticket", 0)
+                    self._meta[cur[0]] = b
+        if cur:
+            self._docs[cur[0]]["segs"][-1] = (cur[1], len(lines), cur[2])
+        # 结构树：BOARD / SCH(board) / SCH_PAGE(schematic)
+        for u, d in self._docs.items():
+            m = self._meta.get(u) or {}
+            dt = d["docType"]
+            if dt == "BOARD":
+                self._boards.append((u, m.get("title") or u,
+                                     m.get("zIndex") or 0))
+            elif dt == "SCH":
+                self._schs[u] = {"title": m.get("title") or u,
+                                 "board": m.get("board")}
+            elif dt == "SCH_PAGE":
+                self._pages[u] = {"title": m.get("title") or u,
+                                  "schematic": m.get("schematic"),
+                                  "zIndex": m.get("zIndex") or 0}
+        self._boards.sort(key=lambda x: x[2])
+
+    def _iter_doc_lines(self, uuid):
+        """聚合某文档全部段的行（按 ticket 升序已天然满足：段按出现序）。"""
+        d = self._docs.get(uuid)
+        if not d:
+            return iter(())
+        lines = self._lines_of()
+
+        def gen():
+            for s, e, _t in d["segs"]:
+                for ln in lines[s:e]:
+                    yield ln
+        return gen()
+
+    # -- duck-typed API ----------------------------------------------------
+    def project_name(self):
+        return self.path.stem
+
+    def decompress(self, ds):
+        return ds
+
+    def schematics(self):
+        return [(u, t, t) for u, t, _ in self._boards]
+
+    def schem_map(self):
+        return {t: (t, t) for _, t, _ in self._boards}
+
+    def sheets(self, doc_type=1):
+        sch_board = {u: s["board"] for u, s in self._schs.items()}
+        board_title = {u: t for u, t, _ in self._boards}
+        # CBB 模板等 SCH 无 board 归属：以 SCH 标题（去 .sch 后缀）匹配
+        # 同名 BOARD，匹配不到则 SCH 标题自作为板名
+        board_titles = {t for _, t, _ in self._boards}
+        sch_fallback = {}
+        for u, s in self._schs.items():
+            if not s["board"]:
+                t = re.sub(r"\.sch.*$", "", s["title"] or "")
+                sch_fallback[u] = t if t in board_titles else (s["title"] or u)
+        rows = []
+        for pu, p in self._pages.items():
+            su = p["schematic"]
+            bt = board_title.get(sch_board.get(su)) \
+                or sch_fallback.get(su) or "?"
+            rows.append((pu, f"{bt}::{p['title']}", bt, 1))
+        rows.sort(key=lambda r: r[1])
+        return rows
+
+    def sheet_text(self, doc_key, doc_type=1):
+        recs = self.sheet_records(doc_key)
+        if recs is None:
+            return None
+        return "\n".join(json.dumps(r, ensure_ascii=False) for r in recs)
+
+    def sheet_records(self, doc_key, doc_type=1):
+        """V3 记录 -> V2 数组模型（COMPONENT/ATTR/WIRE 顺序输出，
+        WIRE 段由 LINE.lineGroup 聚合为嵌套 [[x1,y1,x2,y2],...]）。"""
+        if doc_key in self._rec_cache:
+            return self._rec_cache[doc_key]
+        if doc_key not in self._docs:
+            return None
+        comps, attrs, wires = [], [], {}
+        # 页 CANVAS 原点（V3 符号/页坐标需先减原点再翻转 Y）
+        ox = oy = 0.0
+        for ln in self._iter_doc_lines(doc_key):
+            if '"CANVAS"' in ln[:18]:
+                b = self._jl(ln.partition("||")[2].rstrip("|")) or {}
+                ox = b.get("originX") or 0
+                oy = b.get("originY") or 0
+                break
+        for ln in self._iter_doc_lines(doc_key):
+            head, _, body = ln.partition("||")
+            h = self._jl(head)
+            if not h:
+                continue
+            b = self._jl(body.rstrip("|"))
+            if b is None:
+                continue
+            t = h.get("type")
+            if t == "COMPONENT":
+                cid = h.get("id")
+                # a[2](title 位)放 partId：V3 的 partId 即符号内 PART 名
+                # （如 "OPA2189ID.2"），比 Name 属性更完备可靠。
+                # V3 为 Y 向上坐标系：先减 CANVAS 原点，再统一 Y 取反翻转
+                # 为 V2 的 Y 向下语义。
+                comps.append(["COMPONENT", cid, b.get("partId") or "",
+                              (b.get("x") or 0) - ox,
+                              -((b.get("y") or 0) - oy),
+                              b.get("rotation") or 0,
+                              1 if b.get("isMirror") else 0, {}, 0])
+                for k, v in (b.get("attrs") or {}).items():
+                    if v:
+                        attrs.append(["ATTR", "", cid, k, str(v)])
+            elif t == "ATTR":
+                pid = b.get("parentId") or ""
+                k = b.get("key")
+                v = b.get("value")
+                if k and v is not None:
+                    attrs.append(["ATTR", h.get("id") or "", pid, k, str(v)])
+            elif t == "WIRE":
+                wid = h.get("id")
+                wires.setdefault(wid, [])
+            elif t == "LINE":
+                g = b.get("lineGroup")
+                if g:
+                    wires.setdefault(g, []).append(
+                        [(b.get("startX") or 0) - ox,
+                         -((b.get("startY") or 0) - oy),
+                         (b.get("endX") or 0) - ox,
+                         -((b.get("endY") or 0) - oy)])
+        recs = comps + attrs
+        for wid, segs in wires.items():
+            recs.append(["WIRE", wid,
+                         [s for s in segs
+                          if all(v is not None for v in s)]])
+        self._rec_cache[doc_key] = recs
+        return recs
+
+    def device_map(self):
+        """DEVICE 文档 META.attributes 为权威属性集；SYMBOL 文档兜底。"""
+        if self._dmap_cache is not None:
+            return self._dmap_cache
+        out = {}
+        for u, d in self._docs.items():
+            if d["docType"] != "DEVICE":
+                continue
+            m = self._meta.get(u) or {}
+            a = m.get("attributes") or {}
+            disp = ""
+            for k in ("Manufacturer Part", "Manufacturer Part Number",
+                      "MPN", "Part Number", "Supplier Part"):
+                if a.get(k):
+                    disp = a[k]
+                    break
+            out[u] = (m.get("title") or "", disp,
+                      a.get("Description") or m.get("description") or "")
+        for u, d in self._docs.items():
+            if d["docType"] == "SYMBOL" and u not in out:
+                m = self._meta.get(u) or {}
+                out[u] = (m.get("title") or "", "", "")
+        # 实例 Device 值未命中 DEVICE 文档时（导出库不全），用页上实例
+        # 自带属性（Manufacturer Part/LCSC Part Name/Description）合成条目
+        have = set(out)
+        inst_attrs = {}
+        for u, d in self._docs.items():
+            if d["docType"] != "SCH_PAGE":
+                continue
+            cur_dev = None
+            ent = {}
+            for ln in self._iter_doc_lines(u):
+                if '"ATTR"' not in ln[:16]:
+                    continue
+                b = self._jl(ln.partition("||")[2].rstrip("|"))
+                if not b:
+                    continue
+                k, v = b.get("key"), b.get("value")
+                if k == "Device":
+                    if cur_dev and ent:
+                        inst_attrs.setdefault(cur_dev, ent)
+                    cur_dev, ent = v, {}
+                elif cur_dev is not None and k in (
+                        "Manufacturer Part", "LCSC Part Name",
+                        "Description", "Supplier Part"):
+                    ent[k] = v
+            if cur_dev and ent:
+                inst_attrs.setdefault(cur_dev, ent)
+        for du, ent in inst_attrs.items():
+            if du and du not in have:
+                disp = (ent.get("Manufacturer Part")
+                        or ent.get("LCSC Part Name") or "")
+                out[du] = ("", disp, ent.get("Description") or "")
+        self._dmap_cache = out
+        return out
+
+    def device_attrs(self, device_uuid):
+        m = self._meta.get(device_uuid)
+        if m and isinstance(m.get("attributes"), dict):
+            return dict(m["attributes"])
+        return {}
+
+    def symbol_of_device(self, device_uuid):
+        """V3 无 Device->Symbol 桥表：返回 None，实例自带 Symbol 属性。"""
+        return None
+
+    def datasheet_rows(self):
+        rows = []
+        for u, d in self._docs.items():
+            if d["docType"] != "DEVICE":
+                continue
+            m = self._meta.get(u) or {}
+            url = (m.get("attributes") or {}).get("Datasheet")
+            if url:
+                dm = self.device_map().get(u, ("", "", ""))
+                rows.append({"device": dm[1] or dm[0] or u, "url": url})
+        return rows
+
+    def symbol_pins(self, symbol_uuid):
+        """SYMBOL 文档 -> 引脚表。键：ATTR 'Pin Name'/'Pin Number'/'Pin Type'
+        （parentId=PIN id）；symbol_type 仅 CBB 黑盒可判（META docType=17）。
+        symbol_uuid 实参兼容 文档uuid / 符号标题（V3 实例 Symbol 属性值为
+        标题，同 title 多版本取最新 ticket 的文档）。"""
+        if not symbol_uuid:
+            return None
+        if symbol_uuid in self._sym_cache:
+            return self._sym_cache[symbol_uuid]
+        result = {"pins": [], "bbox": None, "parts": [],
+                  "symbol_type": None}
+        d = self._docs.get(symbol_uuid)
+        if d is None:
+            # 标题 -> 最新文档 uuid 解析
+            su = self._sym_uuid_by_title(symbol_uuid)
+            d = self._docs.get(su) if su else None
+            if d is not None:
+                self._sym_cache[symbol_uuid] = self.symbol_pins(su)
+                return self._sym_cache[symbol_uuid]
+        meta = self._meta.get(symbol_uuid) or {}
+        if d is None or d["docType"] != "SYMBOL":
+            self._sym_cache[symbol_uuid] = result
+            return result
+        # V3 符号类型 = META.docType：17=CBB / 18=电源 / 19=NetPort /
+        # 22=Short 短接符 / 25=Off-Page 跨页连接器（按 NetPort 语义处理）/
+        # 2=普通器件符号
+        mdt = meta.get("docType")
+        if mdt in (17, 18, 19, 22):
+            result["symbol_type"] = mdt
+        elif mdt == 25:
+            result["symbol_type"] = 19
+        pins = {}
+        names, numbers, ptypes = {}, {}, {}
+        parts = []
+        bbox = None
+        # 符号 CANVAS 原点：V3 引脚坐标先减原点再翻转 Y（与页同规则）
+        ox = oy = 0.0
+        for ln in self._iter_doc_lines(symbol_uuid):
+            if '"CANVAS"' in ln[:18]:
+                b = self._jl(ln.partition("||")[2].rstrip("|")) or {}
+                ox = b.get("originX") or 0
+                oy = b.get("originY") or 0
+                break
+        for ln in self._iter_doc_lines(symbol_uuid):
+            head, _, body = ln.partition("||")
+            h = self._jl(head)
+            if not h:
+                continue
+            b = self._jl(body.rstrip("|"))
+            if b is None:
+                continue
+            t = h.get("type")
+            if t == "PART":
+                pid = h.get("id")
+                parts.append(pid)
+                bb = b.get("BBOX")
+                if bb and len(bb) == 4 and bbox is None:
+                    bbox = [min(bb[0], bb[2]), min(bb[1], bb[3]),
+                            max(bb[0], bb[2]), max(bb[1], bb[3])]
+            elif t == "PIN":
+                pins[h.get("id")] = {
+                    "id": h.get("id"),
+                    "x": (b.get("x") or 0) - ox,
+                    "y": -((b.get("y") or 0) - oy),
+                    "rot": b.get("rotation") or 0,
+                    "part": b.get("partId"), "name": None,
+                    "number": None, "pin_type": None}
+            elif t == "ATTR":
+                pid = b.get("parentId")
+                k = b.get("key")
+                if pid in pins:
+                    if k == "Pin Name":
+                        names[pid] = b.get("value")
+                    elif k == "Pin Number":
+                        numbers[pid] = str(b.get("value"))
+                    elif k == "Pin Type":
+                        ptypes[pid] = b.get("value")
+        for pid, p in pins.items():
+            p["name"] = names.get(pid)
+            p["number"] = numbers.get(pid)
+            p["pin_type"] = ptypes.get(pid)
+        result["pins"] = list(pins.values())
+        result["parts"] = sorted(parts)
+        result["bbox"] = bbox
+        self._sym_cache[symbol_uuid] = result
+        return result
+
+    def _sym_uuid_by_title(self, title):
+        """符号标题 -> 最新 SYMBOL 文档 uuid（懒索引，同 title 取 ticket 最大）。"""
+        idx = getattr(self, "_sym_title_idx", None)
+        if idx is None:
+            idx = {}
+            for u, d in self._docs.items():
+                if d["docType"] != "SYMBOL":
+                    continue
+                m = self._meta.get(u) or {}
+                t = m.get("title")
+                if not t:
+                    continue
+                seg = d["segs"][-1][2] if d["segs"] else 0
+                old = idx.get(t)
+                if old is None or seg >= old[1]:
+                    idx[t] = (u, seg)
+            idx = {t: u for t, (u, _) in idx.items()}
+            self._sym_title_idx = idx
+        return idx.get(title)
+
+    def cbb_symbol_board_map(self):
+        """CBB 黑盒：SYMBOL META docType=17，title 即模板板名。
+        实例 Symbol 属性值 = 符号文档 uuid（V3 实测），故同时提供
+        uuid 键与标题键两种映射。"""
+        if self._cbb_sym_map is None:
+            m = {}
+            for u, d in self._docs.items():
+                if d["docType"] != "SYMBOL":
+                    continue
+                mt = self._meta.get(u) or {}
+                if mt.get("docType") == 17 and mt.get("title"):
+                    m[u] = mt["title"]
+                    m.setdefault(mt["title"], mt["title"])
+            self._cbb_sym_map = m
+        return self._cbb_sym_map
 
 
 # ---------------------------------------------------------------- 解析层
@@ -1106,10 +1533,14 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
                           f"{explicit!r} 不存在", file=sys.stderr)
                 continue
         if tmpl is None:
-            # 立创EDA 自带映射：同目录 .eprj2 的 structure.blockSymbols
-            # （Symbol uuid -> 模板板名），比端口匹配更可靠
+            # CBB 符号映射：优先后端自带（Epro2DB 原生 blockSymbols 等价物，
+            # 键=符号标题），其次同目录 .eprj2 的 structure.blockSymbols
+            # （Symbol uuid -> 模板板名）
             su = sym_uuid_of.get(des)
-            mapped = _cbb_symbol_map(db).get(su or "") if su else None
+            getter = getattr(db, "cbb_symbol_board_map", None)
+            mapped = getter().get(su or "") if (getter and su) else None
+            if mapped is None and su:
+                mapped = _cbb_symbol_map(db).get(su)
             if mapped:
                 tmpl = _resolve_cbb_target(db, sig, mapped)
         if tmpl is None:
@@ -1150,10 +1581,13 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
         if not t_dom:
             continue
         t_sheet = parse_sheet(db, tmpl)
-        # 模板端口名 -> 内部网络 token 集（经 PORT 合成位号反查）
-        port_titles = {f"PORT{c['cid']}": c["title"]
-                       for c in t_sheet["components"]
-                       if not c.get("designator") and c.get("title")}
+        # 模板端口名 -> 内部网络 token 集（经 PORT 合成位号反查）。
+        # 端口名取 Name 属性优先（V3 实例 title 位是 partId），title 兜底。
+        port_titles = {}
+        for c in t_sheet["components"]:
+            if not c.get("designator") and c.get("title"):
+                nm = (c.get("attrs") or {}).get("Name") or c.get("title")
+                port_titles[f"PORT{c['cid']}"] = nm
         port_net = {}
         for (tdes, tpin), net in t_dom.items():
             t = port_titles.get(tdes)
@@ -1319,8 +1753,8 @@ def _collect_pinmap_data(db, sheet, page_name):
             pt_wires.setdefault(k, set())
     recs = db.sheet_records(page_name)
     wires = []
+    net_of = {}
     if recs:
-        net_of = {}
         for a in recs:
             if not isinstance(a, list) or len(a) < 2:
                 continue
@@ -2443,6 +2877,10 @@ def main():
         out("未找到 .eprj2，请用 --eprj 指定路径")
         sys.exit(1)
     def open_db(p):
+        if str(p).lower().endswith(".epro2"):
+            print(f"[lceda_reader] 检测到 .epro2（V3 导出）读取：{p}",
+                  file=sys.stderr)
+            return Epro2DB(p)
         if str(p).lower().endswith(".epro"):
             # 提示走 stderr：stdout 可能是 --json 消费方的数据通道
             print(f"[lceda_reader] 检测到 .epro ZIP 导出包，自动解包读取：{p}",

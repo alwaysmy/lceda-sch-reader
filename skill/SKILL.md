@@ -72,19 +72,22 @@ description: Use when the user asks to read, query, search, extract, or verify c
   引脚 `pin_type`（Undefined/IN/OUT/BI/Power）用于信号方向。**注意**：V2.2 数组
   格式无官方 V3 的 electric 字段，pin_type 从符号 "Pin Type" ATTR 读取——多数
   芯片符号未标注该属性（实测为 Undefined），**不可依赖它判断信号方向**。
-- **`.epro`（ZIP 工程导出）直接支持**：`--eprj x.epro` 或自动探测（目录内只有
-  .epro 时自动选中）。内部格式差异（WIRE 平铺点链、COMPONENT a[2]=符号 uuid、
-  页标题 `板名::页名`）已在 EproDB 后端归一化，命令用法与 .eprj2 完全一致。
-  `.epro2/.epru`（V3 增量日志备份）暂不支持。
+- **`.epro`（V2 ZIP 导出）与 `.epro2`（V3 ZIP 导出）均直接支持**：`--eprj`
+  显式或自动探测。EproDB/Epro2DB 后端把格式差异归一化（V3：Y 向上坐标取反、
+  CANVAS 原点、COMPONENT.partId 即符号内 PART 名、符号类型=META.docType
+  （17=CBB/18=电源/19=NetPort/22=Short/25=OffPage）、引脚名键
+  Pin Name/Pin Number），命令用法与 .eprj2 完全一致。`.epro2` 的 .epru 为
+  增量日志（同 uuid 多段按 ticket 合并）。
 - **CBB（复用块，symbol_type=17）已支持展开**：黑盒实例位号 CBBn。匹配
-  优先级：`--cbb-map 位号=板名/页名` 显式指定 > **同目录 .eprj2 的
-  structure.blockSymbols 符号映射**（立创EDA 自带登记表，自动探测加载）>
-  端口名集合匹配（内容相同的副本页如 `_old` 归为等价取其一；多模板歧义时
-  stderr 告警并跳过）。展开后 netlist/trace/netfind/nets/pins 出现
+  优先级：`--cbb-map 位号=板名/页名` 显式指定 > **后端原生精确映射**
+  （.epro: `symbols[uuid].title`=板名，即立创EDA 导入还原机制；.epro2:
+  SYMBOL META docType=17；同目录 .eprj2 的 structure.blockSymbols 亦可）>
+  端口名集合匹配（兜底；内容相同的副本页如 `_old` 归为等价取其一；多模板
+  歧义时 stderr 告警并跳过）。**单文件即可精确展开，不要求组合文件**。
+  展开后 netlist/trace/netfind/nets/pins 出现
   `CBBn.内部位号` 条目（如 `CBB6.U13`），net 为"内部网络,父网络"并集——
-  链路分析可贯通 CBB 内部。注意：`.epro` 文件内**无**实例→模板链接字段
-  （Reuse Block/BatchReuse 为空）；`pinmap` 仍是黑盒视图；`find` 不索引
-  展开位号（查内部器件直接查模板页）；CBB 模板页在 .epro 中作为独立
+  链路分析可贯通 CBB 内部。注意：`pinmap` 仍是黑盒视图；`find` 不索引
+  展开位号（查内部器件直接查模板页）；CBB 模板页在导出文件中作为独立
   "板"列出。**新版 .eprj2（documents 表空、内容在加密 history_data）当前
   不支持读取内容**，仅 structure 可读（见 TODO.md）。
 - **DNP（未贴装）标志已纳入链路分析**：实例属性 `Add into BOM=no` 或
@@ -116,10 +119,9 @@ description: Use when the user asks to read, query, search, extract, or verify c
   描述为准（如 0Ω 跳线按型号含 0000 识别，电阻也可能标为 U 或别的位号）。**不要根据
   位号前缀判断器件类型**，用 `components` 的 device 字段。
 - 同号位器件跨板重复：汇报必须带"哪个板哪个页"（见上文汇报规范）。
-- `.epro2` 备份是 zip（内含 `.epru`，V3 key-value 式 `DOCHEAD||body` **增量日志**，
-  同 type+id 多条记录按 ticket/client 最终一致性合并），与 `.eprj2` 内数组式
-  全量快照语义一致但写法不同。**`.epro` 已支持（EproDB 后端），`.epro2/.epru`
-  暂不支持**——备份文件仅作历史归档，读取主工程请用 .eprj2 或 .epro。
+- `.epro2` 是 zip（内含 `project2.json` + `.epru` V3 增量日志 + IMAGE 缩略图），
+  与 `.eprj2`/`.epro` 语义一致但写法不同（详见 Epro2DB 后端）。三格式
+  （.eprj2/.epro/.epro2）均已支持，单文件即可完整读取。
 
 ## 多工程使用（关联工程分析）
 
