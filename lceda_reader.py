@@ -884,8 +884,15 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
         desc = dmap.get(du, ("", "", ""))[2] if du else ""
         if _is_zero_ohm(c.get("title"), desc):
             jumpers.add(c.get("designator"))
-    des2dnp = {c.get("designator"): bool(c.get("dnp"))
-               for c in sheet["components"]}
+    # 位号 -> DNP 映射：除真实 Designator 外，同时映射合成位号
+    # （SHORT{cid}/PORT{cid}——短接符/NetFlag 无 Designator 属性，
+    #   否则 DNP 短接符查不到会被错误合并）
+    des2dnp = {}
+    for c in sheet["components"]:
+        d = bool(c.get("dnp"))
+        des2dnp[c.get("designator")] = d
+        des2dnp[f"SHORT{c['cid']}"] = d
+        des2dnp[f"PORT{c['cid']}"] = d
     for des in jumpers:
         plist = comp_pins.get(des, [])
         if len(plist) == 2:
