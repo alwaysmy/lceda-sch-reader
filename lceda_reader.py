@@ -146,6 +146,28 @@ class SchemaBackend(ABC):
     def datasheet_rows(self):
         """[{"device": 名, "url": Datasheet URL}]"""
 
+    @abstractmethod
+    def hierarchy(self):
+        """工程内层级（立创EDA 工程面板语义）：
+        {"project": 工程名,
+         "boards": [{"uuid", "title",
+                     "schematics": [{"uuid", "title",
+                                     "pages": [{uuid,title}]}],
+                     "pcbs": [{"uuid", "title"}]}],
+         "free": {"schematics": [...], "pages": [...], "pcbs": [...]}}
+        free = 未归属任何板的原理图/页/PCB；旧版 .eprj2 无板层数据时全部
+        归 free（如实呈现，不虚构板）。"""
+
+    @abstractmethod
+    def hierarchy(self):
+        """工程内层级（立创EDA 工程面板语义）：
+        {"project": 工程名,
+         "boards": [{"uuid", "title",
+                     "schematics": [{"uuid", "title", "pages": [{uuid,title}]}],
+                     "pcbs": [{"uuid", "title"}]}],
+         "free": {"schematics": [...], "pages": [...], "pcbs": [...]}}
+        free = 未归属任何板的原理图/页/PCB（旧版 .eprj2 无板层时全部归 free）。"""
+
 def out(s=""):
     print(s)
 
@@ -328,6 +350,33 @@ class LcedaDB(SchemaBackend):
         return [{"device": name_map.get(du, ("", "", ""))[0] or
                  name_map.get(du, ("", "", ""))[1] or du, "url": v}
                 for v, du in raw]
+
+    def hierarchy(self):
+        """旧版 .eprj2 无板层数据（boards 表空、PCB 无关联字段）——
+        如实呈现：全部原理图（含页）与 PCB 归入 free。"""
+        pages_by_sch = {}
+        sch_order = []
+        seen = set()
+        sn = self.schem_map()
+        for u, t, s, dt in self.sheets():
+            if s not in seen:
+                seen.add(s)
+                disp = sn.get(s, (s, s))
+                sch_order.append({"uuid": s,
+                                  "title": disp[0] or disp[1] or s,
+                                  "pages": []})
+            if dt == 1:
+                pages_by_sch.setdefault(s, []).append(
+                    {"uuid": u, "title": t})
+        for ent in sch_order:
+            ent["pages"] = pages_by_sch.get(ent["uuid"], [])
+        pcbs = [{"uuid": u, "title": (t or u)}
+                for u, t in self.cur.execute(
+                    "SELECT uuid, display_title FROM documents "
+                    "WHERE docType=3")]
+        return {"project": self.project_name(), "boards": [],
+                "free": {"schematics": sch_order, "pages": [],
+                         "pcbs": pcbs}}
 
     def symbol_pins(self, symbol_uuid):
         """components.dataStr（SYMBOL 定义）-> 引脚表
@@ -539,6 +588,46 @@ class EproDB(SchemaBackend):
                 d = self.device_map().get(uuid, ("", "", ""))
                 rows.append({"device": d[1] or d[0] or uuid, "url": url})
         return rows
+
+    def hierarchy(self):
+        """板 → {原理图(页), PCB}；.epro 数据完备（boards 含 schematic+pcb），
+        无游离实体时 free 为空。"""
+        pcb_title = {}
+        for u, p in (self.obj.get("pcbs") or {}).items():
+            pcb_title[u] = (p.get("title") or p.get("name") or u
+                            if isinstance(p, dict) else str(p))
+        sch_title = {u: (s.get("name") or u)
+                     for u, s in self._schematics.items()}
+        # 页按 板 聚合（sheets() 行 = (page_uuid, "板::页", 板名, 1)）
+        pages_by_board = {}
+        for pu, title, bt, _dt in self.sheets():
+            pages_by_board.setdefault(bt, []).append(
+                {"uuid": pu, "title": title.split("::", 1)[-1]})
+        boards, used_sch, used_pcb = [], set(), set()
+        for bname, b in self._boards.items():
+            su = b.get("schematic")
+            pu_ = b.get("pcb")
+            used_sch.add(su)
+            used_pcb.add(pu_)
+            boards.append({
+                "uuid": bname, "title": bname,
+                "schematics": [{"uuid": su,
+                                "title": sch_title.get(su, su or ""),
+                                "pages": sorted(
+                                    pages_by_board.get(bname, []),
+                                    key=lambda x: natkey(x["title"]))}],
+                "pcbs": ([{"uuid": pu_, "title": pcb_title.get(pu_, pu_)}]
+                         if pu_ else [])})
+        free_sch = [{"uuid": u, "title": sch_title.get(u, u),
+                     "pages": sorted(pages_by_board.get(
+                         sch_title.get(u, u), []),
+                         key=lambda x: natkey(x["title"]))}
+                    for u in self._schematics if u not in used_sch]
+        free_pcb = [{"uuid": u, "title": pcb_title.get(u, u)}
+                    for u in pcb_title if u not in used_pcb]
+        return {"project": self.project_name(), "boards": boards,
+                "free": {"schematics": free_sch, "pages": [],
+                         "pcbs": free_pcb}}
 
     def device_attrs(self, device_uuid):
         dev = self._devices.get(device_uuid)
@@ -904,6 +993,55 @@ class Epro2DB(SchemaBackend):
                 dm = self.device_map().get(u, ("", "", ""))
                 rows.append({"device": dm[1] or dm[0] or u, "url": url})
         return rows
+
+    def hierarchy(self):
+        """板 → {原理图(页), PCB}；游离判定：SCH 无 board 且标题匹配不到
+        同名 BOARD（CBB 模板按标题归板）；PCB META.board 为空 → 游离。"""
+        board_uuid_title = {u: t for u, t, _ in self._boards}
+        board_titles = set(board_uuid_title.values())
+        sch_of_board = {}
+        free_sch = []
+        for u, s in self._schs.items():
+            bt = board_uuid_title.get(s["board"])
+            if not bt:
+                t = re.sub(r"\.sch.*$", "", s["title"] or "")
+                bt = t if t in board_titles else None
+            entry = {"uuid": u, "title": s["title"] or u}
+            if bt:
+                sch_of_board.setdefault(bt, []).append(
+                    (s.get("zIndex") or 0, entry))
+            else:
+                free_sch.append(entry)
+        pages_by_sch = {}
+        for pu, p in self._pages.items():
+            pages_by_sch.setdefault(p["schematic"], []).append(
+                {"uuid": pu, "title": p["title"]})
+        pcb_meta = {u: (self._meta.get(u) or {})
+                    for u, d in self._docs.items() if d["docType"] == "PCB"}
+        boards = []
+        claimed_pcb = set()
+        for bu, bt, _z in self._boards:
+            slst = []
+            for _z, e in sorted(sch_of_board.get(bt, []),
+                                key=lambda x: x[0]):
+                e["pages"] = sorted(pages_by_sch.get(e["uuid"], []),
+                                    key=lambda x: natkey(x["title"]))
+                slst.append(e)
+            plst = [{"uuid": u, "title": (m.get("title") or u)}
+                    for u, m in sorted(pcb_meta.items())
+                    if m.get("board") == bu]
+            claimed_pcb.update(e["uuid"] for e in plst)
+            boards.append({"uuid": bu, "title": bt,
+                           "schematics": slst, "pcbs": plst})
+        for e in free_sch:
+            e["pages"] = sorted(pages_by_sch.get(e["uuid"], []),
+                                key=lambda x: natkey(x["title"]))
+        free_pcbs = [{"uuid": u, "title": (m.get("title") or u)}
+                     for u, m in sorted(pcb_meta.items())
+                     if u not in claimed_pcb]
+        return {"project": self.project_name(), "boards": boards,
+                "free": {"schematics": free_sch, "pages": [],
+                         "pcbs": free_pcbs}}
 
     def symbol_pins(self, symbol_uuid):
         """SYMBOL 文档 -> 引脚表。键：ATTR 'Pin Name'/'Pin Number'/'Pin Type'
@@ -2193,6 +2331,36 @@ def cmd_pinmap(db, args):
         outj(rows)
 
 
+def cmd_tree(db, args):
+    """工程层级树：工程 → 板 → {原理图(页), PCB} + 游离实体。
+    对应立创EDA 工程面板语义；--json 输出 hierarchy 结构。"""
+    h = db.hierarchy()
+    if args.json:
+        outj(h)
+        return
+    out(f"工程: {h['project']}")
+    for b in h["boards"]:
+        out(f"├─ 板: {b['title']}")
+        sl = b["schematics"]
+        for i, s in enumerate(sl):
+            pages = ", ".join(p["title"] for p in s["pages"])
+            last_sch = (i == len(sl) - 1) and not b["pcbs"]
+            pre = "│   └─ " if last_sch else "│   ├─ "
+            out(f"{pre}原理图: {s['title']}（{len(s['pages'])} 页: {pages}）")
+        for j, p in enumerate(b["pcbs"]):
+            last = j == len(b["pcbs"]) - 1
+            out(f"│   {'└─ ' if last else '├─ '}PCB: {p['title']}")
+    fr = h["free"]
+    items = ([("原理图", s["title"],
+               f"（{len(s['pages'])} 页）" if s["pages"] else "")
+              for s in fr["schematics"]]
+             + [("PCB", p["title"], "") for p in fr["pcbs"]])
+    if items:
+        out("└─ 游离（未归属板）:")
+        for kind, title, extra in items:
+            out(f"    {kind}: {title}{extra}")
+
+
 def cmd_nets(db, args):
     """页内网络连接：网络名 -> 归属元件（连通域精确方案，与 pinmap 同源）。"""
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
@@ -2999,6 +3167,9 @@ def main():
 
     sub.add_parser("list", help="列出板与页").set_defaults(fn=cmd_list)
     sub.add_parser("boards", help="列出每页的 @Board Name/@Page Name").set_defaults(fn=cmd_boards)
+
+    p = sub.add_parser("tree", help="工程层级树: 板→原理图(页)/PCB + 游离实体")
+    p.set_defaults(fn=cmd_tree)
 
     p = sub.add_parser("components", help="列出页内元件(设计符/型号/值)")
     p.add_argument("sheet", nargs="?", default=None)

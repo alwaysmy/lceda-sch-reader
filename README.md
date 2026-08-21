@@ -12,6 +12,7 @@ rem 建议先设置 UTF-8 输出，避免中文在 GBK 控制台乱码
 set PYTHONIOENCODING=utf-8
 
 python lceda_reader.py list                 rem 列出全部板(Schematic)与页(sheet)
+python lceda_reader.py tree                 rem 工程层级树: 工程→板→{原理图(页),PCB}+游离实体
 python lceda_reader.py boards               rem 列出每页的 @Board Name/@Page Name 标题块
 python lceda_reader.py components [页名]     rem 页内元件：设计符/型号/显示名/参数描述
 python lceda_reader.py nets <页名>           rem 页内网络连接（stub端点归属元件）
