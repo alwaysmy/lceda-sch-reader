@@ -200,6 +200,24 @@ def natkey(s):
     return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", s)]
 
 
+# dom 网络集合的内部分隔符（UNICODE 分隔符，正常网络名不会包含）。
+# 历史值可能为逗号拼接，net_tokens 同时兼容。
+NET_SEP = "\u241f"
+
+
+def net_tokens(v):
+    """dom 网络字段 -> 网络名列表（兼容 NET_SEP 与历史逗号拼接）。"""
+    v = str(v or "")
+    if NET_SEP in v:
+        return [t for t in v.split(NET_SEP) if t]
+    return [t for t in v.split(",") if t]
+
+
+def net_disp(v):
+    """显示/JSON 输出：内部分隔符转逗号（保持既有消费方兼容）。"""
+    return str(v or "").replace(NET_SEP, ", ")
+
+
 class LcedaDB(SchemaBackend):
     """立创EDA 专业版 .eprj2（V2.2 SQLite，旧版保存格式）后端。"""
 
@@ -356,7 +374,7 @@ class LcedaDB(SchemaBackend):
                 elif a[3] == "Pin Type":
                     pin_types[a[2]] = a[4]
         for pid, p in pins.items():
-            p["name"] = names.get(pid)
+            p["name"] = names.get(pid) or numbers.get(pid) or "1"
             p["number"] = numbers.get(pid)
             p["pin_type"] = pin_types.get(pid)
         return {"pins": list(pins.values()), "bbox": bbox, "parts": sorted(
@@ -586,7 +604,7 @@ class EproDB(SchemaBackend):
                 elif a[3] == "Pin Type":
                     pin_types[a[2]] = a[4]
         for pid, p in pins.items():
-            p["name"] = names.get(pid)
+            p["name"] = names.get(pid) or numbers.get(pid) or "1"
             p["number"] = numbers.get(pid)
             p["pin_type"] = pin_types.get(pid)
         result = {"pins": list(pins.values()), "bbox": bbox,
@@ -780,6 +798,10 @@ class Epro2DB(SchemaBackend):
                 pid = b.get("parentId") or ""
                 k = b.get("key")
                 v = b.get("value")
+                if k == "NO_CONNECT" and pid:
+                    # V3 的 NO_CONNECT parentId 为 "实例cid-引脚id"（横杠复合），
+                    # 归一化为 V2 的直接拼接形式供 parse_sheet 匹配
+                    pid = pid.replace("-", "")
                 if k and v is not None:
                     attrs.append(["ATTR", h.get("id") or "", pid, k, str(v)])
             elif t == "WIRE":
@@ -961,7 +983,7 @@ class Epro2DB(SchemaBackend):
                     elif k == "Pin Type":
                         ptypes[pid] = b.get("value")
         for pid, p in pins.items():
-            p["name"] = names.get(pid)
+            p["name"] = names.get(pid) or numbers.get(pid) or "1"
             p["number"] = numbers.get(pid)
             p["pin_type"] = ptypes.get(pid)
         result["pins"] = list(pins.values())
@@ -989,6 +1011,38 @@ class Epro2DB(SchemaBackend):
             idx = {t: u for t, (u, _) in idx.items()}
             self._sym_title_idx = idx
         return idx.get(title)
+
+    def cbb_instances(self):
+        """V3 复用块实例唯一精确映射（INSTANCE 文档）：
+        {(母图页uuid, 实例cid): {"src": 模板页uuid,
+                                  "members": {模板元件cid: 母图位号}}}
+        INSTANCE uuid 编码 = `<sch>_$<母图页>~<实例cid>_$<模板页>`；
+        INSTANCE_ATTR.id = 模板页内元件 cid，值.Designator = 母图位号
+        （实测 22/22 全中）。这是立创EDA 自身的展开对应关系，唯一无需推断。"""
+        idx = getattr(self, "_cbb_inst_idx", None)
+        if idx is None:
+            idx = {}
+            for u, d in self._docs.items():
+                if d["docType"] != "INSTANCE":
+                    continue
+                parts = u.split("_$")
+                if len(parts) < 3 or "~" not in parts[1]:
+                    continue
+                page = parts[1].split("~", 1)[0]
+                inst_cid = parts[1].split("~", 1)[1]
+                src = parts[2]
+                members = {}
+                for ln in self._iter_doc_lines(u):
+                    if '"INSTANCE_ATTR"' not in ln[:24]:
+                        continue
+                    h = self._jl(ln.partition("||")[0])
+                    b = self._jl(ln.partition("||")[2].rstrip("|"))
+                    if h and b and b.get("Designator"):
+                        members[h.get("id")] = b["Designator"]
+                if src:
+                    idx[(page, inst_cid)] = {"src": src, "members": members}
+            self._cbb_inst_idx = idx
+        return idx
 
     def cbb_symbol_board_map(self):
         """CBB 黑盒：SYMBOL META docType=17，title 即模板板名。
@@ -1517,7 +1571,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
         ns = set()
         for pt in pts:
             ns |= dom_nets.get(domain_of_pt[pt], set())
-        result[(des, pin)] = ",".join(sorted(ns))
+        result[(des, pin)] = NET_SEP.join(sorted(ns))
     # 7) CBB（复用块）展开：模板内部电路按端口映射进实例网络
     if _cbb_depth < 2:
         _expand_cbb(db, sheet, comp_pins, result, _cbb_depth)
@@ -1637,12 +1691,18 @@ def _resolve_cbb_target(db, sig, val):
 def _expand_cbb(db, sheet, comp_pins, result, depth=0):
     """CBB（复用块，symbol_type=17）展开：模板页内部连通域按"端口名"映射
     进实例引脚所在网络。
-    - 实例→模板匹配：--cbb-map 显式指定优先；否则按"端口名集合相等"匹配
-      全部页——内容指纹唯一组采纳（_old 镜像视为等价取其一），多组歧义则
-      stderr 告警并跳过（.epro 文件内无实例→模板链接字段，实测 Reuse Block/
-      BatchReuse 属性为空、Device 引用悬空）。
-    - 展开条目：位号 "实例位号.模板位号"（如 CBB6.U13），
-      net = 模板内部网络 ∪ 端口对应父网络（逗号并集）——netlist/trace/
+    - 实例→模板匹配链（前三级为**唯一精确映射**，无需人工指定）：
+      1) --cbb-map 显式指定；
+      2) V3 INSTANCE 文档（Epro2DB）：uuid 编码 `<sch>_$<母图页>~<实例cid>_$
+         <模板页>`，立创EDA 自身的展开对应关系；
+      3) 后端原生符号映射（.epro symbols.title / .epro2 META docType=17 /
+         同目录 .eprj2 blockSymbols）——符号标题与模板板名一一对应；
+      4) 端口名集合匹配（仅兜底）：**仅唯一候选才自动采用**，多候选一律
+         告警跳过（副本页内容可能不同，不做等价假设）。
+    - 展开条目位号：**母图位号优先**（V3 INSTANCE_ATTR 提供模板元件cid→
+      母图位号映射；分析母图按母图位号，分析模板页本身自然是模板位号），
+      格式 "实例位号.成员位号"；无成员映射时回退模板位号。
+    - net = 模板内部网络 ∪ 端口对应父网络（NET_SEP 并集）——netlist/trace/
       netfind 的同名归并据此贯通 CBB 内部电路。
     - 模板内部桥接多端口的域会把多个父网络经展开条目连通（正确语义）。"""
     if depth >= 2 or not comp_pins:
@@ -1657,14 +1717,18 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
         return
     sig = _cbb_sig(db)
     self_uuid = sheet.get("title")
-    # 实例位号 -> Symbol uuid（供 blockSymbols 映射查询）
-    sym_uuid_of = {c.get("designator"): c.get("symbol_uuid")
-                   for c in sheet.get("components", [])
-                   if c.get("designator")}
+    # 实例位号 -> cid / Symbol uuid
+    cid_of, sym_uuid_of = {}, {}
+    for c in sheet.get("components", []):
+        if c.get("designator"):
+            cid_of[c["designator"]] = c.get("cid")
+            sym_uuid_of[c["designator"]] = c.get("symbol_uuid")
+    inst_map = db.cbb_instances() if hasattr(db, "cbb_instances") else {}
     for des, pin_names in sorted(insts.items()):
         if not pin_names:
             continue
         tmpl = None
+        members = {}
         explicit = _CBB_MAP.get(des)
         if explicit:
             tmpl = _resolve_cbb_target(db, sig, explicit)
@@ -1676,9 +1740,14 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
                           f"{explicit!r} 不存在", file=sys.stderr)
                 continue
         if tmpl is None:
-            # CBB 符号映射：优先后端自带（Epro2DB 原生 blockSymbols 等价物，
-            # 键=符号标题），其次同目录 .eprj2 的 structure.blockSymbols
-            # （Symbol uuid -> 模板板名）
+            # ② V3 INSTANCE 文档：母图页+实例cid -> 模板页（唯一精确）
+            info = inst_map.get((self_uuid, cid_of.get(des)))
+            if info and info.get("src"):
+                tmpl = info["src"]
+                members = info.get("members") or {}
+        if tmpl is None:
+            # ③ 后端原生符号映射（.epro symbols.title / .epro2 docType=17 /
+            #    同目录 .eprj2 structure.blockSymbols）
             su = sym_uuid_of.get(des)
             mapped = db.cbb_symbol_board_map().get(su or "") if su else None
             if mapped is None and su:
@@ -1686,30 +1755,19 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
             if mapped:
                 tmpl = _resolve_cbb_target(db, sig, mapped)
         if tmpl is None:
-            cands = {u: v for u, v in sig.items()
-                     if v[0] == pin_names and u != self_uuid}
-            groups = {}
-            for u, (ports, fp, title) in cands.items():
-                groups.setdefault(fp, []).append((u, title))
-            if len(groups) == 1:
-                members = sorted(groups.popitem()[1], key=lambda x: x[1])
-                tmpl = members[0][0]
-                if len(members) > 1:
-                    wk = ("cbb_mirror", des, members[0][1])
-                    if wk not in _WARN_ONCE:
-                        _WARN_ONCE.add(wk)
-                        print(f"[lceda_reader] CBB {des}: 多个内容等价模板，"
-                              f"选用 {members[0][1]}（其余: "
-                              f"{','.join(t for _, t in members[1:])}）",
-                              file=sys.stderr)
-            elif len(groups) > 1:
+            # ④ 端口名集合匹配（兜底）：仅唯一候选自动采用——副本页内容
+            #    可能不同（指纹不含连线），不做等价/多数决假设
+            cands = [u for u, v in sig.items()
+                     if v[0] == pin_names and u != self_uuid]
+            if len(cands) == 1:
+                tmpl = cands[0]
+            elif len(cands) > 1:
+                names = sorted(sig[u][2] for u in cands)
                 wk = ("cbb_ambig", des)
                 if wk not in _WARN_ONCE:
                     _WARN_ONCE.add(wk)
-                    names = sorted(t for ms in groups.values()
-                                   for _, t in ms)
-                    print(f"[lceda_reader] CBB {des}: 端口匹配到多个不同内容"
-                          f"模板 {names}，未展开；请用 --cbb-map "
+                    print(f"[lceda_reader] CBB {des}: 端口匹配到多个候选模板 "
+                          f"{names}，无法唯一确定，未展开；请用 --cbb-map "
                           f"{des}=<页名> 指定", file=sys.stderr)
             else:
                 wk = ("cbb_nomatch", des, tuple(sorted(pin_names)))
@@ -1723,6 +1781,9 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
         if not t_dom:
             continue
         t_sheet = parse_sheet(db, tmpl)
+        # 模板 designator -> 元件 cid（供母图位号映射）
+        t_des2cid = {c.get("designator"): c.get("cid")
+                     for c in t_sheet["components"] if c.get("designator")}
         # 模板端口名 -> 内部网络 token 集（经 PORT 合成位号反查）。
         # 端口名取 Name 属性优先（V3 实例 title 位是 partId），title 兜底。
         port_titles = {}
@@ -1734,10 +1795,9 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
         for (tdes, tpin), net in t_dom.items():
             t = port_titles.get(tdes)
             if t:
-                for tok in net.split(","):
-                    if tok:
-                        port_net.setdefault(t, set()).add(tok)
-        # 实例引脚 -> 爐网络 token 集
+                for tok in net_tokens(net):
+                    port_net.setdefault(t, set()).add(tok)
+        # 实例引脚 -> 父网络 token 集
         plist = next((v for k, v in comp_pins.items()
                       if (k if isinstance(k, str) else k[0]) == des), [])
         pin_parent = {}
@@ -1745,14 +1805,15 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
             if p.get("sym_type") != 17:
                 continue
             k = p.get("key") or p.get("pin")
-            toks = {t for t in result.get((des, k), "").split(",") if t}
+            toks = set(net_tokens(result.get((des, k))))
             if toks:
                 pin_parent[p["pin"]] = toks
-        # 展开：模板引脚所在域触及端口内部网络 -> 并入对应父网络
+        # 展开：模板引脚所在域触及端口内部网络 -> 并入对应父网络。
+        # 条目位号 = 实例位号.成员位号（母图位号优先，回退模板位号）
         for (tdes, tpin), net in t_dom.items():
             if tdes.startswith(("PORT", "SHORT")):
                 continue
-            toks = {t for t in net.split(",") if t}
+            toks = set(net_tokens(net))
             if not toks:
                 continue
             hit = set()
@@ -1760,7 +1821,9 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
                 if (toks & ptoks) and pname in pin_parent:
                     hit |= pin_parent[pname]
             if hit:
-                result[(f"{des}.{tdes}", tpin)] = ",".join(sorted(toks | hit))
+                mdes = members.get(t_des2cid.get(tdes) or "", tdes)
+                result[(f"{des}.{mdes}", tpin)] = \
+                    NET_SEP.join(sorted(toks | hit))
 
 
 def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
@@ -2089,7 +2152,8 @@ def cmd_pinmap(db, args):
                                 wire_peers.append(tag)
             pinmap.append({
                 "pin": p.get("key") or p["pin"], "number": p["number"],
-                "net": net or "",
+                "net": net_disp(net),
+                "nets": net_tokens(net),
                 "not_connected": bool(p.get("no_connect")),
                 "pin_type": p.get("pin_type"),
                 "peers": sorted(set(peers)),
@@ -2112,7 +2176,8 @@ def cmd_pinmap(db, args):
                     key = (row["designator"], pm["pin"])
                     n = dom.get(key, "")
                     if n:
-                        pm["net"] = n
+                        pm["net"] = net_disp(n)
+                        pm["nets"] = net_tokens(n)
                         pm["net_inferred"] = True
     if not args.json:
         for row in rows:
@@ -2123,7 +2188,7 @@ def cmd_pinmap(db, args):
                 wp = f"  [wire: {','.join(pm['wire_peers'])}]" if pm["wire_peers"] else ""
                 tag = "*" if pm.get("net_inferred") else ""
                 nc = " [X]" if pm["not_connected"] else ""
-                out(f"  {pm['pin']:12s} (#{pm['number']:>3})  {pm['net'] or '(未命名)'}{tag}{nc}{peer}{wp}")
+                out(f"  {pm['pin']:12s} (#{pm['number']:>3})  {net_disp(pm['net']) or '(未命名)'}{tag}{nc}{peer}{wp}")
     if args.json:
         outj(rows)
 
@@ -2148,7 +2213,7 @@ def cmd_nets(db, args):
     net_comps = {}
     for (des, pin), net in dom.items():
         if net:
-            for tok in net.split(","):
+            for tok in net_tokens(net):
                 net_comps.setdefault(tok, set()).add(des)
     # 网络 -> 端点坐标
     net_pts = {}
@@ -2192,9 +2257,9 @@ def cmd_pins(db, args):
         if key in seen:
             continue
         seen.add(key)
-        rows.append({"designator": des, "pin": pin, "net": net})
+        rows.append({"designator": des, "pin": pin, "net": net_disp(net)})
         if not args.json:
-            out(f"{des:10s} {pin:12s} {net or '(未命名)'}")
+            out(f"{des:10s} {pin:12s} {net_disp(net) or '(未命名)'}")
     # NO_CONNECT 引脚：不参与连通域，单独列出（标记 X，net 恒为空）
     for (des, cid), plist in sorted(comp_pins.items()):
         for p in plist:
@@ -2267,7 +2332,7 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
         pin_net_of = {}
         for (des, pin), net in dom.items():
             if net:
-                for tok in net.split(","):
+                for tok in net_tokens(net):
                     pin_net_of.setdefault(tok, set()).add(des.upper())
         for net, des_set in pin_net_of.items():
             e = net_index.setdefault(net, {})
@@ -2354,7 +2419,7 @@ def _trace_multi(dbs, args):
             pin_net_of = {}
             for (des, pin), net in dom.items():
                 if net:
-                    for tok in net.split(","):
+                    for tok in net_tokens(net):
                         pin_net_of.setdefault(tok, set()).add(des.upper())
             for net, des_set in pin_net_of.items():
                 e = net_index.setdefault(net, {})
@@ -2494,7 +2559,7 @@ def cmd_netlist(db, args):
         for (des, pin), net in dom.items():
             if not net:
                 continue
-            for tok in net.split(","):
+            for tok in net_tokens(net):
                 e = agg.setdefault(tok, {"sheets": [], "components": []})
                 if title not in e["sheets"]:
                     e["sheets"].append(title)
@@ -2557,7 +2622,7 @@ def cmd_find(db_or_dbs, args):
         tag = f"工程{h['eprj']} " if multi else ""
         out(f"{tag}{des}: {h['sheet']} (sch={h['schematic']})  {h['title']}  {h['device']}")
         if h.get("nets"):
-            uniq = sorted({t for n in h["nets"] for t in n.split(",")})
+            uniq = sorted({t for n in h["nets"] for t in net_tokens(n)})
             out(f"    nets: {','.join(uniq)}")
 
 
@@ -2621,7 +2686,7 @@ def _netfind_one(db, net_name):
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
         d, n = sn.get(sch, ("?", "?"))
         for (des, pin), net in dom.items():
-            if net and target in [t.upper() for t in net.split(",")]:
+            if net and target in [t.upper() for t in net_tokens(net)]:
                 key = (title, d)
                 found.setdefault(key, []).append((des, pin))
     rows = []
@@ -2701,7 +2766,7 @@ def _conn_pairs(db_a, db_b):
                     re.search(r"连接器|插针|排针|排母|端子|座|header|connector",
                               descs.get(des, ""), re.I)
                 if is_conn and len(pin) <= 3:
-                    res.setdefault(des, {}).setdefault(pin, set()).add(net or "")
+                    res.setdefault(des, {}).setdefault(pin, set()).update(net_tokens(net) or [''])
         return res
 
     na = conn_nets(db_a)

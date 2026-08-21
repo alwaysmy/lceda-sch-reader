@@ -4,14 +4,22 @@
 
 - **状态**：暂不做。2026-08-21 发现新版立创EDA 保存的 .eprj2 采用新存储格式：
   `documents`/`schematics` 等主表为空，内容在 `history_data`（base64 + 加密，
-  香农熵 8.00 bits/byte，非 gzip/zlib/zstd），工程树在
+  香农熵 8.00 bits/byte，已排除 raw-deflate/zlib/gzip），工程树在
   `project_structures.structure`（明文 JSON：boards/schematics/sheets/pcbs/
   blockSymbols）。branches/projects 行含 branch_uuid。
-- **影响**：当前工具读此类文件得到空结果（无报错）。
-- **可读部分**：structure 明文——已用于 CBB 块符号映射（见
-  docs/epro支持与DNP处理-2026-08-21.md 第八节）。
-- **触发条件**：拿到足够多的样本 + 官方格式说明（或社区逆向成果）后再评估
-  解密/解析。
+- **影响**：detect_backend 已识别并**明确报错 + 指引导出 .epro/.epro2**
+  （不再静默空结果）。
+- **可读部分**：structure 明文——已用于 CBB 块符号映射。
+- **逆向侦察结论（2026-08-21）**：LCEDA 安装目录
+  `C:\Program Files\lceda-pro\resources\app`（Electron，非 asar 打包）；
+  主进程 app.js 含 history_data 建表语句但**无解密代码**；加密/解密逻辑在
+  渲染层 `assets/pro-ui/<版本>/js/ui.js`（17MB webpack 混淆包）中，静态
+  分析成本高。**可行路径 = CDP 动态分析**：以
+  `--remote-debugging-port=9222` 启动立创EDA → CDP 连接后 hook
+  WebCrypto(subtle.decrypt)/自定义解密函数或直接读取编辑器内存中的文档
+  JSON。需要现场配合（打开目标工程），作为独立任务规划。
+- **触发条件**：用户需要直接读新版 .eprj2 且接受 CDP 动态方案时启动；
+  当前以"导出 .epro/.epro2"为标准工作流替代。
 
 ## BUS / BUSENTRY 总线支持（未实施）
 

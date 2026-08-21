@@ -79,17 +79,23 @@ description: Use when the user asks to read, query, search, extract, or verify c
   Pin Name/Pin Number），命令用法与 .eprj2 完全一致。`.epro2` 的 .epru 为
   增量日志（同 uuid 多段按 ticket 合并）。
 - **CBB（复用块，symbol_type=17）已支持展开**：黑盒实例位号 CBBn。匹配
-  优先级：`--cbb-map 位号=板名/页名` 显式指定 > **后端原生精确映射**
-  （.epro: `symbols[uuid].title`=板名，即立创EDA 导入还原机制；.epro2:
+  优先级（前三为**唯一精确映射，单文件即可，无需 --cbb-map**）：
+  `--cbb-map` 显式指定 > **V3 INSTANCE 文档**（.epro2：uuid 编码
+  母图页+实例cid→模板页，并含成员母图位号）> 后端原生符号映射
+  （.epro `symbols[uuid].title`=板名，即立创EDA 导入还原机制；.epro2
   SYMBOL META docType=17；同目录 .eprj2 的 structure.blockSymbols 亦可）>
-  端口名集合匹配（兜底；内容相同的副本页如 `_old` 归为等价取其一；多模板
-  歧义时 stderr 告警并跳过）。**单文件即可精确展开，不要求组合文件**。
-  展开后 netlist/trace/netfind/nets/pins 出现
-  `CBBn.内部位号` 条目（如 `CBB6.U13`），net 为"内部网络,父网络"并集——
-  链路分析可贯通 CBB 内部。注意：`pinmap` 仍是黑盒视图；`find` 不索引
-  展开位号（查内部器件直接查模板页）；CBB 模板页在导出文件中作为独立
-  "板"列出。**新版 .eprj2（documents 表空、内容在加密 history_data）当前
-  不支持读取内容**，仅 structure 可读（见 TODO.md）。
+  端口名集合匹配（仅兜底；**只接受唯一候选**，多候选告警跳过——副本页
+  内容可能不同，不做等价假设）。**单文件即可精确展开，不要求组合文件**。
+  展开后 netlist/trace/netfind/nets/pins 出现 `CBBn.成员位号` 条目，
+  **母图位号优先**（INSTANCE_ATTR 记录的改名成员），未改名成员沿用模板
+  位号（与立创EDA 行为一致）；net 为"内部网络,父网络"并集——链路分析可
+  贯通 CBB 内部。注意：`pinmap` 仍是黑盒视图；`find` 不索引展开位号
+  （查内部器件直接查模板页）；CBB 模板页在导出文件中作为独立"板"列出。
+  **新版 .eprj2（documents 表空、内容加密 history_data）不支持内容读取，
+  打开时明确报错并指引导出 .epro/.epro2。**
+- **dom 网络多值分隔**：内部使用 UNICODE 分隔符（U+241F）规避网络名含
+  逗号的歧义；输出兼容——`pinmap.pins[].net` 为逗号显示，精确列表见
+  `nets` 数组字段；历史逗号拼接值自动兼容。
 - **DNP（未贴装）标志已纳入链路分析**：实例属性 `Add into BOM=no` 或
   `Convert to PCB=no` 视为 DNP——**0Ω 跳线/短接符两脚不再合并网络**（物理
   未贴装），pinmap 输出 `dnp:true` + 文本 `[DNP]` 标记。审查时注意：
