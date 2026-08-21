@@ -289,10 +289,10 @@ class EproDB:
         self.path = Path(path)
         self.zip = zipfile.ZipFile(self.path)
         self.obj = json.loads(self.zip.read("project.json"))
-        self.devices = self.obj.get("devices", {})
-        self.symbols = self.obj.get("symbols", {})
-        self.boards = self.obj.get("boards", {})
-        self.schematics = self.obj.get("schematics", {})
+        self._devices = self.obj.get("devices", {})
+        self._symbols = self.obj.get("symbols", {})
+        self._boards = self.obj.get("boards", {})
+        self._schematics = self.obj.get("schematics", {})
         self._names = set(self.zip.namelist())
         self._page_index = {}      # unique_title -> (schematic uuid, page id)
         self._records_cache = {}
@@ -305,11 +305,11 @@ class EproDB:
         return self.path.stem
 
     def _build_page_index(self):
-        for board_name, board in self.boards.items():
+        for board_name, board in self._boards.items():
             sch_uuid = board.get("schematic")
             if not sch_uuid:
                 continue
-            sch = self.schematics.get(sch_uuid, {})
+            sch = self._schematics.get(sch_uuid, {})
             for page in sch.get("sheets", []):
                 page_name = page.get("display_title") or page.get("name") or str(page.get("id"))
                 key = f"{board_name}::{page_name}"
@@ -318,7 +318,7 @@ class EproDB:
                 if pu:
                     self._page_index.setdefault(pu, (sch_uuid, int(page["id"])))
         # CBB module schematics are also reachable through their own namespace.
-        for sch_uuid, sch in self.schematics.items():
+        for sch_uuid, sch in self._schematics.items():
             sch_name = sch.get("name", sch_uuid)
             for page in sch.get("sheets", []):
                 page_name = page.get("display_title") or page.get("name") or str(page.get("id"))
@@ -333,16 +333,16 @@ class EproDB:
 
     # -- lceda_reader-compatible API ----------------------------------------
     def schematics(self):
-        return [(name, name, name) for name in self.boards]
+        return [(name, name, name) for name in self._boards]
 
     def schem_map(self):
-        return {name: (name, name) for name in self.boards}
+        return {name: (name, name) for name in self._boards}
 
     def sheets(self, doc_type=1):
         rows = []
-        for board_name, board in self.boards.items():
+        for board_name, board in self._boards.items():
             sch_uuid = board.get("schematic")
-            sch = self.schematics.get(sch_uuid, {})
+            sch = self._schematics.get(sch_uuid, {})
             for page in sch.get("sheets", []):
                 title = f"{board_name}::{page.get('display_title') or page.get('name') or page['id']}"
                 rows.append((page.get("uuid"), title, board_name, 1))
@@ -368,7 +368,9 @@ class EproDB:
         return text
 
     def sheet_records(self, doc_key, doc_type=1):
-        """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，复合标题回退）。"""
+        """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，复合标题回退）。
+        .epro 的 COMPONENT a[2] 是符号 uuid 引用（非 V2 的标题字符串），
+        这里归一化为空串，实例名由 parse_sheet 从 Name 属性兜底。"""
         if doc_key in self._records_cache:
             cached = self._records_cache[doc_key]
             if isinstance(cached, list):
@@ -379,9 +381,13 @@ class EproDB:
         records = []
         for line in text.splitlines():
             try:
-                records.append(json.loads(line))
+                a = json.loads(line)
             except Exception:
                 continue
+            if isinstance(a, list) and len(a) > 2 and a[0] == "COMPONENT":
+                a = list(a)
+                a[2] = ""
+            records.append(a)
         self._records_cache[doc_key] = records
         return records
 
@@ -389,7 +395,7 @@ class EproDB:
         if self._dmap_cache is not None:
             return self._dmap_cache
         out = {}
-        for uuid, dev in self.devices.items():
+        for uuid, dev in self._devices.items():
             if not isinstance(dev, dict):
                 continue
             attrs = dev.get("attributes") or {}
@@ -402,7 +408,7 @@ class EproDB:
                     break
             out[uuid] = (dev.get("title") or "", disp,
                          attrs.get("Description") or dev.get("description") or "")
-        for uuid, sym in self.symbols.items():
+        for uuid, sym in self._symbols.items():
             if not isinstance(sym, dict) or uuid in out:
                 continue
             out[uuid] = (sym.get("title") or "", "", "")
@@ -411,7 +417,7 @@ class EproDB:
 
     def datasheet_rows(self):
         rows = []
-        for uuid, dev in self.devices.items():
+        for uuid, dev in self._devices.items():
             if not isinstance(dev, dict):
                 continue
             url = (dev.get("attributes") or {}).get("Datasheet")
@@ -421,7 +427,7 @@ class EproDB:
         return rows
 
     def device_attrs(self, device_uuid):
-        dev = self.devices.get(device_uuid)
+        dev = self._devices.get(device_uuid)
         if isinstance(dev, dict):
             return dict(dev.get("attributes") or {})
         return {}
@@ -429,7 +435,7 @@ class EproDB:
     def symbol_of_device(self, device_uuid):
         if not device_uuid:
             return None
-        dev = self.devices.get(device_uuid)
+        dev = self._devices.get(device_uuid)
         if isinstance(dev, dict) and isinstance(dev.get("attributes"), dict):
             return dev["attributes"].get("Symbol")
         return None
@@ -496,6 +502,42 @@ class EproDB:
 
 # ---------------------------------------------------------------- 解析层
 
+def _norm_segs(segs):
+    """走线段归一化：兼容两种格式 -> [(x1,y1,x2,y2),...]
+    - V2 (.eprj2) 嵌套段：[[x1,y1,x2,y2], [x2,y2,x3,y3], ...]
+    - .epro 平铺点链：[x1,y1,x2,y2,y3,y3...]（相邻点成段，可多条）
+      实测 .epro 一条 WIRE 的 segs 为若干平铺数组，如
+      [[1425,745,1390,745,1390,735,...], [1390,735,1425,735]]。"""
+    out = []
+    if not isinstance(segs, list):
+        return out
+    for s_ in segs:
+        if not isinstance(s_, list) or len(s_) < 4 or \
+                not all(isinstance(v, (int, float)) for v in s_):
+            continue
+        if len(s_) == 4:
+            out.append((s_[0], s_[1], s_[2], s_[3]))
+        elif len(s_) % 2 == 0:
+            pts = [(s_[i], s_[i + 1]) for i in range(0, len(s_), 2)]
+            for p1, p2 in zip(pts, pts[1:]):
+                out.append((p1[0], p1[1], p2[0], p2[1]))
+    return out
+
+
+def _is_dnp(c):
+    """器件未贴装判定（实例属性）：Add into BOM=no 或 Convert to PCB=no。
+    典型场景：0Ω 跳线标不上BOM 表示 DNP——两脚物理不通，不得合并网络。"""
+    a = c.get("attrs") or {}
+    for k, v in a.items():
+        kl = str(k).strip().lower()
+        vl = str(v).strip().lower()
+        if vl != "no":
+            continue
+        if kl in ("add into bom", "convert to pcb"):
+            return True
+    return False
+
+
 def parse_sheet(db, doc_key):
     """把一张原理图页解析为结构化 dict。doc_key 为 document uuid（或兼容的
     复合标题），sheet_records 内部会优先按 uuid 精确查。"""
@@ -540,6 +582,11 @@ def parse_sheet(db, doc_key):
         c["symbol_uuid"] = a.get("Symbol")
         c["device_uuid"] = a.get("Device")
         c["net"] = net_of.get(c["cid"]) or a.get("Name")
+        # .epro 的 COMPONENT a[2] 是符号 uuid 引用（EproDB 已归一化为空），
+        # 实例名在 Name 属性里——title 为空时以 Name 兜底
+        if not c["title"]:
+            c["title"] = str(a.get("Name") or "")
+        c["dnp"] = _is_dnp(c)
         # 保留有 Symbol/Device 的实例（含 short 短接符/netport 等无 title 的）
         if c["title"] or c["designator"] or c["symbol_uuid"] or c["device_uuid"]:
             sheet["components"].append(c)
@@ -547,9 +594,9 @@ def parse_sheet(db, doc_key):
     for wid, segs in wires:
         net = net_of.get(wid) or None
         pts = set()
-        for s_ in segs:
-            pts.add((s_[0], s_[1]))
-            pts.add((s_[2], s_[3]))
+        for x1, y1, x2, y2 in _norm_segs(segs):
+            pts.add((x1, y1))
+            pts.add((x2, y2))
         sheet["nets"].append({"net": net, "points": sorted(pts)})
     # 页标题块：以含 "@" 属性（@Board Name 等）的组件判定；兜底 cid=="e1"
     # （立创EDA 标题块通常是页内首个组件 e1，但不依赖该约定）
@@ -760,13 +807,16 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
 
     # 1) WIRE 记录内部端点相接 => 连通域（归一化后 union，避免尾差断链）
     wire_pts = {}   # wire_id -> set(points)
+    seglist = []
     for wid, segs in wires:
         pts = set()
-        for s_ in segs:
-            if isinstance(s_, list) and len(s_) >= 4 and \
-                    all(isinstance(v, (int, float)) for v in s_):
-                pts.add(norm_pt((s_[0], s_[1])))
-                pts.add(norm_pt((s_[2], s_[3])))
+        for x1, y1, x2, y2 in _norm_segs(segs):
+            p1 = norm_pt((x1, y1))
+            p2 = norm_pt((x2, y2))
+            pts.add(p1)
+            pts.add(p2)
+            if p1 != p2:
+                seglist.append((p1, p2))
         if not pts:
             continue
         wire_pts[wid] = pts
@@ -791,15 +841,6 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
             endp_all.add(npt)
             if n["net"] and npt not in endp_net:
                 endp_net[npt] = n["net"]
-    seglist = []
-    for wid, segs in wires:
-        for s_ in segs:
-            if isinstance(s_, list) and len(s_) >= 4 and \
-                    all(isinstance(v, (int, float)) for v in s_):
-                p1 = norm_pt((s_[0], s_[1]))
-                p2 = norm_pt((s_[2], s_[3]))
-                if p1 != p2:
-                    seglist.append((p1, p2))
 
     def on_segment(px, py):
         for p1, p2 in seglist:
@@ -829,16 +870,22 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
 
     # 3) 0Ω 跳线 + Short Symbol(短接符 symbolType=22) 两脚物理直连合并
     #    （0Ω 判定用 title+desc 精确 token，见 _is_zero_ohm）
+    #    DNP（Add into BOM=no / Convert to PCB=no）器件未贴装，两脚物理不通，
+    #    不合并——两侧网络保持独立，输出以 [DNP] 标记供审计确认。
     jumpers = set()
     try:
         dmap = db.device_map() if db is not None else {}
     except Exception:
         dmap = {}
     for c in sheet["components"]:
+        if c.get("dnp"):
+            continue
         du = c.get("device_uuid") or c.get("symbol_uuid") or ""
         desc = dmap.get(du, ("", "", ""))[2] if du else ""
         if _is_zero_ohm(c.get("title"), desc):
             jumpers.add(c.get("designator"))
+    des2dnp = {c.get("designator"): bool(c.get("dnp"))
+               for c in sheet["components"]}
     for des in jumpers:
         plist = comp_pins.get(des, [])
         if len(plist) == 2:
@@ -849,6 +896,8 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
     # Short Symbol（无 title 的合成 SHORT 实例，sym_type=22）：两脚同网络
     for key, plist in list(comp_pins.items()):
         des = key if isinstance(key, str) else key[0]
+        if des2dnp.get(des):
+            continue
         if len(plist) == 2 and any(p.get("sym_type") == 22 for p in plist):
             k0 = (des, pin_key(plist[0]))
             k1 = (des, pin_key(plist[1]))
@@ -926,23 +975,28 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
         sym_types = {p.get("sym_type") for p in plist}
         title = ""
         uuid = ""
+        c_dnp = False
         for c in sheet.get("components", []):
             if c.get("designator") == des:
                 title = c.get("title") or ""
                 uuid = c.get("device_uuid") or c.get("symbol_uuid") or ""
+                c_dnp = bool(c.get("dnp"))
                 break
         d = dev_map.get(uuid) if uuid else None
         device = (d[0] if d else "") or title
         is_short = 22 in sym_types
         # 0Ω 判定：title + 器件 desc 双源精确 token（"10R"/"50R0" 等不再误判）
         is_zero = _is_zero_ohm(title, d[2] if d else "")
+        # DNP（不上BOM/不上PCB）器件未贴装：direct 恒为 False（两脚不通）
+        is_dnp = bool(c_dnp)
         kind = "short" if is_short else ("jumper" if is_zero else "passive")
         net_a = _direct_net(a, des)
         net_b = _direct_net(b, des)
         rows.append({
             "designator": des,
             "kind": kind,
-            "direct": is_short or is_zero,
+            "direct": (is_short or is_zero) and not is_dnp,
+            "dnp": is_dnp,
             "device": device or title,
             "title": title,
             "pin_a": _key(a), "number_a": a.get("number"),
@@ -1032,8 +1086,8 @@ def _collect_pinmap_data(db, sheet, page_name):
                 wires.append((a[1], a[2]))
         for wid, segs in wires:
             nm = net_of.get(wid)
-            for s_ in segs:
-                for p in (np_((s_[0], s_[1])), np_((s_[2], s_[3]))):
+            for x1, y1, x2, y2 in _norm_segs(segs):
+                for p in (np_((x1, y1)), np_((x2, y2))):
                     if nm and endp.get(p) is None:
                         endp[p] = nm
                     pt_wires.setdefault(p, set()).add(wid)
@@ -1202,11 +1256,9 @@ def cmd_pinmap(db, args):
                 for wid in hit_wires:
                     for w in wires:
                         if w[0] == wid:
-                            for s_ in w[1]:
-                                if isinstance(s_, list) and len(s_) >= 4 and \
-                                        all(isinstance(v, (int, float)) for v in s_):
-                                    wire_pts.add((round(s_[0], 1), round(s_[1], 1)))
-                                    wire_pts.add((round(s_[2], 1), round(s_[3], 1)))
+                            for x1, y1, x2, y2 in _norm_segs(w[1]):
+                                wire_pts.add((round(x1, 1), round(y1, 1)))
+                                wire_pts.add((round(x2, 1), round(y2, 1)))
                 for (odes, ocid), plist in comp_pins.items():
                     if odes == des:
                         continue
@@ -1227,7 +1279,8 @@ def cmd_pinmap(db, args):
         if comp_pins.get((des, c["cid"])):
             sym_t = comp_pins[(des, c["cid"])][0].get("sym_type")
         rows.append({"designator": des, "symbol": c["title"],
-                     "symbol_type": sym_t, "pins": pinmap})
+                     "symbol_type": sym_t, "dnp": bool(c.get("dnp")),
+                     "pins": pinmap})
     # 连通域网络名解析：为 net 为空的引脚推断网络名（走线拓扑，无启发式噪声）
     if not args.no_domain:
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
@@ -1243,7 +1296,8 @@ def cmd_pinmap(db, args):
                         pm["net_inferred"] = True
     if not args.json:
         for row in rows:
-            out(f"== {row['designator']} ({row['symbol']}) ==")
+            dtag = " [DNP]" if row.get("dnp") else ""
+            out(f"== {row['designator']} ({row['symbol']}){dtag} ==")
             for pm in row["pins"]:
                 peer = f"  <- {','.join(pm['peers'])}" if pm["peers"] else ""
                 wp = f"  [wire: {','.join(pm['wire_peers'])}]" if pm["wire_peers"] else ""
@@ -2142,8 +2196,9 @@ def main():
         sys.exit(1)
     def open_db(p):
         if str(p).lower().endswith(".epro"):
-            out(f"[lceda_reader] 检测到 .epro ZIP 导出包，自动解包读取：{p}")
-            out("[lceda_reader] 读取 project.json / SHEET/*.esch / SYMBOL/*.esym / DEVICE 数据 ...")
+            # 提示走 stderr：stdout 可能是 --json 消费方的数据通道
+            print(f"[lceda_reader] 检测到 .epro ZIP 导出包，自动解包读取：{p}",
+                  file=sys.stderr)
             return EproDB(p)
         return LcedaDB(p)
 

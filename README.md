@@ -139,12 +139,17 @@ dataStr = "base64" 前缀 + base64(gzip(NDJSON 文本))
   `--json` 时 `value` 字段已结构化解析。
 - 坐标单位：0.01 inch（官方约定）。
 
-### 兼容备份格式（.epro2 / .epru）
+### 兼容备份格式（.epro / .epro2 / .epru）
 
-`.epro2` 备份文件为 zip 容器：内含 `*.epru`（**不压缩**的 `DOCHEAD||body`
-key-value 式记录序列，文档间以 `|\n` 分隔，docType 含 FOOTPRINT/SYMBOL/DEVICE/
-BOARD/SCH/SCH_PAGE/PCB/CONFIG）+ `IMAGE/*.webp` 位图。此为官方 V3 key-value
-式日志格式（与 .eprj2 内的数组式记录不同，但语义一致）。
+- **`.epro`（ZIP 工程导出，立创EDA"另存为"产物）已直接支持**：`--eprj x.epro`
+  或自动探测。内部格式与 .eprj2 的差异已在 EproDB 后端归一化：
+  WIRE segs 为平铺点链 `[x1,y1,x2,y2,y3,...]`（相邻点成段）、COMPONENT a[2]
+  为符号 uuid 引用（实例名取 Name 属性）、页标题为 `板名::页名` 复合式。
+  已用 Piezo Driver（5MB，4 板修订+CBB）与 TPS56C230 Buck 两真实导出验证。
+- `.epro2` 备份文件为 zip 容器：内含 `*.epru`（**不压缩**的 `DOCHEAD||body`
+  key-value 式记录序列，文档间以 `|\n` 分隔，docType 含 FOOTPRINT/SYMBOL/DEVICE/
+  BOARD/SCH/SCH_PAGE/PCB/CONFIG）+ `IMAGE/*.webp` 位图。此为官方 V3 key-value
+  式日志格式（与 .eprj2 内的数组式记录不同，但语义一致），暂未支持。
 
 ## 三、网络查询方法（配对/链路/跨页）
 

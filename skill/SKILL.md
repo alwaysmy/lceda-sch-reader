@@ -72,6 +72,16 @@ description: Use when the user asks to read, query, search, extract, or verify c
   引脚 `pin_type`（Undefined/IN/OUT/BI/Power）用于信号方向。**注意**：V2.2 数组
   格式无官方 V3 的 electric 字段，pin_type 从符号 "Pin Type" ATTR 读取——多数
   芯片符号未标注该属性（实测为 Undefined），**不可依赖它判断信号方向**。
+- **`.epro`（ZIP 工程导出）直接支持**：`--eprj x.epro` 或自动探测（目录内只有
+  .epro 时自动选中）。内部格式差异（WIRE 平铺点链、COMPONENT a[2]=符号 uuid、
+  页标题 `板名::页名`）已在 EproDB 后端归一化，命令用法与 .eprj2 完全一致。
+  `.epro2/.epru`（V3 增量日志备份）暂不支持。
+- **DNP（未贴装）标志已纳入链路分析**：实例属性 `Add into BOM=no` 或
+  `Convert to PCB=no` 视为 DNP——**0Ω 跳线/短接符两脚不再合并网络**（物理
+  未贴装），pinmap 输出 `dnp:true` + 文本 `[DNP]` 标记。审查时注意：
+  - DNP 0R 两侧网络各自独立是**预期行为**，不是断链 bug；
+  - 非 DNP 的 0R 才是跨网络桥；
+  - "不上BOM"的测试点等非桥器件不影响连通性。
 - **NO_CONNECT（X 不连接）**：文件内为 ATTR `NO_CONNECT=yes`，挂在
   `实例id+引脚id` 复合编号上（如 `e130e198` = 实例 e130 + PIN e198）。
   `pins`/`pinmap` 输出 `[X]`（json `not_connected:true`）标记，且**不参与**
@@ -97,9 +107,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
 - 同号位器件跨板重复：汇报必须带"哪个板哪个页"（见上文汇报规范）。
 - `.epro2` 备份是 zip（内含 `.epru`，V3 key-value 式 `DOCHEAD||body` **增量日志**，
   同 type+id 多条记录按 ticket/client 最终一致性合并），与 `.eprj2` 内数组式
-  全量快照语义一致但写法不同。**当前工具仅支持 .eprj2（V2.2）**；V3 后端方案
-  已记录在 README（单工具双后端，按扩展名自动判断），暂未实现——备份文件
-  仅作历史归档，读取主工程请用 .eprj2。
+  全量快照语义一致但写法不同。**`.epro` 已支持（EproDB 后端），`.epro2/.epru`
+  暂不支持**——备份文件仅作历史归档，读取主工程请用 .eprj2 或 .epro。
 
 ## 多工程使用（关联工程分析）
 
