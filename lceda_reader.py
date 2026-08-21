@@ -81,7 +81,9 @@ def _multi_json(dbs, rows):
 def find_eprj(path=None):
     """定位工程文件（通用，不绑定任何工程目录结构）：
     1) 显式 --eprj 优先；
-    2) 否则搜索当前工作目录及其父目录的 *.eprj2，再退化为 *.epro。"""
+    2) 否则搜索当前工作目录及其父目录的 *.eprj2——命中多个时列出并要求
+       显式指定（避免 glob 顺序不确定导致静默读错工程）；
+    3) 无 .eprj2 时退化为 *.epro 同样逻辑。"""
     import glob
     if path:
         return path
@@ -94,10 +96,16 @@ def find_eprj(path=None):
         bases.append(parent)
         d = parent
     for pattern in ("*.eprj2", "*.epro"):
+        hits = []
         for base in bases:
-            hits = glob.glob(os.path.join(base, pattern))
-            if hits:
-                return hits[0]
+            hits.extend(glob.glob(os.path.join(base, pattern)))
+        if len(hits) == 1:
+            return hits[0]
+        if len(hits) > 1:
+            out("发现多个工程文件，请用 --eprj 显式指定其一：")
+            for h in sorted(set(hits)):
+                out(f"  {h}")
+            sys.exit(1)
     return None
 
 
@@ -112,6 +120,7 @@ class LcedaDB:
         self.conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         self.cur = self.conn.cursor()
         self._text_cache = {}
+        self._dmap_cache = None
 
     def project_name(self):
         """可读项目名。工程文件内 projects.name 为立创EDA默认名（New Project_日期，
@@ -179,6 +188,8 @@ class LcedaDB:
     def device_map(self):
         """uuid -> (title, display_title, description)
         Symbol uuid -> components 表；Device uuid -> devices 表（两表互斥）。"""
+        if self._dmap_cache is not None:
+            return self._dmap_cache
         m = {}
         for r in self.cur.execute(
                 "SELECT uuid, title, display_title, description FROM devices"):
@@ -187,6 +198,7 @@ class LcedaDB:
                 "SELECT uuid, title, display_title, description FROM components"):
             if r[0] not in m:
                 m[r[0]] = (r[1], r[2] or "", r[3] or "")
+        self._dmap_cache = m
         return m
 
     def device_attrs(self, device_uuid):
@@ -202,6 +214,15 @@ class LcedaDB:
             "SELECT value FROM attributes WHERE device_uuid=? AND key='Symbol'",
             (device_uuid,)).fetchone()
         return r[0] if r else None
+
+    def datasheet_rows(self):
+        raw = list(self.cur.execute(
+            "SELECT value, device_uuid FROM attributes "
+            "WHERE key='Datasheet' AND value!=''"))
+        name_map = self.device_map()
+        return [{"device": name_map.get(du, ("", "", ""))[0] or
+                 name_map.get(du, ("", "", ""))[1] or du, "url": v}
+                for v, du in raw]
 
     def symbol_pins(self, symbol_uuid):
         """components.dataStr（SYMBOL 定义）-> 引脚表
@@ -276,6 +297,7 @@ class EproDB:
         self._page_index = {}      # unique_title -> (schematic uuid, page id)
         self._records_cache = {}
         self._symbol_pin_cache = {}
+        self._dmap_cache = None
         self._build_page_index()
 
     def project_name(self):
@@ -364,19 +386,39 @@ class EproDB:
         return records
 
     def device_map(self):
+        if self._dmap_cache is not None:
+            return self._dmap_cache
         out = {}
         for uuid, dev in self.devices.items():
             if not isinstance(dev, dict):
                 continue
             attrs = dev.get("attributes") or {}
-            out[uuid] = (dev.get("title") or "",
-                         attrs.get("Supplier Part") or "",
+            # display 位（型号列）优先取 MPN 类属性，Supplier Part 仅作兜底
+            disp = ""
+            for k in ("Manufacturer Part", "Manufacturer Part Number",
+                      "MPN", "Part Number", "Supplier Part"):
+                if attrs.get(k):
+                    disp = attrs[k]
+                    break
+            out[uuid] = (dev.get("title") or "", disp,
                          attrs.get("Description") or dev.get("description") or "")
         for uuid, sym in self.symbols.items():
             if not isinstance(sym, dict) or uuid in out:
                 continue
             out[uuid] = (sym.get("title") or "", "", "")
+        self._dmap_cache = out
         return out
+
+    def datasheet_rows(self):
+        rows = []
+        for uuid, dev in self.devices.items():
+            if not isinstance(dev, dict):
+                continue
+            url = (dev.get("attributes") or {}).get("Datasheet")
+            if url:
+                d = self.device_map().get(uuid, ("", "", ""))
+                rows.append({"device": d[1] or d[0] or uuid, "url": url})
+        return rows
 
     def device_attrs(self, device_uuid):
         dev = self.devices.get(device_uuid)
@@ -480,7 +522,7 @@ def parse_sheet(db, doc_key):
                           "attrs": {}}
         elif kind == "ATTR" and len(a) >= 5:
             cid, name, val = a[2], a[3], a[4]
-            if name == "NO_CONNECT" and str(val).lower() in ("yes", "1"):
+            if name == "NO_CONNECT" and str(val).strip().lower() in ("yes", "1", "true"):
                 # parentId 为 compId+pinId 复合编号（如 e130e198 = 实例 e130 + PIN e198）
                 sheet["no_connect"].add(cid)
             if cid in comps:
@@ -509,10 +551,16 @@ def parse_sheet(db, doc_key):
             pts.add((s_[0], s_[1]))
             pts.add((s_[2], s_[3]))
         sheet["nets"].append({"net": net, "points": sorted(pts)})
-    # 页标题块
+    # 页标题块：以含 "@" 属性（@Board Name 等）的组件判定；兜底 cid=="e1"
+    # （立创EDA 标题块通常是页内首个组件 e1，但不依赖该约定）
+    tb = None
     for c in comps.values():
-        if c["cid"] == "e1":
-            sheet["attrs"] = c["attrs"]
+        if any(str(k).startswith("@") for k in c["attrs"]):
+            tb = c
+            break
+    if tb is None and "e1" in comps:
+        tb = comps["e1"]
+    sheet["attrs"] = tb["attrs"] if tb else {}
     return sheet
 
 
@@ -560,7 +608,10 @@ def parse_value(description):
 # ---------------------------------------------------------------- 输出层
 
 def _fmt_comp(c, dev, with_value=True):
-    d = dev.get(c.get("symbol_uuid") or c.get("device_uuid") or "",
+    # 器件信息优先按 Device uuid 查（devices 表是型号/描述真源）；
+    # Symbol uuid 仅作无 Device 属性实例的兜底——同一符号可被多个器件复用，
+    # 按 Symbol 查会错并不同器件（实测本工程 5 个符号对应多个器件）。
+    d = dev.get(c.get("device_uuid") or c.get("symbol_uuid") or "",
                 ("", "", ""))
     row = {
         "designator": c.get("designator"),
@@ -647,11 +698,28 @@ def cmd_components(db, args):
             if args.json:
                 rows.append({"sheet": st, "schematic": d, **fr})
             else:
-                sym = fr["symbol_uuid"] or fr["device_uuid"] or ""
+                sym = fr["device_uuid"] or fr["symbol_uuid"] or ""
                 drec = dev.get(sym, ("", "", ""))
                 out(f"{fr['designator']}\t{fr['title']}\t{drec[0]}\t{drec[1]}\t{drec[2]}")
     if args.json:
         outj(rows)
+
+
+# 0Ω 跳线判定（title 与 desc 双源，精确 token 匹配）：
+# - "0R"/"0Ω"/"0ohm"：0 前不能是数字/小数点（排除 10R/50R0/10Ω），R 后不能是
+#   字母数字（排除 "0710RL" 的 0R 后随 L、"50R0" 的 0R 后随 0）
+# - "0000"：独立 token（阻值码/封装码，如 "0Ω (0000)"），排除 MPN 内嵌
+#   （如 0603WAF0000T5E 的 0000 由 desc 阻值:0Ω 判定）
+ZERO_VALUE_RE = re.compile(r"(?:^|[^0-9.])0(?:\.0)?(?:Ω|ohm|R(?![A-Za-z0-9]))",
+                           re.I)
+ZERO_CODE_RE = re.compile(r"(?:^|[^0-9A-Za-z])0000(?![0-9A-Za-z])", re.I)
+
+
+def _is_zero_ohm(title, desc=""):
+    t = str(title or "")
+    d = str(desc or "")
+    return bool(ZERO_CODE_RE.search(t) or ZERO_VALUE_RE.search(t) or
+                ZERO_VALUE_RE.search(d) or ZERO_CODE_RE.search(d))
 
 
 def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
@@ -708,49 +776,69 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp):
         for p in pts:
             union(p, first)
 
-    # 2) 引脚命中点并入连通域
-
+    # 2) 引脚命中点并入连通域——精确拓扑匹配（实测全工程 2933 引脚命中全部
+    #    为归一化后精确重合，容差从未需要；容差吸附反而可能把悬空引脚误连
+    #    到邻近走线）。三级判定：
+    #    a) 引脚坐标 == 某走线端点（命名或 stub）→ 并入该点所在域；
+    #    b) 引脚落在某线段中间（T 型连接，无端点）→ 与该线段两端 union；
+    #    c) 都不满足 → 真悬空，不归属任何网络。
     pin_hit = {}   # (des,pin) -> [命中端点...]（重名引脚(如 VDD×5)各保留命中点，不互相覆盖）
     endp_net = {}
+    endp_all = set()
     for n in sheet["nets"]:
-        if n["net"]:
-            for px, py in n["points"]:
-                endp_net.setdefault(norm_pt((px, py)), n["net"])
+        for px, py in n["points"]:
+            npt = norm_pt((px, py))
+            endp_all.add(npt)
+            if n["net"] and npt not in endp_net:
+                endp_net[npt] = n["net"]
+    seglist = []
+    for wid, segs in wires:
+        for s_ in segs:
+            if isinstance(s_, list) and len(s_) >= 4 and \
+                    all(isinstance(v, (int, float)) for v in s_):
+                p1 = norm_pt((s_[0], s_[1]))
+                p2 = norm_pt((s_[2], s_[3]))
+                if p1 != p2:
+                    seglist.append((p1, p2))
+
+    def on_segment(px, py):
+        for p1, p2 in seglist:
+            x1, y1 = p1
+            x2, y2 = p2
+            cross = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
+            if abs(cross) <= 0.75 and \
+                    min(x1, x2) - 0.01 <= px <= max(x1, x2) + 0.01 and \
+                    min(y1, y2) - 0.01 <= py <= max(y1, y2) + 0.01:
+                return p1, p2
+        return None
+
     for des, plist in comp_pins.items():
         for p in plist:
             if p.get("no_connect"):
                 continue
-            for (px, py), nm in endp_net.items():
-                if abs(p["x"] - px) <= 2 and abs(p["y"] - py) <= 2:
-                    pin_hit.setdefault((des, pin_key(p)), []).append((px, py))
-                    parent.setdefault((px, py), (px, py))
-                    break
-    # 引脚未直接命中命名端点时，与最近 wire 端点相连（容差2，归一化后）
-    all_wpts = set()
-    for pts in wire_pts.values():
-        for pt in pts:
-            all_wpts.add(norm_pt(pt))
-    for des, plist in comp_pins.items():
-        for p in plist:
-            if p.get("no_connect"):
+            pt = norm_pt((p["x"], p["y"]))
+            if pt in endp_all:
+                pin_hit.setdefault((des, pin_key(p)), []).append(pt)
                 continue
-            key = (des, pin_key(p))
-            if key in pin_hit:
-                continue
-            best = None
-            for (wx, wy) in all_wpts:
-                d2 = (p["x"] - wx) ** 2 + (p["y"] - wy) ** 2
-                if d2 <= 4 and (best is None or d2 < best[0]):
-                    best = (d2, (wx, wy))
-            if best:
-                pin_hit.setdefault(key, []).append(best[1])
-                parent.setdefault(best[1], best[1])
+            seg = on_segment(*pt)
+            if seg:
+                parent.setdefault(pt, pt)
+                union(pt, seg[0])
+                union(pt, seg[1])
+                pin_hit.setdefault((des, pin_key(p)), []).append(pt)
 
     # 3) 0Ω 跳线 + Short Symbol(短接符 symbolType=22) 两脚物理直连合并
+    #    （0Ω 判定用 title+desc 精确 token，见 _is_zero_ohm）
     jumpers = set()
+    try:
+        dmap = db.device_map() if db is not None else {}
+    except Exception:
+        dmap = {}
     for c in sheet["components"]:
-        if c.get("title") and "0000" in c["title"]:
-            jumpers.add(c["designator"])
+        du = c.get("device_uuid") or c.get("symbol_uuid") or ""
+        desc = dmap.get(du, ("", "", ""))[2] if du else ""
+        if _is_zero_ohm(c.get("title"), desc):
+            jumpers.add(c.get("designator"))
     for des in jumpers:
         plist = comp_pins.get(des, [])
         if len(plist) == 2:
@@ -823,16 +911,10 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
     def _key(p):
         return p.get("key") or p.get("pin")
 
-    def _direct_net(p):
-        if not endp:
-            return pinmap.get((des, _key(p)), "")
-        ax, ay = p.get("x"), p.get("y")
-        if (ax, ay) in endp:
-            return endp[(ax, ay)] or ""
-        for ox in (-1, 0, 1):
-            for oy in (-1, 0, 1):
-                if (ax + ox, ay + oy) in endp and endp[(ax + ox, ay + oy)]:
-                    return endp[(ax + ox, ay + oy)]
+    def _direct_net(p, des):
+        pt = (round(p.get("x", 0), 1), round(p.get("y", 0), 1))
+        if endp and pt in endp:
+            return endp[pt] or ""
         return pinmap.get((des, _key(p)), "")
 
     dev_map = db.device_map() if hasattr(db, "device_map") else {}
@@ -843,22 +925,20 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
         a, b = plist
         sym_types = {p.get("sym_type") for p in plist}
         title = ""
+        uuid = ""
         for c in sheet.get("components", []):
             if c.get("designator") == des:
                 title = c.get("title") or ""
-                break
-        is_short = 22 in sym_types
-        is_zero = bool(title and re.search(r"0000|0R|0Ω|0RΩ", str(title), re.I))
-        kind = "short" if is_short else ("jumper" if is_zero else "passive")
-        net_a = _direct_net(a)
-        net_b = _direct_net(b)
-        device = ""
-        for c in sheet.get("components", []):
-            if c.get("designator") == des:
                 uuid = c.get("device_uuid") or c.get("symbol_uuid") or ""
-                d = dev_map.get(uuid)
-                device = (d[0] if d else "") or title
                 break
+        d = dev_map.get(uuid) if uuid else None
+        device = (d[0] if d else "") or title
+        is_short = 22 in sym_types
+        # 0Ω 判定：title + 器件 desc 双源精确 token（"10R"/"50R0" 等不再误判）
+        is_zero = _is_zero_ohm(title, d[2] if d else "")
+        kind = "short" if is_short else ("jumper" if is_zero else "passive")
+        net_a = _direct_net(a, des)
+        net_b = _direct_net(b, des)
         rows.append({
             "designator": des,
             "kind": kind,
@@ -876,15 +956,30 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
 
 def resolve_page(db, page_name, schematic=None):
     """按页名（+可选板名）解析页：解决同名页歧义。返回文档 uuid 或 None。
-    EproDB 的页标题是 "板名::页名" 复合格式，这里做兼容匹配。"""
+    EproDB 的页标题是 "板名::页名" 复合格式，这里做兼容匹配。
+    未指定 --schematic 且存在同名页时，取第一个匹配并向 stderr 告警。"""
     target = schematic
+    matches = []
     for uuid, title, sch, dt in db.sheets():
         if title == page_name or title.endswith("::" + page_name):
             if target is None:
-                return uuid
-            d, n = db.schem_map().get(sch, ("?", "?"))
-            if target.lower() in (d.lower(), n.lower()):
-                return uuid
+                matches.append((uuid, sch))
+            else:
+                d, n = db.schem_map().get(sch, ("?", "?"))
+                if target.lower() in (d.lower(), n.lower()):
+                    return uuid
+    if matches:
+        if len(matches) > 1:
+            sn = db.schem_map()
+            names = "/".join(sn.get(sch, ("?", "?"))[0] or "?"
+                             for _, sch in matches)
+            warn_key = ("ambig_page", page_name, names)
+            if warn_key not in _WARN_ONCE:
+                _WARN_ONCE.add(warn_key)
+                print(f"[lceda_reader] 警告: 页名 {page_name!r} 在 {names} "
+                      f"中重名，未指定 --schematic，取第一个匹配",
+                      file=sys.stderr)
+        return matches[0][0]
     return None
 
 
@@ -903,20 +998,27 @@ def _synth_designator(db, c):
     return None
 
 
+_WARN_ONCE = set()   # 进程级一次性告警（非90°旋转等）
+
+
 def _collect_pinmap_data(db, sheet, page_name):
     """提取 cmd_pinmap/trace 共用的引脚网络数据：
     返回 (comp_pins, wires, pt_wires, endp)。
     comp_pins 键为 (designator, cid)；wires 为 [(wire_id, segs)]；
     pt_wires 为 {(x,y): set(wire_id)}；endp 为 {(x,y): net}。"""
+    def np_(p):
+        return (round(p[0], 1), round(p[1], 1))
+
     endp = {}
     pt_wires = {}
     for n in sheet["nets"]:
         nm = n["net"]
         for px, py in n["points"]:
-            e = endp.setdefault((px, py), None)
+            k = np_((px, py))
+            e = endp.setdefault(k, None)
             if e is None and nm:
-                endp[(px, py)] = nm
-            pt_wires.setdefault((px, py), set())
+                endp[k] = nm
+            pt_wires.setdefault(k, set())
     recs = db.sheet_records(page_name)
     wires = []
     if recs:
@@ -931,11 +1033,12 @@ def _collect_pinmap_data(db, sheet, page_name):
         for wid, segs in wires:
             nm = net_of.get(wid)
             for s_ in segs:
-                for p in ((s_[0], s_[1]), (s_[2], s_[3])):
+                for p in (np_((s_[0], s_[1])), np_((s_[2], s_[3]))):
                     if nm and endp.get(p) is None:
                         endp[p] = nm
                     pt_wires.setdefault(p, set()).add(wid)
     comp_pins = {}
+    port_cids = set()   # symbol_type 18/19 实例 cid（端口命名只对这些实例生效）
     for c in sheet["components"]:
         des = _synth_designator(db, c)
         if not des:
@@ -944,6 +1047,8 @@ def _collect_pinmap_data(db, sheet, page_name):
         sp = db.symbol_pins(sym) if sym else None
         if not sp or not sp["pins"]:
             continue
+        if sp.get("symbol_type") in (18, 19):
+            port_cids.add(c["cid"])
         # symbol_type=22: Short 短接符；17: CBB 复用模块；18/19: NetFlag/NetPort
         # 网络命名符号。CBB 实例没有 title，但其引脚必须参与连通域分析，否则
         # CBB 与母图之间的连接会被静默漏掉；NetFlag/NetPort 引脚参与连通域，
@@ -978,14 +1083,21 @@ def _collect_pinmap_data(db, sheet, page_name):
             continue
         key = (des, c["cid"])
         plist = []
+        rot360 = (c.get("rot") or 0) % 360
+        if rot360 % 90:
+            warn_key = ("odd_rot", page_name)
+            if warn_key not in _WARN_ONCE:
+                _WARN_ONCE.add(warn_key)
+                print(f"[lceda_reader] 警告: 页 {page_name} 存在非90°倍数旋转 "
+                      f"(rot={c.get('rot')})，引脚坐标按 {rot360}° 处理可能不准",
+                      file=sys.stderr)
         for p in sp["pins"]:
             if p["part"] != part:
                 continue
             rx, ry = p["x"], p["y"]
             if c.get("mirror"):
                 rx = -rx
-            rot = (c.get("rot") or 0) % 360
-            for _ in range(int(rot // 90)):
+            for _ in range(int(rot360 // 90)):
                 rx, ry = -ry, rx
             ax, ay = c["x"] + rx, c["y"] + ry
             plist.append({
@@ -1005,12 +1117,12 @@ def _collect_pinmap_data(db, sheet, page_name):
             if name_count[p["pin"]] > 1:
                 p["key"] = f"{p['pin']}#{p['number']}"
         comp_pins[key] = plist
-    # NetFlag/NetPort 端口命名：Global Net Name 挂在实例 cid 上，若其引脚
-    # 命中端点无 wire 网络名，则以端口名补充（防御 wire 无 NET 仅靠端口命名的
-    # 场景；补进 sheet["nets"] 使连通域解析与 pinmap 同时生效）。
-    inst_cids = {c["cid"] for c in sheet["components"]}
+    # NetFlag/NetPort 端口命名：Global Net Name 挂在 18/19 实例 cid 上，若其
+    # 引脚命中端点无 wire 网络名，则以端口名补充（防御 wire 无 NET 仅靠端口
+    # 命名的场景；补进 sheet["nets"] 使连通域解析与 pinmap 同时生效）。
+    # 只认 18/19 实例——防止普通器件偶带 NET 属性时被误当端口命名。
     port_nets = {cid: nm for cid, nm in net_of.items()
-                 if nm and cid in inst_cids}
+                 if nm and cid in port_cids}
     if port_nets:
         have = set()
         for n in sheet["nets"]:
@@ -1066,16 +1178,15 @@ def cmd_pinmap(db, args):
         pinmap = []
         for p in comp_pins[key]:
             ax, ay = p["x"], p["y"]
+            pt = (round(ax, 1), round(ay, 1))
             net = None
             hit_pt = None
             hit_wires = set()
-            for (wx, wy), wids in pt_wires.items():
-                if abs(ax - wx) <= 2 and abs(ay - wy) <= 2:
-                    if hit_pt is None:
-                        hit_pt = (wx, wy)
-                    hit_wires |= wids
-                    if net is None and endp.get((wx, wy)):
-                        net = endp[(wx, wy)]
+            wids = pt_wires.get(pt)
+            if wids:
+                hit_pt = pt
+                hit_wires |= wids
+                net = endp.get(pt) or None
             # 同物理连接点的其他器件引脚 + 同 WIRE 记录的其他端点引脚
             peers = []
             wire_peers = []
@@ -1084,8 +1195,7 @@ def cmd_pinmap(db, args):
                     if odes == des:
                         continue
                     for op in plist:
-                        if abs(op["x"] - hit_pt[0]) <= 2 and \
-                                abs(op["y"] - hit_pt[1]) <= 2:
+                        if (round(op["x"], 1), round(op["y"], 1)) == hit_pt:
                             peers.append(f"{odes}.{op.get('key') or op['pin']}")
             if hit_wires:
                 wire_pts = set()
@@ -1228,8 +1338,26 @@ def cmd_pins(db, args):
         outj(rows)
 
 
-POWER_NET_RE = re.compile(r"^(GND|AGND|DGND|PGND|VCC|VDD|VSS|VBUS|D3V3|3V3|3\.3V|5V|\+3\.3V|\+5V|\+15V|-15V|15V)$",
-                          re.I)
+def is_power_net(name):
+    """电源/地网名判定（trace --no-power 用）。通用规则，不绑定具体工程：
+    - 含 GND（AGND/DGND/PGND/GND_1...）；
+    - 电源族前缀/全名：VCC/VDD/VSS/VBUS/VBAT/VPP/VREF 及其派生
+      （AVDD/DVDD/VDDA/VCCA...）；
+    - 数值电压式：5V/+3.3V/-15V/24V；
+    - 拆分电压式：3V3/D3V3/1V8/+2V5。
+    锚定全名匹配，不误伤 3V3_EN 之类使能信号。"""
+    u = str(name).upper()
+    if "GND" in u:
+        return True
+    if u in ("VCC", "VDD", "VSS", "VBUS", "VBAT", "VPP", "VREF") or \
+            u.startswith(("VCC", "VDD", "VSS", "AVDD", "AVSS", "VDDA",
+                          "VSSA", "VCCA", "VCCD", "VBUS", "VBAT")):
+        return True
+    if re.match(r"^[+-]?\d+(?:\.\d+)?V$", u):
+        return True
+    if re.match(r"^[+-]?D?\d+V\d+$", u):
+        return True
+    return False
 
 
 def cmd_trace(db_or_dbs, args):
@@ -1294,14 +1422,14 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
             for nm, e in net_index.items():
                 if sheet_title in e and cur in e[sheet_title]:
                     cur_nets.add(nm)
-        for nm in cur_nets:
+        for nm in sorted(cur_nets):
             if nm in visited_net:
                 continue
-            if args.no_power and POWER_NET_RE.match(nm):
+            if args.no_power and is_power_net(nm):
                 continue
             visited_net.add(nm)
             for sheet_title, des_set in net_index[nm].items():
-                for nxt in des_set:
+                for nxt in sorted(des_set):
                     if nxt.upper() in visited_des:
                         continue
                     visited_des.add(nxt.upper())
@@ -1406,15 +1534,15 @@ def _trace_multi(dbs, args):
             for nm, e in p["net_index"].items():
                 if sheet_title in e and cur in e[sheet_title]:
                     cur_nets.add(nm)
-        for nm in cur_nets:
+        for nm in sorted(cur_nets):
             nk = (di, nm)
             if nk in visited_net:
                 continue
-            if args.no_power and POWER_NET_RE.match(nm):
+            if args.no_power and is_power_net(nm):
                 continue
             visited_net.add(nk)
             for sheet_title, des_set in p["net_index"][nm].items():
-                for nxt in des_set:
+                for nxt in sorted(des_set):
                     k = gkey(di, nxt)
                     if k in visited:
                         continue
@@ -1448,11 +1576,11 @@ def _trace_multi(dbs, args):
                             nk = (dst_i, nm2)
                             if nk in visited_net:
                                 continue
-                            if args.no_power and POWER_NET_RE.match(nm2):
+                            if args.no_power and is_power_net(nm2):
                                 continue
                             visited_net.add(nk)
                             for st2, ds2 in e.items():
-                                for nxt in ds2:
+                                for nxt in sorted(ds2):
                                     k = gkey(dst_i, nxt)
                                     if k in visited:
                                         continue
@@ -1661,7 +1789,14 @@ def cmd_link_check(dbs, args):
 def _conn_pairs(db_a, db_b):
     """两工程间连接器网络映射对比，返回候选 (des_a, des_b, common, diff, total)。"""
     def conn_nets(db):
-        """收集全工程连接器（designator 以 H/CN/J 开头且多 pin）的网络映射。"""
+        """收集全工程连接器的网络映射。候选判定（仅产候选，最终靠网络名
+        逐 pin 一致度确认）：
+        - 位号前缀 H/J/P/CN/CON/XS；或器件描述含连接器关键词
+          （插针/排针/排母/端子/座/header/connector——覆盖 RF1/USBC1 等
+          非常规前缀）；
+        - 排除合成位号 PORT*/SHORT*（NetFlag/NetPort/短接符，非物理连接器，
+          否则会灌入数万假候选对）；
+        - 排除 NetFlag 风格引脚名（Pin1）。"""
         res = {}
         for uuid, title, sch, dt in db.sheets():
             if dt != 1:
@@ -1673,11 +1808,25 @@ def _conn_pairs(db_a, db_b):
             if pinc is None:
                 continue
             comp_pins, wires, pt_wires, endp = pinc
-            dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+            dom = resolve_nets_by_domain(db, sheet, comp_pins, wires,
+                                         pt_wires, endp)
+            dmap = db.device_map()
+            descs = {}
+            for c in sheet["components"]:
+                if c.get("designator"):
+                    du = c.get("device_uuid") or ""
+                    descs[c["designator"]] = \
+                        dmap.get(du, ("", "", ""))[2] if du else ""
             for (des, pin), net in dom.items():
-                # 连接器：H/J/P 开头或 CN 前缀；排除 C（电容）、R、U、L 等
-                if des and (des[0] in ("H", "J", "P") or des.startswith("CN")) \
-                        and len(pin) <= 3:
+                if not des or des.startswith(("PORT", "SHORT")):
+                    continue
+                if str(pin).lower().startswith("pin"):
+                    continue
+                is_conn = des[0] in ("H", "J", "P") or \
+                    des.startswith(("CN", "CON", "XS")) or \
+                    re.search(r"连接器|插针|排针|排母|端子|座|header|connector",
+                              descs.get(des, ""), re.I)
+                if is_conn and len(pin) <= 3:
                     res.setdefault(des, {}).setdefault(pin, set()).add(net or "")
         return res
 
@@ -1727,7 +1876,7 @@ def cmd_search(db_or_dbs, args):
             hits = set()
             for ln in text.splitlines():
                 if pat.search(ln):
-                    hits.add(ln.strip()[:120])
+                    hits.add(ln.strip()[:200])
             if hits:
                 d, n = sn.get(sch, ("?", "?"))
                 if args.json:
@@ -1773,7 +1922,9 @@ def cmd_bom(db, args):
             des = c.get("designator")
             if not des:
                 continue
-            key = c.get("symbol_uuid") or c.get("device_uuid") or ""
+            # BOM 按 Device uuid 归并（器件真源）；无 Device 属性时退化为
+            # Symbol uuid。按 Symbol 归并会把共用符号的不同器件错并成一行。
+            key = c.get("device_uuid") or c.get("symbol_uuid") or ""
             e = bom.setdefault(key, {"title": "", "device": "", "desc": "",
                                      "desigs": set(), "sheets": set(),
                                      "boards": set(), "value": {},
@@ -1819,19 +1970,13 @@ def cmd_bom(db, args):
 
 
 def cmd_datasheets(db, args):
-    """从 attributes 表提取 Datasheet URL 清单。"""
-    raw = list(db.cur.execute(
-        "SELECT value, device_uuid FROM attributes WHERE key='Datasheet' AND value!=''"))
-    name_map = db.device_map()
-    rows = []
-    for value, dev_uuid in raw:
-        t, d, ds = name_map.get(dev_uuid, ("", "", ""))
-        rows.append({"device": d or t or dev_uuid, "url": value})
+    """提取 Datasheet URL 清单（经后端方法，LcedaDB/EproDB 均支持）。"""
+    rows = db.datasheet_rows()
     if args.json:
         outj(rows)
         return
     if not rows:
-        out("attributes 表中无 Datasheet 记录")
+        out("无 Datasheet 记录")
     for r in rows:
         out(f"{r['device']:28s} {r['url']}")
 

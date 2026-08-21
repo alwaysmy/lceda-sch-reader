@@ -165,8 +165,9 @@ python lceda_reader.py netlist | findstr <网络名>
 ```
 python lceda_reader.py trace U1 --no-power
 ```
-- `--no-power` 跳过电源/地网络（GND/AGND/VCC/3.3V/5V/±15V/VBUS 等常规命名），
-  避免爆炸式展开（若工程电源网络命名特殊，可省略该参数）
+- `--no-power` 跳过电源/地网络（通用规则：含 GND、VCC/VDD/VSS/VBUS/VBAT/VREF
+  及其派生前缀、数值电压式 `5V/+3.3V/-15V`、拆分电压式 `3V3/D3V3/1V8`；
+  锚定全名匹配不误伤 `3V3_EN` 类使能信号），避免爆炸式展开
 - `--depth N` 限制跳数（一跳 = 经过一个网络）
 - **trace 基于 pinmap 连通域精确方案**（与 pinmap 同源）：经串阻/磁珠间接连接的
   引脚链路完整（如 U18 的 SCLK/MOSI/CS 全部可达），短接符（SHORTxxx）作为
@@ -242,8 +243,9 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
    引脚）与 `wire_peers`（同导线记录的其他器件引脚），用于识别串阻/耦合电容/
    晶体管链路，如：`LED1.A <- R8.1`、`LED1.K [wire: BUZZER1.2,D2.+,Q1.D]`。
 8. **`pinmap` 的连通域网络名推断**（默认开启，`--no-domain` 关闭）：基于走线
-   拓扑——同 WIRE 记录端点相接 = 同一物理网络；0Ω 跳线（按型号含 0000 识别，
-   不依赖位号前缀）两脚直连合并；两脚无源器件（串阻/磁珠）作为网络名传播桥，
+   拓扑——同 WIRE 记录端点相接 = 同一物理网络；0Ω 跳线（title+器件描述精确
+   token 识别：`0R/0Ω/阻值:0Ω/独立 0000 码`，不依赖位号前缀，`10R/50R0` 不误判）
+   两脚直连合并；两脚无源器件（串阻/磁珠）作为网络名传播桥，
    **仅从"直接命名的引脚"单向传播到"未命名引脚"**（避免经上拉电阻把信号名
    污染到 GND 域、避免多桥竞争噪声）。推断结果标记 `net_inferred=true`。
    已实测 U4/U3/U26/U27/U18/U2 全部正确（U4.MOSI→LOW_DA_MOSI、U27.CS→H_DA_CS、
@@ -270,7 +272,8 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
     `components 电源框图` 读取顶层架构，并与 pinmap 实际连接交叉核对——框图与
     原理图连接矛盾说明框图过时或原理图有误。
 14. **位号前缀不可作为功能依据**：工具不假设位号前缀（R/C/U/L 等），0Ω 跳线按
-    器件型号（含 0000）识别，器件类型一律查 `components.device` 字段。工程中
+    型号+描述精确 token 识别（`0R/0Ω/阻值:0Ω`），器件类型一律查
+    `components.device` 字段。工程中
     可能出现非标准位号（如电阻标为 U），也可能同号位器件跨板重复——**汇报器件时
     必须说明所在板与页**（如"ADDA 板四路低速DA 页 U4（DAC7562）"）。
 
