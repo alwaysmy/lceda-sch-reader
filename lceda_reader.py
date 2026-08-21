@@ -766,14 +766,16 @@ class Epro2DB(SchemaBackend):
             b = self._jl(body.rstrip("|")) if t in ("DOCHEAD", "META") else None
             if t == "DOCHEAD" and b:
                 u = b.get("uuid")
+                if cur:
+                    # 先闭合上一段（同 uuid 重开时避免旧段未闭合
+                    # 吞掉文件尾部全部行）
+                    self._docs[cur[0]]["segs"][-1] = \
+                        (cur[1], i, cur[2])
                 d = self._docs.get(u)
                 if d is None:
                     d = self._docs[u] = {"docType": b.get("docType"),
                                          "segs": []}
                 d["segs"].append((i, None, h.get("ticket", 0)))
-                if cur:
-                    self._docs[cur[0]]["segs"][-1] = \
-                        (cur[1], i, cur[2])
                 cur = (u, i, h.get("ticket", 0))
             elif t == "META" and b is not None and cur:
                 old = self._meta.get(cur[0])
@@ -794,22 +796,34 @@ class Epro2DB(SchemaBackend):
                                  "board": m.get("board")}
             elif dt == "SCH_PAGE":
                 self._pages[u] = {"title": m.get("title") or u,
-                                  "schematic": m.get("schematic"),
+                                  "schematic": m.get("schematic") or m.get("schematic_uuid"),
                                   "zIndex": m.get("zIndex") or 0}
         self._boards.sort(key=lambda x: x[2])
 
     def _iter_doc_lines(self, uuid):
-        """聚合某文档全部段的行（按 ticket 升序已天然满足：段按出现序）。"""
+        """聚合某文档全部段，并按 V3 增量日志语义合并：同 (type,id) 记录
+        以 (段序, ticket) 双键取最新——ticket 在各段内独立计数，不能全局
+        比较；否则历史编辑轨迹叠加（新旧 LINE 全聚进同一 WIRE）或误覆盖。"""
         d = self._docs.get(uuid)
         if not d:
             return iter(())
         lines = self._lines_of()
-
-        def gen():
-            for s, e, _t in d["segs"]:
-                for ln in lines[s:e]:
-                    yield ln
-        return gen()
+        best = {}
+        seq = 0
+        for si, (s, e, _t) in enumerate(d["segs"]):
+            for ln in lines[s:e]:
+                head, _, _body = ln.partition("||")
+                h = self._jl(head)
+                if not h:
+                    continue
+                key = (h.get("type"), str(h.get("id")))
+                rank = (si, h.get("ticket", 0))
+                old = best.get(key)
+                if old is None or rank >= old[0]:
+                    seq += 1
+                    best[key] = (rank, seq, ln)
+        merged = [v[2] for v in sorted(best.values(), key=lambda x: x[1])]
+        return iter(merged)
 
     # -- duck-typed API ----------------------------------------------------
     def schematics(self):
@@ -1604,6 +1618,10 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
             endp_all.add(npt)
             if n["net"] and npt not in endp_net:
                 endp_net[npt] = n["net"]
+    # 拓扑闭合：所有已知端点均注册为域节点（含 port_nets 补充的合成点，
+    # 防止悬空端口引脚命中合成点时 domain 缺失）
+    for p in endp_all:
+        parent.setdefault(p, p)
 
     def on_segment(px, py):
         for p1, p2 in seglist:
@@ -1814,14 +1832,17 @@ def _cbb_symbol_map(db):
 
 
 def _resolve_cbb_target(db, sig, val):
-    """--cbb-map 值解析：支持 页uuid / 页显示标题 / 板名（取其首页）。"""
+    """--cbb-map / 符号映射值解析：支持 页uuid / 页显示标题 / 板名
+    （取其首页）；标题比较不区分大小写。"""
     if val in sig:
         return val
     u = resolve_page(db, val)
     if u:
         return u
+    lv = str(val).lower()
     for uuid, (_ports, _fp, title) in sig.items():
-        if title == val or title.startswith(val + "::"):
+        lt = str(title).lower()
+        if lt == lv or lt.startswith(lv + "::"):
             return uuid
     return None
 

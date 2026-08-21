@@ -1,25 +1,25 @@
 # TODO
 
-## 新格式 .eprj2（分支版本化，加密）支持（未实施）
+## 新格式 .eprj2（分支版本化，加密）支持（已破解导出路径）
 
-- **状态**：暂不做。2026-08-21 发现新版立创EDA 保存的 .eprj2 采用新存储格式：
-  `documents`/`schematics` 等主表为空，内容在 `history_data`（base64 + 加密，
-  香农熵 8.00 bits/byte，已排除 raw-deflate/zlib/gzip），工程树在
-  `project_structures.structure`（明文 JSON：boards/schematics/sheets/pcbs/
-  blockSymbols）。branches/projects 行含 branch_uuid。
-- **影响**：detect_backend 已识别并**明确报错 + 指引导出 .epro/.epro2**
-  （不再静默空结果）。
-- **可读部分**：structure 明文——已用于 CBB 块符号映射。
-- **逆向侦察结论（2026-08-21）**：LCEDA 安装目录
-  `C:\Program Files\lceda-pro\resources\app`（Electron，非 asar 打包）；
-  主进程 app.js 含 history_data 建表语句但**无解密代码**；加密/解密逻辑在
-  渲染层 `assets/pro-ui/<版本>/js/ui.js`（17MB webpack 混淆包）中，静态
-  分析成本高。**可行路径 = CDP 动态分析**：以
-  `--remote-debugging-port=9222` 启动立创EDA → CDP 连接后 hook
-  WebCrypto(subtle.decrypt)/自定义解密函数或直接读取编辑器内存中的文档
-  JSON。需要现场配合（打开目标工程），作为独立任务规划。
-- **触发条件**：用户需要直接读新版 .eprj2 且接受 CDP 动态方案时启动；
-  当前以"导出 .epro/.epro2"为标准工作流替代。
+- **现状（2026-08-21）**：新版立创EDA .eprj2 的 `history_data` 为加密 blob
+  （熵 8.00，排除 raw-deflate/zlib/gzip；主进程 app.js 无解密代码，解密在
+  渲染层 pro-ui 混淆包内）——**静态解析不可行**。工具打开此类文件会明确
+  报错并指引导出。
+- **已实现的破解导出路径（probes/export_newfmt.py）**：经 CDP
+  （`lceda-pro.exe --remote-debugging-port=9222 <工程>`）进入编辑器渲染层，
+  利用内存中的解密后文档：`SCH.docMemoryManager.getOrInitDoc(uuid)` 加载 →
+  `consistencyImpl.getSourceCode()` 取**明文 epru**（与 .epro2 文本格式
+  一致）；SYMBOL 同理；DEVICE 用 componentCache.device[k].deviceResult 合成
+  META；BOARD/SCH/PCB 层级从 .eprj2 明文 `project_structures.structure`
+  合成；INSTANCE 段从 instanceAttrMgr.savedData 合成。打包为标准 .epro2
+  （`<名>_export.epro2`），**全工具可用**（Piezo 实测：73 页+224 符号+
+  213 器件，netlist 267 网、CBB 15 实例展开、tree 层级完整）。
+- **标准工作流**：新版 .eprj2 → 打开 LCEDA（半离线即可）→ 运行
+  export_newfmt.py → 用导出的 _export.epro2 分析。
+- **遗留**：导出依赖编辑器内存缓存（componentCache），未打开过的符号子集
+  可能缺失（实测 224/226 已覆盖）；INSTANCE 段来自 instanceAttrMgr
+  （仅记录改名成员）。
 
 ## BUS / BUSENTRY 总线支持（未实施）
 
