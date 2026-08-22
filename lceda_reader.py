@@ -1272,9 +1272,82 @@ def _sniff_zip_backend(path):
     return None
 
 
+def _decrypt_new_eprj2(path):
+    """新版加密 .eprj2 → 解密 → 打包临时 .epro2 → 返回路径。
+    算法: AES-128-GCM(key=project_history_<branch>.key, iv=history_data.uuid)
+          → gzip 解压 → V3 epru 明文。
+    详见 docs/新版eprj2格式逆向与破解.md。"""
+    import tempfile
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+
+    # Step 1: 找分支历史表获取密钥
+    branch_tables = [r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' "
+        "AND name LIKE 'project_history_%'")]
+    key_map = {}
+    for tbl in branch_tables:
+        for row in conn.execute(f"SELECT uuid, key FROM [{tbl}]"):
+            if row[1]:
+                key_map[row[0]] = row[1]
+
+    if not key_map:
+        conn.close()
+        raise UnsupportedFormatError(
+            f"{path}: 新版格式但未找到解密密钥（无 project_history_* 表）")
+
+    # Step 2: 解密全部 blob
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    all_text = []
+    for buuid_full, bdata in conn.execute(
+            "SELECT uuid, dataStr FROM history_data ORDER BY id"):
+        if not bdata:
+            continue
+        buuid = buuid_full.split("-")[0]
+        key_hex = key_map.get(buuid)
+        if not key_hex:
+            continue
+
+        blob = base64.b64decode(bdata)
+        iv = bytes.fromhex(buuid[:32])
+        key = bytes.fromhex(key_hex)
+
+        aesgcm = AESGCM(key)
+        compressed = aesgcm.decrypt(iv, blob, None)
+        plaintext = gzip.decompress(compressed).decode("utf-8")
+        all_text.append(plaintext)
+
+    # structure 树（明文 JSON）
+    st_row = conn.execute(
+        "SELECT structure FROM project_structures LIMIT 1").fetchone()
+    conn.close()
+
+    if not all_text:
+        raise UnsupportedFormatError(f"{path}: history_data 无可解密内容")
+
+    merged = "\n".join(all_text)
+
+    # Step 3: 打包为临时 .epro2
+    stem = Path(path).stem
+    tmpdir = tempfile.mkdtemp(prefix="lceda_decrypt_")
+    outpath = os.path.join(tmpdir, stem + "_decrypted.epro2")
+    with zipfile.ZipFile(outpath, "w", zipfile.ZIP_DEFLATED) as zf:
+        pj2 = {"title": stem}
+        if st_row:
+            try:
+                st = json.loads(st_row[0])
+                pj2["title"] = next(iter(st.get("boards", {})),
+                                    {}).get("title", stem) \
+                    if isinstance(st.get("boards", {}), dict) else stem
+            except Exception:
+                pass
+        zf.writestr("project2.json", json.dumps(pj2, ensure_ascii=False))
+        zf.writestr(stem + ".epru", merged)
+    return outpath
+
+
 def _sniff_sqlite_backend(path):
-    """SQLite 内容特征 -> 后端类（LcedaDB/None）；新版加密格式抛
-    UnsupportedFormatError（带可行路径提示）。"""
+    """SQLite 内容特征 -> 后端类（LcedaDB/Epro2DB via 解密/None）。
+    新版加密格式自动解密并返回 Epro2DB。"""
     conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
         tables = {r[0] for r in conn.execute(
@@ -1284,11 +1357,9 @@ def _sniff_sqlite_backend(path):
         n_docs = conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
         if n_docs:
             return LcedaDB
-        if "project_structures" in tables:
-            raise UnsupportedFormatError(
-                f"{path}: 新版立创EDA 分支加密格式（documents 表空，内容在"
-                f"加密 history_data 中），暂不支持读取内容。"
-                f"请在立创EDA 中另存为/导出 .epro 或 .epro2 后使用。")
+        if "project_structures" in tables and "history_data" in tables:
+            # 新版加密格式：解密后用 Epro2DB 读取
+            return "DECRYPT_NEW"
         return None
     finally:
         conn.close()
@@ -1297,7 +1368,8 @@ def _sniff_sqlite_backend(path):
 def detect_backend(path):
     """格式路由：**内容特征优先**（ZIP magic / SQLite magic + 表结构），
     扩展名仅作参考——同扩展名不同存储（如新版/旧版 .eprj2）也能正确区分。
-    返回后端类；无法识别/不支持时抛 UnsupportedFormatError。
+    返回后端类或字符串 "DECRYPT_NEW"（新版加密 .eprj2 需先解密）。
+    无法识别/不支持时抛 UnsupportedFormatError。
     新增格式：实现 SchemaBackend 子类 + 在此登记内容特征。"""
     p = Path(path)
     if not p.is_file():
@@ -3365,10 +3437,17 @@ def main():
         out("未找到 .eprj2，请用 --eprj 指定路径")
         sys.exit(1)
     def open_db(p):
-        cls = detect_backend(p)   # 内容特征路由，识别失败抛 UnsupportedFormatError
-        print(f"[lceda_reader] 格式: {cls.FORMAT_NAME} | 文件: {p}",
+        result = detect_backend(p)
+        if result == "DECRYPT_NEW":
+            # 新版加密 .eprj2：解密 → 临时 .epro2 → Epro2DB
+            print(f"[lceda_reader] 检测到新版加密 .eprj2，正在解密...", file=sys.stderr)
+            decrypted_path = _decrypt_new_eprj2(p)
+            print(f"[lceda_reader] 解密完成 → {decrypted_path}",
+                  file=sys.stderr)
+            return Epro2DB(decrypted_path)
+        print(f"[lceda_reader] 格式: {result.FORMAT_NAME} | 文件: {p}",
               file=sys.stderr)
-        return cls(p)
+        return result(p)
 
     try:
         dbs = [open_db(p) for p in paths]
