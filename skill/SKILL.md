@@ -93,8 +93,9 @@ description: Use when the user asks to read, query, search, extract, or verify c
   位号（与立创EDA 行为一致）；net 为"内部网络,父网络"并集——链路分析可
   贯通 CBB 内部。注意：`pinmap` 仍是黑盒视图；`find` 不索引展开位号
   （查内部器件直接查模板页）；CBB 模板页在导出文件中作为独立"板"列出。
-  **新版 .eprj2（documents 表空、内容加密 history_data）不支持内容读取，
-  打开时明确报错并指引导出 .epro/.epro2。**
+  **新版 .eprj2（documents 表空、内容加密 history_data）已支持自动解密
+  读取**——detect_backend 检测后自动走 AES-128-GCM 解密→临时 .epro2→
+  Epro2DB，对用户完全透明。算法详见 docs/新版eprj2格式逆向与破解.md。
 - **dom 网络多值分隔**：内部使用 UNICODE 分隔符（U+241F）规避网络名含
   逗号的歧义；输出兼容——`pinmap.pins[].net` 为逗号显示，精确列表见
   `nets` 数组字段；历史逗号拼接值自动兼容。
