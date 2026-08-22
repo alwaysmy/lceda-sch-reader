@@ -1,6 +1,6 @@
 import io, os, re, sys, collections
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-TOOL_DIR = r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader"
+TOOL_DIR = r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader"
 sys.path.insert(0, TOOL_DIR)
 import lceda_reader as lr
 

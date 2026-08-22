@@ -1,9 +1,9 @@
 import json, io, sys, subprocess
-sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader")
+sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader")
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 import lceda_reader as lr
 
-R = r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\lceda_reader.py"
+R = r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\lceda_reader.py"
 N = r"D:\WorkDesigns\2_WorkProjects\E_distance\1_sch\涡流传感器-V1.0-2026.04.01.eprj2"
 W = r"C:\Users\dell\AppData\Local\Temp\opencode\lceda_probe"
 

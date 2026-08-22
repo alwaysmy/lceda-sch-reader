@@ -1,6 +1,6 @@
 import subprocess, sys, io, os, json
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-os.chdir(r'D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader')
+os.chdir(r'D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader')
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 tests = [
     ['--json', 'bom', '--board', 'ADDA'],

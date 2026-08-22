@@ -40,7 +40,7 @@ if row is None:
         (tgt[0][0],)).fetchone() if tgt else None
 if row:
     import lceda_reader as lr
-    sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader")
+    sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader")
     text = lr.LcedaDB.decompress(row[1])
     cid = None
     recs = []

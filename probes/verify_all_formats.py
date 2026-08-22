@@ -3,8 +3,8 @@
 交叉对比（同工程 .eprj2 vs .epro2 的 板/页/元件/网络集合）。"""
 import io, sys, json, subprocess, collections
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-TOOL = r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\lceda_reader.py"
-sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader")
+TOOL = r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\lceda_reader.py"
+sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader")
 import lceda_reader as lr
 
 FILES = [

@@ -1,7 +1,7 @@
 """找 dom 中同时含 GND 与 DAC0_SCLK_A 的引脚（桥接点）。"""
 import io, sys
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader")
+sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader")
 import lceda_reader as lr
 
 X = r"C:\Users\dell\Documents\LCEDA-Pro\projects\Piezo_Driver_export.epro2"

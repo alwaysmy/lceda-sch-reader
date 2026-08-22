@@ -1,10 +1,10 @@
 """运行时钩子实验：包装 crypto.subtle.decrypt/encrypt 与 pako.inflate，
 触发文档加载，捕获调用（算法/密钥可提取性/数据头）。"""
 import io, sys, json
-sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\probes")
+sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\probes")
 import importlib.util
 spec = importlib.util.spec_from_file_location(
-    "cdp", r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\probes\cdp_eval.py")
+    "cdp", r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\probes\cdp_eval.py")
 cdp = importlib.util.module_from_spec(spec)
 sys.argv = ["cdp"]
 spec.loader.exec_module(cdp)

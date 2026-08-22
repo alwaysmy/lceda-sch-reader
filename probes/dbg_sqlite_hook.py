@@ -1,10 +1,10 @@
 """方案B：运行中挂 sqlite3/crypto 钩子，渲染层 reload 触发读库。
 输出: probes/newfmt_sql_cap.json"""
 import io, sys, json, time
-sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\probes")
+sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\probes")
 import importlib.util
 spec = importlib.util.spec_from_file_location(
-    "cdp", r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\probes\cdp_eval.py")
+    "cdp", r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\probes\cdp_eval.py")
 cdp = importlib.util.module_from_spec(spec)
 sys.argv = ["cdp"]
 spec.loader.exec_module(cdp)
@@ -113,7 +113,7 @@ time.sleep(30)
 
 cap = ev_n("JSON.stringify(globalThis.__cap||[])")
 data = json.loads(cap or "[]")
-outp = (r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader"
+outp = (r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader"
         r"\probes\newfmt_sql_cap.json")
 with open(outp, "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, indent=1)

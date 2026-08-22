@@ -1,6 +1,6 @@
 import io, json, subprocess, sys, collections
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-R = r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader\lceda_reader.py"
+R = r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader\lceda_reader.py"
 E1 = r"D:\WorkDesigns\3_WorkTools\sch_review_tool\examples\ProPrj_Piezo_Driver_2026-08-21.epro"
 E2 = r"D:\WorkDesigns\3_WorkTools\sch_review_tool\examples\ProPrj_TPS56C230_Buck_12Vto5V_6A_2026-08-13.epro"
 
@@ -40,7 +40,7 @@ for tag, E in (("E1-Piezo", E1), ("E2-Buck", E2)):
             print(f"    {' '.join(cmd):30s} rc={rc} lines={len(out.splitlines())}{note}")
 
 # DNP 标志探查：实例级 ATTR 名分布（找 BOM/PCB/DNP 相关）
-sys.path.insert(0, r"D:\WorkDesigns\2_WorkProjects\E_distance\6_tools\lceda_sch_reader")
+sys.path.insert(0, r"D:\WorkDesigns\3_WorkTools\sch_review_tool\lceda_sch_reader")
 import lceda_reader as lr
 for tag, E in (("E1", E1), ("E2", E2)):
     print("=" * 20, f"{tag} 实例级 ATTR 名分布", "=" * 20)
