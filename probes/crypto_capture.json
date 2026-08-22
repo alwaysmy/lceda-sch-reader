@@ -1,0 +1,6 @@
+[
+ {
+  "fn": "zlib.createGunzip",
+  "stack": "Error\n    at Object.wrapper [as createGunzip] (<anonymous>:24:26)\n    at uL.ctrl (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:8566:74040)\n    at g1.run (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:1166:2303)\n    at a (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:1166:2279)\n    at uL.ctrl (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:8731:17797)\n    at async g1.run (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:1166:2295)\n    at async uL.ctrl (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:1166:55621)\n    at async Au.run (C:\\Program Files\\lceda-pro\\resources\\app\\app.js:1166:229"
+ }
+]
