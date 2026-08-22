@@ -96,6 +96,11 @@ description: Use when the user asks to read, query, search, extract, or verify c
   **新版 .eprj2（documents 表空、内容加密 history_data）已支持自动解密
   读取**——detect_backend 检测后自动走 AES-128-GCM 解密→临时 .epro2→
   Epro2DB，对用户完全透明。算法详见 docs/新版eprj2格式逆向与破解.md。
+- **新版加密 .eprj2 的 CDP 导出备选方案**：当自动解密不完整（如需获取
+  INSTANCE 母图位号映射）时，可用 `probes/export_newfmt.py` 通过 CDP 从
+  运行中的 LCEDA 内存提取解密后文档，打包为更完整的 .epro2。
+  前提：`lceda-pro.exe --remote-debugging-port=9222 <工程.eprj2>` 已启动。
+  用法：`python export_newfmt.py <工程.eprj2路径>` → 自动生成 `<名>_export.epro2`。
 - **dom 网络多值分隔**：内部使用 UNICODE 分隔符（U+241F）规避网络名含
   逗号的歧义；输出兼容——`pinmap.pins[].net` 为逗号显示，精确列表见
   `nets` 数组字段；历史逗号拼接值自动兼容。
