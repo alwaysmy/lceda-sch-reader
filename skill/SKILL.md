@@ -1,13 +1,13 @@
 ---
 name: lceda-sch-reader
-description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) schematic project (.eprj2 files) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool 6_tools/lceda_sch_reader/lceda_reader.py.
+description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) schematic project (.eprj2 files) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool lceda_reader.py.
 ---
 
 # LCEDA 专业版原理图读取（lceda_sch_reader）
 
 读取立创EDA专业版工程（`.eprj2`，SQLite 格式）的原理图数据。工具为**通用格式
 工具**，不绑定特定工程/器件/位号；只读、仅依赖 Python 标准库，位于
-`6_tools/lceda_sch_reader/lceda_reader.py`。
+`lceda_reader.py`。
 
 ## 汇报规范（重要）
 
@@ -24,8 +24,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
 
    ```bat
    set PYTHONIOENCODING=utf-8
-   python 6_tools\lceda_sch_reader\lceda_reader.py list
-   python 6_tools\lceda_sch_reader\lceda_reader.py boards
+   python lceda_reader.py list
+   python lceda_reader.py boards
    ```
 
 2. 常用查询：
@@ -54,7 +54,7 @@ description: Use when the user asks to read, query, search, extract, or verify c
 
 ## 关键格式事实（勿重新猜测，官方规范为准）
 
-- 格式规范依据官方文档：`6_tools/lceda_sch_reader/reference/`（V3 md + V2.2 PDF），
+- 格式规范依据官方文档：`reference/`（V3 md + V2.2 PDF），
   在线：https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md
 - `.eprj2` 是 **SQLite**（不是 zip）；用 `mode=ro` 只读连接，**编辑器开着也能读**。
 - `documents.dataStr` = `base64` 前缀 + base64(gzip(NDJSON))，NDJSON 每行一个 JSON 数组。
@@ -227,4 +227,4 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 ## 输出与编码
 
 - Windows 控制台中文乱码时加 `set PYTHONIOENCODING=utf-8`，或重定向到文件后按 UTF-8 查看。
-- 详细用法与历史错误核对见 `6_tools/lceda_sch_reader/README.md`。
+- 详细用法与历史错误核对见 `README.md`。
