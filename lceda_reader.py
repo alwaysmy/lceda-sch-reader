@@ -198,6 +198,13 @@ class SchemaBackend(ABC):
             result.append(inv)
         return result
 
+    def symbol_records(self, symbol_uuid):
+        """符号文档原始记录数组（V2 图形原语 POLY/RECT/CIRCLE/ARC/PIN/TEXT
+        + LINESTYLE/FONTSTYLE 样式表），供渲染器使用；无原始图形的后端
+        返回 None（渲染器退化为 bbox+引脚桩）。坐标为符号相对坐标，
+        HEAD.originX/originY 偏移由渲染器统一处理。"""
+        return None
+
     @abstractmethod
     def schematics(self):
         """[(uuid, name, display_name)] 板级列表。"""
@@ -478,6 +485,23 @@ class LcedaDB(SchemaBackend):
                 "free": {"schematics": sch_order, "pages": [],
                          "pcbs": pcbs}}
 
+    def symbol_records(self, symbol_uuid):
+        row = self.cur.execute(
+            "SELECT dataStr FROM components WHERE uuid=?", (symbol_uuid,)
+        ).fetchone()
+        if not row:
+            return None
+        text = self.decompress(row[0])
+        arrs = []
+        for ln in text.splitlines():
+            try:
+                a = json.loads(ln)
+            except Exception:
+                continue
+            if isinstance(a, list):
+                arrs.append(a)
+        return arrs
+
     def symbol_pins(self, symbol_uuid):
         """components.dataStr（SYMBOL 定义）-> 引脚表
         [{id, name, number, x, y, rot, part}]（坐标为符号相对坐标）。"""
@@ -598,10 +622,24 @@ class EproDB(SchemaBackend):
 
     def sheet_text(self, doc_key, doc_type=1):
         """取一页原始文本。doc_key 优先按 document uuid 精确查（同名页唯一）；
-        查不到则回退按 "板名::页名" 复合标题查。"""
-        ck = ("text", doc_key)
+        查不到则回退按 "板名::页名" 复合标题查。doc_type=3 时读
+        PCB/<uuid>.epcb（uuid 或 project.json pcbs 的文件名均可）。"""
+        ck = ("text", doc_type, doc_key)
         if ck in self._records_cache:
             return self._records_cache[ck]
+        text = None
+        if doc_type == 3:
+            pu = doc_key if f"PCB/{doc_key}.epcb" in self._names else None
+            if pu is None:
+                for u, t in self.obj.get("pcbs", {}).items():
+                    if t == doc_key:
+                        pu = u
+                        break
+            fname = f"PCB/{pu}.epcb" if pu else None
+            if fname in self._names:
+                text = self.zip.read(fname).decode("utf-8", errors="replace")
+            self._records_cache[ck] = text
+            return text
         key = self._page_index.get(doc_key)
         if key is None:
             self._records_cache[ck] = None
@@ -619,8 +657,9 @@ class EproDB(SchemaBackend):
         """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，复合标题回退）。
         .epro 的 COMPONENT a[2] 是符号 uuid 引用（非 V2 的标题字符串），
         这里归一化为空串，实例名由 parse_sheet 从 Name 属性兜底。"""
-        if doc_key in self._records_cache:
-            cached = self._records_cache[doc_key]
+        ck = (doc_key, doc_type)
+        if ck in self._records_cache:
+            cached = self._records_cache[ck]
             if isinstance(cached, list):
                 return cached
         text = self.sheet_text(doc_key, doc_type)
@@ -636,8 +675,31 @@ class EproDB(SchemaBackend):
                 a = list(a)
                 a[2] = ""
             records.append(a)
-        self._records_cache[doc_key] = records
+        self._records_cache[ck] = records
         return records
+
+    PCB_SUPPORT = True
+
+    def pcb_docs(self):
+        """project.json pcbs: {uuid: 文件名(.brd)}；文件名即用户可见标题。"""
+        return [(u, t or u) for u, t in self.obj.get("pcbs", {}).items()]
+
+    def symbol_records(self, symbol_uuid):
+        if not symbol_uuid:
+            return None
+        fname = f"SYMBOL/{symbol_uuid}.esym"
+        if fname not in self._names:
+            return None
+        text = self.zip.read(fname).decode("utf-8", errors="replace")
+        arrs = []
+        for line in text.splitlines():
+            try:
+                a = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(a, list):
+                arrs.append(a)
+        return arrs
 
     def device_map(self):
         if self._dmap_cache is not None:
@@ -971,11 +1033,51 @@ class Epro2DB(SchemaBackend):
     def sheet_records(self, doc_key, doc_type=1):
         """V3 记录 -> V2 数组模型（COMPONENT/ATTR/WIRE 顺序输出，
         WIRE 段由 LINE.lineGroup 聚合为嵌套 [[x1,y1,x2,y2],...]）。
-        TEXT 行（设计注释）一并转换。"""
-        if doc_key in self._rec_cache:
-            return self._rec_cache[doc_key]
+        TEXT 行（设计注释）一并转换。doc_type=3 时解析 PCB 文档并转换为
+        V2 PCB 布局模型（ATTR key/value 在 [7]/[8]，与 LcedaDB 一致）。"""
+        ck = (doc_key, doc_type)
+        if ck in self._rec_cache:
+            return self._rec_cache[ck]
         if doc_key not in self._docs:
             return None
+        if doc_type == 3:
+            out = []
+            for ln in self._iter_doc_lines(doc_key):
+                head, _, body = ln.partition("||")
+                h = self._jl(head)
+                if not h:
+                    continue
+                b = self._jl(body.rstrip("|")) or {}
+                t = h.get("type")
+                if t == "COMPONENT":
+                    attrs = b.get("attrs")
+                    out.append(["COMPONENT", h.get("id"),
+                                b.get("layerId") or 0, 0,
+                                b.get("x") or 0, b.get("y") or 0,
+                                b.get("angle") or 0,
+                                attrs if isinstance(attrs, dict) else {}, 0])
+                elif t == "ATTR":
+                    k, v = b.get("key"), b.get("value")
+                    if k and v is not None:
+                        out.append(["ATTR", h.get("id") or "", "",
+                                    b.get("parentId") or "", "",
+                                    None, None, str(k), str(v)])
+                elif t == "NET":
+                    try:
+                        nm = json.loads(h.get("id") or "null")[1]
+                    except Exception:
+                        nm = None
+                    if nm:
+                        out.append(["NET", nm])
+                elif t == "PAD_NET":
+                    try:
+                        cid, pin, pad = (json.loads(h.get("id"))or [None]*4)[1:4]
+                    except Exception:
+                        cid = pin = pad = None
+                    out.append(["PAD_NET", cid, pin,
+                                b.get("padNet") or "", pad])
+            self._rec_cache[ck] = out
+            return out
         comps, attrs, wires, texts = [], [], {}, []
         # 页 CANVAS 原点（V3 符号/页坐标需先减原点再翻转 Y）
         ox = oy = 0.0
@@ -1042,8 +1144,14 @@ class Epro2DB(SchemaBackend):
                          [s for s in segs
                           if all(v is not None for v in s)]])
         recs.extend(texts)
-        self._rec_cache[doc_key] = recs
+        self._rec_cache[ck] = recs
         return recs
+
+    PCB_SUPPORT = True
+
+    def pcb_docs(self):
+        return [(u, (self._meta.get(u) or {}).get("title") or u)
+                for u, d in self._docs.items() if d.get("docType") == "PCB"]
 
     def device_map(self):
         """DEVICE 文档 META.attributes 为权威属性集；SYMBOL 文档兜底。"""
@@ -2299,6 +2407,28 @@ def _synth_designator(db, c):
 _WARN_ONCE = set()   # 进程级一次性告警（非90°旋转等）
 
 
+def _match_part(title, parts):
+    """实例 title -> 符号 PART 名。Part 名不限于 ".1/.2" 数字后缀：支持
+    完整 PART 名、字母名（XC7A35T....B0/B14/GTP/POWER）以及大小写差异。"""
+    title = title or ""
+    if title in parts:
+        return title
+    m = re.search(r"\.(\d+)$", title)
+    if m:
+        candidate = title[:-len(m.group(0))] + "." + m.group(1)
+        if candidate in parts:
+            return candidate
+    for candidate in parts:
+        if str(candidate).lower() == title.lower():
+            return candidate
+    if len(parts) == 1:
+        return next(iter(parts))
+    for candidate in parts:
+        if str(candidate).endswith(title) or title.endswith(str(candidate)):
+            return candidate
+    return None
+
+
 def _collect_pinmap_data(db, sheet, page_name):
     """提取 cmd_pinmap/trace 共用的引脚网络数据：
     返回 (comp_pins, wires, pt_wires, endp)。
@@ -2353,31 +2483,9 @@ def _collect_pinmap_data(db, sheet, page_name):
         # 网络名以 Global Net Name 补充（见下方端口命名）。
         if not c["title"] and sp.get("symbol_type") not in (17, 18, 19, 22):
             continue
-        # Part 名不限于 ".1/.2" 数字后缀：支持完整 PART 名、字母名
-        # （XC7A35T....B0/B14/GTP/POWER）以及大小写差异。
-        title = c.get("title") or ""
-        parts = sp["parts"]
-        part = title if title in parts else None
-        if part is None:
-            m = re.search(r"\.(\d+)$", title)
-            if m:
-                candidate = title[:-len(m.group(0))] + "." + m.group(1)
-                if candidate in parts:
-                    part = candidate
-        if part is None:
-            for candidate in parts:
-                if str(candidate).lower() == title.lower():
-                    part = candidate
-                    break
-        if part is None and len(parts) == 1:
-            part = parts[0]
-        if part is None:
-            # 最后一个兜底：title 的尾段（.后）能匹配某个 PART 名。
-            for candidate in parts:
-                if str(candidate).endswith(title) or title.endswith(str(candidate)):
-                    part = candidate
-                    break
-        if part not in parts:
+        # Part 名匹配见 _match_part（多 PART 器件按 title 选子库）。
+        part = _match_part(c.get("title") or "", sp["parts"])
+        if part not in sp["parts"]:
             continue
         key = (des, c["cid"])
         plist = []
@@ -3441,6 +3549,532 @@ def cmd_pcbsch(db, args):
         out("工程内无 PCB 文档")
 
 
+# ---------------------------------------------------------------- 渲染
+
+def _svg_esc(s):
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _xf(x, y, ox, oy, rot, mirror):
+    """符号相对坐标 -> 页面绝对坐标。与 _collect_pinmap_data 的引脚变换
+    完全一致：先镜像 x，再按 rot 度数旋转（90° 步进等价 (x,y)->(-y,x)），
+    最后平移到实例原点。"""
+    if mirror:
+        x = -x
+    r = math.radians(rot or 0)
+    c, s = math.cos(r), math.sin(r)
+    return ox + x * c - y * s, oy + x * s + y * c
+
+
+def _arc_pts(x1, y1, x2, y2, x3, y3, n=24):
+    """三点圆弧（起点/弧上点/终点）-> 折线采样。LCEDA ARC 三点均在圆上，
+    参数化折线规避 SVG sweep/large-arc 歧义；共线退化返回 None。"""
+    d = 2.0 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+    if abs(d) < 1e-9:
+        return None
+    s1 = x1 * x1 + y1 * y1
+    s2 = x2 * x2 + y2 * y2
+    s3 = x3 * x3 + y3 * y3
+    ux = (s1 * (y2 - y3) + s2 * (y3 - y1) + s3 * (y1 - y2)) / d
+    uy = (s1 * (x3 - x2) + s2 * (x1 - x3) + s3 * (x2 - x1)) / d
+    r = math.hypot(x1 - ux, y1 - uy)
+    a0 = math.atan2(y1 - uy, x1 - ux)
+    am = math.atan2(y2 - uy, x2 - ux)
+    ae = math.atan2(y3 - uy, x3 - ux)
+
+    def norm(t):
+        while t < 0:
+            t += 2 * math.pi
+        while t >= 2 * math.pi:
+            t -= 2 * math.pi
+        return t
+
+    dm = norm(am - a0)
+    de = norm(ae - a0)
+    total = dm if dm <= de else -(2 * math.pi - de)
+    return [(ux + r * math.cos(a0 + total * i / n),
+             uy + r * math.sin(a0 + total * i / n)) for i in range(n + 1)]
+
+
+_RENDER_CFG_DEFAULTS = {
+    "colors": {"wire": "#006600", "junction": "#006600",
+               "label": "#8822aa", "text": "#555555",
+               "nc": "#dd0000", "dnp": "#cc00cc",
+               "fallback": "#c0a000"},
+    "sizes": {"default_font": 10.0, "line_width": 3.0},
+    "show": {"net_labels": True, "texts": True, "pin_numbers": False,
+             "dnp": True, "nc": True, "fallback_box": True},
+    "limits": {"max_labels": 500},
+}
+
+
+def _render_cfg(args):
+    """渲染配置：默认值 <- 工具目录 render_config.json（存在则自动加载，
+    类比 EDA 自身配置）<- --config 显式文件 <- 命令行开关。"""
+    import copy
+    cfg = copy.deepcopy(_RENDER_CFG_DEFAULTS)
+
+    def merge(dst, src):
+        for k, v in (src or {}).items():
+            if isinstance(v, dict) and isinstance(dst.get(k), dict):
+                merge(dst[k], v)
+            elif k in dst or True:
+                dst[k] = v
+
+    paths = []
+    auto = Path(__file__).with_name("render_config.json")
+    if auto.exists():
+        paths.append(auto)
+    p = getattr(args, "config", None)
+    if p:
+        paths.append(Path(p))
+    for pp in paths:
+        try:
+            merge(cfg, json.loads(pp.read_text(encoding="utf-8")))
+        except Exception as e:
+            print(f"[lceda_reader] 渲染配置 {pp} 解析失败({e})，忽略",
+                  file=sys.stderr)
+    if getattr(args, "no_labels", False):
+        cfg["show"]["net_labels"] = False
+    if getattr(args, "no_texts", False):
+        cfg["show"]["texts"] = False
+    if getattr(args, "pin_numbers", False):
+        cfg["show"]["pin_numbers"] = True
+    return cfg
+
+
+def _font_of(fs_map, sid, cfg):
+    """FONTSTYLE 引用 -> {size,color,bold,italic}；缺省回退配置值。"""
+    st = fs_map.get(sid) or {}
+    return {
+        "size": st.get("size") or cfg["sizes"]["default_font"],
+        "color": st.get("color") or "#000000",
+        "bold": bool(st.get("bold")),
+        "italic": bool(st.get("italic")),
+    }
+
+
+def _parse_fs(a):
+    """FONTSTYLE 记录 -> dict。真实布局：
+    [type,id,color,family,?,size,bold?,italic?,...]，空值多（继承默认）。"""
+    def num(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+    size = num(a[5]) if len(a) > 5 else None
+    if size is None:
+        size = num(a[4]) if len(a) > 4 else None
+    return {"color": a[2] if len(a) > 2 and a[2] else None,
+            "family": a[3] if len(a) > 3 else None,
+            "size": size,
+            "bold": a[6] if len(a) > 6 else None,
+            "italic": a[7] if len(a) > 7 else None}
+
+
+def cmd_render(db, args):
+    """原理图页 -> SVG。V2 坐标直出（Y 向下与 SVG 一致）。
+    字体/文字位置取自工程存储：FONTSTYLE 样式表 + 实例 ATTR 的显示坐标
+    （用户在 EDA 里摆放的位置），不做发明式排版；显示项可经
+    render_config.json / --config / 开关裁剪，避免审查输出被注释类信息淹没。"""
+    cfg = _render_cfg(args)
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    if page is None:
+        out(f"未找到页: {args.sheet}")
+        sys.exit(1)
+    sh = parse_sheet(db, page)
+    if sh is None:
+        out(f"未找到页: {args.sheet}")
+        sys.exit(1)
+    recs = db.sheet_records(page) or []
+
+    # ── 页级样式表 ──
+    page_fs = {}
+    for a in recs:
+        if isinstance(a, list) and a and a[0] == "FONTSTYLE" and len(a) > 1:
+            page_fs[a[1]] = _parse_fs(a)
+
+    # ── 符号缓存：(原始记录, symbol_pins, 符号内 FS/LS 样式表) ──
+    sym_cache = {}
+
+    def get_sym(sym_uuid):
+        if sym_uuid not in sym_cache:
+            prims = db.symbol_records(sym_uuid) if sym_uuid else None
+            sp = db.symbol_pins(sym_uuid) if sym_uuid else None
+            sfs, sls = {}, {}
+            for a in (prims or []):
+                if not (isinstance(a, list) and a):
+                    continue
+                if a[0] == "FONTSTYLE" and len(a) > 1:
+                    sfs[a[1]] = _parse_fs(a)
+                elif a[0] == "LINESTYLE" and len(a) >= 6:
+                    w = a[5]
+                    try:
+                        w = float(w) if w is not None else None
+                    except (TypeError, ValueError):
+                        w = None
+                    sls[a[1]] = {"color": a[2] or "#000000", "width": w}
+            sym_cache[sym_uuid] = (prims, sp, sfs, sls)
+        return sym_cache[sym_uuid]
+
+    def grow(x, y):
+        b = bbox_all
+        b[0] = x if b[0] is None else min(b[0], x)
+        b[1] = y if b[1] is None else min(b[1], y)
+        b[2] = x if b[2] is None else max(b[2], x)
+        b[3] = y if b[3] is None else max(b[3], y)
+
+    bbox_all = [None, None, None, None]
+    elems = []
+    lw = cfg["sizes"]["line_width"]
+
+    def txt(x, y, s, f, anchor="start", rot=None):
+        tr = f' transform="rotate({rot:.0f} {x:.0f} {y:.0f})"' \
+            if rot else ""
+        fw = ' font-weight="bold"' if f.get("bold") else ""
+        return (f'<text x="{x:.1f}" y="{y:.1f}" font-size="{f["size"]:.0f}"'
+                f'{fw} fill="{f["color"]}" text-anchor="{anchor}"{tr}>'
+                f'{_svg_esc(s)}</text>')
+
+    # ── 导线 + 网络名 + 结点统计 + 页文本(TEXT 带样式) ──
+    net_of, wires = {}, []
+    texts = []
+    for a in recs:
+        if not isinstance(a, list) or len(a) < 2:
+            continue
+        k = a[0]
+        if k == "ATTR" and len(a) >= 5 and \
+                a[3] in ("NET", "Global Net Name"):
+            net_of[a[2]] = a[4]
+        elif k == "WIRE" and len(a) >= 3:
+            wires.append((a[1], a[2]))
+        elif k == "TEXT" and len(a) >= 7 and str(a[5]).strip():
+            f = _font_of(page_fs, a[6], cfg)
+            f["color"] = page_fs.get(a[6], {}).get("color") \
+                or cfg["colors"]["text"]
+            texts.append((a[2], a[3], a[4], str(a[5]), f))
+    seg_count = {}
+    labels = []
+    for wid, segs in wires:
+        nm = net_of.get(wid)
+        first_mid = None
+        for seg in _norm_segs(segs):
+            x1, y1, x2, y2 = seg
+            elems.append(
+                f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" '
+                f'y2="{y2:.1f}" stroke="{cfg["colors"]["wire"]}" '
+                f'stroke-width="{lw}"/>')
+            grow(x1, y1)
+            grow(x2, y2)
+            for p in ((x1, y1), (x2, y2)):
+                pt = (round(p[0], 1), round(p[1], 1))
+                seg_count[pt] = seg_count.get(pt, 0) + 1
+            if first_mid is None:
+                first_mid = ((x1 + x2) / 2, (y1 + y2) / 2)
+        if nm and first_mid:
+            labels.append((first_mid[0] + lw * 4, first_mid[1] - lw * 3, nm))
+
+    # ── 实例属性显示信息（EDA 里摆好的位置/样式）：ATTR len>=12 ──
+    # [type,id,parent,key,value,x?,vis?,x,y,rot,styleId,hideFlag]
+    attr_disp = {}
+    for a in recs:
+        if (isinstance(a, list) and a and a[0] == "ATTR" and len(a) >= 12
+                and a[2] is not None):
+            attr_disp[(str(a[2]), str(a[3]))] = {
+                "x": a[7], "y": a[8], "rot": a[9],
+                "sid": a[10], "hide": bool(a[11]) if a[11] is not None
+                else False}
+
+    # ── 元件 ──
+    dmap = db.device_map()
+    n_nograph = 0
+    for c in sh["components"]:
+        cx, cy = c["x"], c["y"]
+        rot360 = int(c.get("rot") or 0) % 360
+        mir = bool(c.get("mirror"))
+        sym = symbol_of(db, c)
+        prims, sp, sfs, sls = get_sym(sym)
+        parts = (sp or {}).get("parts") or []
+        part = _match_part(c.get("title"), parts) if parts else None
+
+        draw_prims = []
+        cur = None
+        have_part_sec = False
+        origin = [0.0, 0.0]
+        pin_label_attrs = []   # 符号内 NAME/NUMBER 显示属性
+        for a in (prims or []):
+            if not isinstance(a, list) or not a:
+                continue
+            k = a[0]
+            if k == "HEAD" and len(a) > 1 and isinstance(a[1], dict):
+                origin = [float(a[1].get("originX") or 0),
+                          float(a[1].get("originY") or 0)]
+            elif k == "PART":
+                cur = a[1]
+                have_part_sec = True
+            elif k in ("POLY", "RECT", "CIRCLE", "ARC", "PIN"):
+                if not have_part_sec or part is None or cur == part:
+                    draw_prims.append((k, a))
+            elif (k == "ATTR" and len(a) >= 12 and cfg["show"]["pin_numbers"]
+                  and a[3] in ("NAME", "NUMBER")):
+                if not have_part_sec or part is None or cur == part:
+                    pin_label_attrs.append(a)
+
+        def T(x, y):
+            return _xf(x - origin[0], y - origin[1], cx, cy, rot360, mir)
+
+        drew_graph = False
+        comp_bbox = [None, None, None, None]
+
+        def cgrow(x, y):
+            b = comp_bbox
+            b[0] = x if b[0] is None else min(b[0], x)
+            b[1] = y if b[1] is None else min(b[1], y)
+            b[2] = x if b[2] is None else max(b[2], x)
+            b[3] = y if b[3] is None else max(b[3], y)
+
+        for k, a in draw_prims:
+            try:
+                if k == "POLY" and len(a) >= 3 and isinstance(a[2], list):
+                    pts = a[2]
+                    xy = [T(pts[i], pts[i + 1])
+                          for i in range(0, len(pts) - 1, 2)]
+                    st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                    closed = bool(a[3]) if len(a) > 3 else False
+                    pstr = " ".join(f"{px:.1f},{py:.1f}" for px, py in xy)
+                    tag = "polygon" if closed else "polyline"
+                    if tag == "polyline":
+                        pstr += f" {xy[0][0]:.1f},{xy[0][1]:.1f}"
+                    elems.append(
+                        f'<{tag} points="{pstr}" fill="none" '
+                        f'stroke="{st.get("color", "#000000")}" '
+                        f'stroke-width="{st.get("width") or lw}"/>')
+                    for px, py in xy:
+                        cgrow(px, py)
+                    drew_graph = True
+                elif k == "RECT" and len(a) >= 6:
+                    ax1, ay1 = T(min(a[2], a[4]), min(a[3], a[5]))
+                    ax2, ay2 = T(max(a[2], a[4]), max(a[3], a[5]))
+                    st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                    elems.append(
+                        f'<rect x="{min(ax1,ax2):.1f}" '
+                        f'y="{min(ay1,ay2):.1f}" '
+                        f'width="{abs(ax2-ax1):.1f}" '
+                        f'height="{abs(ay2-ay1):.1f}" fill="none" '
+                        f'stroke="{st.get("color", "#000000")}" '
+                        f'stroke-width="{st.get("width") or lw}"/>')
+                    cgrow(ax1, ay1)
+                    cgrow(ax2, ay2)
+                    drew_graph = True
+                elif k == "CIRCLE" and len(a) >= 5:
+                    ccx, ccy = T(a[2], a[3])
+                    r = float(a[4])
+                    st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                    elems.append(
+                        f'<circle cx="{ccx:.1f}" cy="{ccy:.1f}" r="{r:.1f}"'
+                        f' fill="none" stroke="'
+                        f'{st.get("color", "#000000")}" '
+                        f'stroke-width="{st.get("width") or lw}"/>')
+                    cgrow(ccx - r, ccy - r)
+                    cgrow(ccx + r, ccy + r)
+                    drew_graph = True
+                elif k == "ARC" and len(a) >= 9:
+                    xy = _arc_pts(a[2], a[3], a[4], a[5], a[6], a[7])
+                    if xy:
+                        txy = [T(px, py) for px, py in xy]
+                        pstr = " ".join(f"{px:.1f},{py:.1f}"
+                                        for px, py in txy)
+                        st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                        elems.append(
+                            f'<polyline points="{pstr}" fill="none" '
+                            f'stroke="{st.get("color", "#000000")}" '
+                            f'stroke-width="{st.get("width") or lw}"/>')
+                        for px, py in txy:
+                            cgrow(px, py)
+                        drew_graph = True
+                elif k == "PIN" and sp and len(a) >= 8:
+                    plen = float(a[6]) if a[6] else 20.0
+                    prot = float(a[7] or 0)
+                    for pp in sp["pins"]:
+                        if pp["id"] != a[1]:
+                            continue
+                        ex, ey = T(pp["x"], pp["y"])
+                        bx, by = T(pp["x"] + math.cos(math.radians(prot))
+                                   * plen,
+                                   pp["y"] + math.sin(math.radians(prot))
+                                   * plen)
+                        elems.append(
+                            f'<line x1="{ex:.1f}" y1="{ey:.1f}" '
+                            f'x2="{bx:.1f}" y2="{by:.1f}" '
+                            f'stroke="#000000" stroke-width="{lw}"/>')
+                        cgrow(ex, ey)
+                        cgrow(bx, by)
+                        if cfg["show"]["nc"] and \
+                                (c["cid"] + (pp.get("id") or "")) \
+                                in sh["no_connect"]:
+                            s_ = lw * 8
+                            nc = cfg["colors"]["nc"]
+                            elems.append(
+                                f'<line x1="{ex-s_:.0f}" y1="{ey-s_:.0f}" '
+                                f'x2="{ex+s_:.0f}" y2="{ey+s_:.0f}" '
+                                f'stroke="{nc}" stroke-width="{lw*1.5}"/>'
+                                f'<line x1="{ex-s_:.0f}" y1="{ey+s_:.0f}" '
+                                f'x2="{ex+s_:.0f}" y2="{ey-s_:.0f}" '
+                                f'stroke="{nc}" stroke-width="{lw*1.5}"/>')
+                        break
+            except Exception:
+                continue
+
+        # 符号内 NAME/NUMBER 文本（EDA 摆好的位置+符号样式表）
+        for a in pin_label_attrs:
+            try:
+                if a[7] is None or a[8] is None or not str(a[4]):
+                    continue
+                lx_, ly_ = T(float(a[7]), float(a[8]))
+                prot = float(a[9] or 0)
+                f = _font_of(sfs, a[10], cfg)
+                elems.append(txt(lx_, ly_, str(a[4]), f,
+                                 anchor="middle",
+                                 rot=prot if prot % 360 else None))
+                cgrow(lx_, ly_)
+            except Exception:
+                continue
+
+        if not drew_graph:
+            n_nograph += 1
+            pin_pts = []
+            if sp:
+                for pp in sp["pins"]:
+                    if parts and pp.get("part") != part:
+                        continue
+                    px_, py_ = T(pp["x"], pp["y"])
+                    pin_pts.append((px_, py_))
+            if pin_pts:
+                xs = [p[0] for p in pin_pts]
+                ys = [p[1] for p in pin_pts]
+                comp_bbox = [min(xs), min(ys), max(xs), max(ys)]
+            else:
+                comp_bbox = [cx - 80, cy - 80, cx + 80, cy + 80]
+            if cfg["show"]["fallback_box"]:
+                fb = cfg["colors"]["fallback"]
+                elems.append(
+                    f'<rect x="{comp_bbox[0]:.0f}" y="{comp_bbox[1]:.0f}" '
+                    f'width="{comp_bbox[2]-comp_bbox[0]:.0f}" '
+                    f'height="{comp_bbox[3]-comp_bbox[1]:.0f}" '
+                    f'fill="#fffbe6" stroke="{fb}" stroke-width="{lw}" '
+                    f'stroke-dasharray="24,16"/>')
+
+        # 位号/值：优先用工程存储的显示坐标与样式（用户在 EDA 里摆的）
+        des = c.get("designator")
+        dev_desc = dmap.get(c.get("device_uuid") or "", ("", "", ""))[2]
+        inst_val = c["attrs"].get("Value")
+        val = inst_val or parse_value(dev_desc).get("value") or ""
+
+        def draw_attr_stored(key, text):
+            info = attr_disp.get((c["cid"], key))
+            if not info or info["hide"] or info["x"] is None \
+                    or text is None:
+                return False
+            f = _font_of(page_fs, info["sid"], cfg)
+            f["color"] = page_fs.get(info["sid"], {}).get("color") \
+                or "#0000cc"
+            elems.append(txt(float(info["x"]), float(info["y"]), str(text),
+                             f, anchor="middle",
+                             rot=float(info["rot"] or 0)
+                             if (info["rot"] or 0) % 360 else None))
+            grow(float(info["x"]), float(info["y"]))
+            return True
+
+        placed_des = draw_attr_stored("Designator", des)
+        placed_val = draw_attr_stored("Value", val) if val else True
+        if comp_bbox[0] is not None and not (placed_des and placed_val):
+            mx = (comp_bbox[0] + comp_bbox[2]) / 2
+            df = {"size": cfg["sizes"]["default_font"], "color": "#0000cc",
+                  "bold": True, "italic": False}
+            if des and not placed_des:
+                elems.append(txt(mx, comp_bbox[1] - lw * 2, des, df,
+                                 anchor="middle"))
+                grow(comp_bbox[0], comp_bbox[1] - lw * 6)
+                grow(comp_bbox[2], comp_bbox[1])
+            if val and not placed_val:
+                vf = {"size": cfg["sizes"]["default_font"],
+                      "color": "#006600", "bold": False, "italic": False}
+                elems.append(txt(mx, comp_bbox[3] + lw * 8, val, vf,
+                                 anchor="middle"))
+                grow(comp_bbox[0], comp_bbox[3] + lw * 10)
+                grow(comp_bbox[2], comp_bbox[3])
+        if cfg["show"]["dnp"] and c.get("dnp") \
+                and comp_bbox[0] is not None:
+            dc = cfg["colors"]["dnp"]
+            elems.append(
+                f'<rect x="{comp_bbox[0]:.0f}" y="{comp_bbox[1]:.0f}" '
+                f'width="{comp_bbox[2]-comp_bbox[0]:.0f}" '
+                f'height="{comp_bbox[3]-comp_bbox[1]:.0f}" fill="none" '
+                f'stroke="{dc}" stroke-width="{lw*2}" '
+                f'stroke-dasharray="40,24"/>')
+            elems.append(txt(comp_bbox[0], comp_bbox[3] + lw * 20, "[DNP]",
+                             {"size": cfg["sizes"]["default_font"],
+                              "color": dc, "bold": True, "italic": False}))
+        for x, y in ((comp_bbox[0], comp_bbox[1]),
+                     (comp_bbox[2], comp_bbox[3])):
+            if x is not None:
+                grow(x, y)
+
+    # ── 结点圆点 / 网络名 / 页文本 ──
+    jr = lw * 2.5
+    for (px, py), n in seg_count.items():
+        if n >= 3:
+            elems.insert(0,
+                         f'<circle cx="{px:.0f}" cy="{py:.0f}" r="{jr:.0f}"'
+                         f' fill="{cfg["colors"]["junction"]}"/>')
+    if cfg["show"]["net_labels"]:
+        lf = {"size": cfg["sizes"]["default_font"],
+              "color": cfg["colors"]["label"], "bold": False,
+              "italic": False}
+        for lx, ly, nm in labels[:cfg["limits"]["max_labels"]]:
+            elems.append(txt(lx, ly, nm, lf))
+    if cfg["show"]["texts"]:
+        for tx, ty, trot, s, f in texts:
+            elems.append(txt(tx, ty, s, f, rot=trot if trot % 360 else None))
+            grow(tx, ty)
+
+    # ── 组装 SVG ──
+    m = 300
+    if bbox_all[0] is None:
+        out("页面无几何内容")
+        sys.exit(1)
+    vx0, vy0 = bbox_all[0] - m, bbox_all[1] - m
+    vw = (bbox_all[2] - bbox_all[0]) + 2 * m
+    vh = (bbox_all[3] - bbox_all[1]) + 2 * m
+    title = f"{db.project_name()} :: {sh['title']}"
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="{vx0:.0f} {vy0:.0f} {vw:.0f} {vh:.0f}" '
+        f'font-family="Consolas, monospace">\n'
+        f'<rect x="{vx0:.0f}" y="{vy0:.0f}" width="{vw:.0f}" '
+        f'height="{vh:.0f}" fill="#ffffff"/>\n'
+        + "\n".join(elems) + "\n</svg>\n")
+
+    o = getattr(args, "output", None)
+    disp = sh["title"]
+    for u_, t_, s_, dt_ in db.sheets():
+        if u_ == page:
+            disp = t_ or disp
+            break
+    if not o:
+        safe = re.sub(r'[\\/:*?"<>|]+', "_",
+                      f"{db.project_name()}_{disp}")[:80]
+        o = f"{safe}.svg"
+    with open(o, "w", encoding="utf-8") as f:
+        f.write(svg)
+    out(f"[render] 页「{disp}」: 元件 {len(sh['components'])} "
+        f"(无图形退化 {n_nograph}), 导线 {len(wires)}, "
+        f"网络标签 {len(labels)}")
+    out(f"[render] 输出: {o} ({len(svg)//1024} KB)")
+
+
 def cmd_datasheets(db, args):
     """提取 Datasheet URL 清单（经后端方法，LcedaDB/EproDB 均支持）。"""
     rows = db.datasheet_rows()
@@ -3602,6 +4236,20 @@ def main():
                    ).set_defaults(fn=cmd_datasheets)
 
     sub.add_parser("pcbsch", help="PCB↔SCH 器件核对(Unique ID 映射: 反标/漏布局)").set_defaults(fn=cmd_pcbsch)
+
+    p = sub.add_parser("render", help="原理图页渲染为 SVG(字体/文字位置取自工程存储)")
+    p.add_argument("sheet")
+    p.add_argument("--schematic", default=None, help="指定板名解决同名页")
+    p.add_argument("-o", "--output", default=None, help="输出 SVG 路径(默认自动命名)")
+    p.add_argument("--config", default=None,
+                   help="渲染配置 JSON(颜色/字号/显示项)；缺省自动加载工具目录"
+                        " render_config.json")
+    p.add_argument("--no-labels", action="store_true", help="不画网络名标签")
+    p.add_argument("--no-texts", action="store_true",
+                   help="不画页内文本注释(大段说明会遮挡审查)")
+    p.add_argument("--pin-numbers", action="store_true",
+                   help="画引脚名/号(默认关，减少视觉噪声)")
+    p.set_defaults(fn=cmd_render)
 
     p = sub.add_parser("attrs", help="导出页的全部属性(含@标题块)")
     p.add_argument("sheet")

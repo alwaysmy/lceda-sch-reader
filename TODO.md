@@ -10,16 +10,26 @@
 - CDP 导出路径（probes/export_newfmt.py）仍保留作为备选方案，
   可获取 INSTANCE 段的母图位号映射（直接解密路径暂不含此数据）。
 
-## PCB 解析（✅ 基础完成 2026-08-23，V2 SQLite）
+## PCB 解析（✅ 三后端完成 2026-08-23）
 
-- **已完成**：`pcb_inventory()`（LcedaDB docType=3）解析
-  COMPONENT/ATTR/NET/PAD_NET；`pcbsch` 命令以 COMPONENT 内联
-  "Unique ID"(ggeN) 为 SCH↔PCB 全局映射键，输出反标改名清单/
-  仅SCH(未布局)/仅PCB。实测涡流 V1.0：主板 PCB1 265 元件，
-  一致 263 / 改名 2（SCH C75→PCB C29、C10→C30）/ 未布局 215。
-  工程内其余 PCB 文档（PCB1_1/PCB1_2/PCB2/PCB3）为历史快照。
-- **待做**：.epro/.epro2 的 PCB 访问（pcb_docs 返回 [] → 明确报错）；
-  PCB 网络/PAD 拓扑级审查（如 PCB 网络表 vs SCH 网络表逐 pin 对比）。
+- **已完成**：`pcb_inventory()` 解析 COMPONENT/ATTR/NET/PAD_NET；`pcbsch`
+  命令以 COMPONENT 内联 "Unique ID"(ggeN) 为 SCH↔PCB 全局映射键。
+  - LcedaDB：documents.docType=3
+  - EproDB：ZIP `PCB/<uuid>.epcb`（与 SQLite V2 布局一致）
+  - Epro2DB：docType=="PCB" epru → V2 布局转换
+  实测涡流 V1.0 主板 PCB1 265 元件一致 263/改名 2；epro Piezo 581 元件
+  板级文档 15 个全枚举；跨格式 UID 稳定（epro2 备份 PCB2 与 SQLite 同步）。
+- **待做**：PCB 网络拓扑级审查（PCB 网络表 vs SCH 网络表逐 pin 对比，
+  需解析 PAD 几何/Footprint 引脚位置，当前仅 PAD_NET 归属清单）。
+
+## 渲染 render（✅ 基础完成 2026-08-23）
+
+- SVG 输出：导线/结点/网络名、符号图形原语(POLY/RECT/CIRCLE/ARC 三点弧)、
+  引脚桩+NC 叉、位号/值（FONTSTYLE 字号 + ATTR 显示坐标=EDA 排版）、
+  DNP 标记、页文本。配置：render_config.json 自动加载 / --config /
+  --no-labels/--no-texts/--pin-numbers。
+- **待做**：图纸边框区域裁剪（标题块外留白过大）；NetFlag 符号文字
+  （VCC/GND 名在符号 TEXT 里已画但字号小）；多页批量渲染；PDF 出图。
 
 ## BUS / BUSENTRY 总线支持（未实施）
 

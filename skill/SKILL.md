@@ -36,6 +36,7 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 页内文本注释（设计意图/备注） | `lceda_reader.py texts "页名"` |
    | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
    | PCB↔SCH 器件核对（反标改名/漏布局；仅旧版 .eprj2） | `lceda_reader.py pcbsch` |
+   | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
    | 精确引脚网络表（推荐，含同网络关联引脚） | `lceda_reader.py pinmap "页名" [--designator U1]` |
    | 引脚级网络表（designator→网络+引脚名） | `lceda_reader.py pins "页名"` |
@@ -60,6 +61,10 @@ description: Use when the user asks to read, query, search, extract, or verify c
   uuid，不跨文档共享。`pcbsch` 命令基于它输出 PCB 反标改名清单/未布局器件；
   工程内多个 PCB 文档是历史快照，以匹配数最多的主板为准。
   注意 PCB ATTR 布局与 SCH 不同（key/value 在 [7]/[8]）。
+  三后端（.eprj2/.epro/.epro2）均已支持 PCB 枚举与 pcbsch。
+- **render 渲染**：字体字号取自 FONTSTYLE、位号/值位置取自实例 ATTR 显示
+  坐标——即用户在 EDA 里看到的排版；不要硬编码字号。页内大段设计注释会
+  遮挡审查视图时用 `--no-texts`；引脚名/号默认关（`--pin-numbers` 开）。
 
 - 格式规范依据官方文档：`reference/`（V3 md + V2.2 PDF），
   在线：https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md
