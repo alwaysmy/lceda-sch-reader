@@ -35,6 +35,7 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 某页元件（设计符/型号/参数） | `lceda_reader.py components "页名"` |
    | 页内文本注释（设计意图/备注） | `lceda_reader.py texts "页名"` |
    | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
+   | PCB↔SCH 器件核对（反标改名/漏布局；仅旧版 .eprj2） | `lceda_reader.py pcbsch` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
    | 精确引脚网络表（推荐，含同网络关联引脚） | `lceda_reader.py pinmap "页名" [--designator U1]` |
    | 引脚级网络表（designator→网络+引脚名） | `lceda_reader.py pins "页名"` |
@@ -53,6 +54,12 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 结构化 JSON（供脚本） | `--json` 前缀，如 `lceda_reader.py --json bom` |
 
 ## 关键格式事实（勿重新猜测，官方规范为准）
+
+- **SCH↔PCB 器件映射键 = COMPONENT 内联属性 "Unique ID"（ggeN）**：SCH/PCB
+  双侧同值、工程内全局唯一（实测交集 100%）；32 位 hex 是 Device/Footprint
+  uuid，不跨文档共享。`pcbsch` 命令基于它输出 PCB 反标改名清单/未布局器件；
+  工程内多个 PCB 文档是历史快照，以匹配数最多的主板为准。
+  注意 PCB ATTR 布局与 SCH 不同（key/value 在 [7]/[8]）。
 
 - 格式规范依据官方文档：`reference/`（V3 md + V2.2 PDF），
   在线：https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md

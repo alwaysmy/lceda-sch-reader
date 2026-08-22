@@ -126,6 +126,78 @@ class SchemaBackend(ABC):
         _expand_cbb 将回退 同目录.eprj2 blockSymbols > 端口集匹配。"""
         return {}
 
+    PCB_SUPPORT = False
+
+    def pcb_docs(self):
+        """[(uuid, title)] 工程 PCB 文档列表；不支持的后端返回 []。"""
+        return []
+
+    def pcb_inventory(self):
+        """解析全部 PCB 文档（V2 数组模型）。
+        返回 [{"uuid","title","comps","nets","pads"}]：
+          comps: [{"cid","uid","designator","device","footprint",
+                   "layer","x","y","rot"}]
+            uid = COMPONENT 内联属性 "Unique ID"（ggeN）——SCH↔PCB 全局
+            唯一映射键（实测交集 100%）；32 位 hex 是 Device/Footprint
+            uuid，不跨文档共享，勿混用。
+          nets: [网络名]，pads: [{"comp","pin","net"}] 焊盘网络归属。
+        仅旧版 .eprj2（SQLite documents.docType=3）支持。"""
+        if not self.PCB_SUPPORT:
+            raise UnsupportedFormatError(
+                f"{self.FORMAT_NAME} 暂不支持 PCB 解析"
+                "（当前仅旧版 .eprj2 SQLite 支持）")
+        result = []
+        for u, title in self.pcb_docs():
+            recs = self.sheet_records(u, doc_type=3)
+            if recs is None:
+                continue
+            inv = {"uuid": u, "title": title,
+                   "comps": [], "nets": [], "pads": []}
+            comps = {}
+            for a in recs:
+                if not isinstance(a, list) or len(a) < 2:
+                    continue
+                k = a[0]
+                if k == "COMPONENT":
+                    cid = str(a[1])
+                    inline = a[7] if len(a) > 7 and isinstance(a[7], dict) \
+                        else {}
+                    comps[cid] = {
+                        "cid": cid,
+                        "uid": str(inline.get("Unique ID") or ""),
+                        "designator": "", "device": "", "footprint": "",
+                        "layer": a[2] if len(a) > 2 else 0,
+                        "x": a[4] if len(a) > 4 else 0,
+                        "y": a[5] if len(a) > 5 else 0,
+                        "rot": a[6] if len(a) > 6 else 0,
+                    }
+                elif k == "ATTR" and len(a) >= 9:
+                    # PCB ATTR 布局（与 SCH 不同）：
+                    # [type,id,?,parent,?,x,y,key,value,...]
+                    pid, key = str(a[3]), str(a[7])
+                    val = "" if a[8] is None else str(a[8])
+                    c = comps.get(pid)
+                    if c is not None:
+                        if key == "Designator":
+                            c["designator"] = val
+                        elif key == "Device":
+                            c["device"] = val
+                        elif key == "Footprint":
+                            c["footprint"] = val
+                elif k == "NET" and len(a) >= 2 and a[1]:
+                    inv["nets"].append(str(a[1]))
+                elif k == "PAD_NET" and len(a) >= 5:
+                    inv["pads"].append({"comp": str(a[1]), "pin": str(a[2]),
+                                        "net": str(a[3])})
+            for c in comps.values():
+                if c["designator"] or c["uid"]:
+                    inv["comps"].append(c)
+            inv["comps"].sort(
+                key=lambda c: natkey(c["designator"] or c["cid"]))
+            inv["nets"] = sorted(set(inv["nets"]))
+            result.append(inv)
+        return result
+
     @abstractmethod
     def schematics(self):
         """[(uuid, name, display_name)] 板级列表。"""
@@ -282,6 +354,12 @@ class LcedaDB(SchemaBackend):
     def sheets(self, doc_type=1):
         return list(self.cur.execute(
             "SELECT uuid, display_title, schematic_uuid, docType FROM documents"))
+
+    PCB_SUPPORT = True
+
+    def pcb_docs(self):
+        return [(u, t) for u, t in self.cur.execute(
+            "SELECT uuid, display_title FROM documents WHERE docType=3")]
 
     @staticmethod
     def decompress(ds):
@@ -3253,6 +3331,116 @@ def cmd_bom(db, args):
         outj(rows)
 
 
+def cmd_pcbsch(db, args):
+    """PCB↔SCH 器件核对：以 COMPONENT 内联 Unique ID(ggeN) 为全局键。
+    输出：位号一致 / PCB 改名(反标清单) / 仅SCH(未布局) / 仅PCB(SCH无)。"""
+    try:
+        pcbs = db.pcb_inventory()
+    except UnsupportedFormatError as e:
+        out(f"PCB 解析不可用: {e}")
+        sys.exit(1)
+
+    # SCH 侧：uid -> {designator, page}（内联 Unique ID 优先，ATTR 兜底）
+    sch_by_uid = {}
+    for u, title, _schem, dt in db.sheets():
+        if dt != 1:
+            continue
+        recs = db.sheet_records(u)
+        if recs is None:
+            continue
+        tmp = {}
+        for a in recs:
+            if not isinstance(a, list):
+                continue
+            if a and a[0] == "COMPONENT" and len(a) >= 8 \
+                    and isinstance(a[7], dict):
+                v = a[7].get("Unique ID")
+                if v:
+                    tmp.setdefault(str(a[1]), {})["_iu"] = str(v)
+            elif a and a[0] == "ATTR" and len(a) >= 5:
+                pid, key = str(a[2]), str(a[3])
+                val = "" if a[4] is None else str(a[4])
+                d = tmp.setdefault(pid, {})
+                if key == "Designator":
+                    d["designator"] = val
+                elif key == "Unique ID" and "_iu" not in d:
+                    d["uid_attr"] = val
+        for d in tmp.values():
+            uid = d.get("_iu") or d.get("uid_attr")
+            des = d.get("designator")
+            if uid and des and uid not in sch_by_uid:
+                sch_by_uid[uid] = {"designator": des, "page": title}
+
+    report = []
+    renamed_total = only_pcb_total = matched_total = 0
+    for inv in pcbs:
+        puids = {}
+        rows = []
+        for c in inv["comps"]:
+            uid, des = c["uid"], c["designator"]
+            if not uid:
+                continue
+            puids[uid] = des
+            s = sch_by_uid.get(uid)
+            if s is None:
+                status, sdes, spage = "only_pcb", None, None
+            elif s["designator"] == des:
+                status, sdes, spage = "match", s["designator"], s["page"]
+            else:
+                status, sdes, spage = "renamed", s["designator"], s["page"]
+            rows.append({"uid": uid, "pcb": des, "sch": sdes,
+                         "page": spage, "status": status,
+                         "device": c["device"] or c["footprint"]})
+        m = sum(1 for r in rows if r["status"] == "match")
+        r = sum(1 for r in rows if r["status"] == "renamed")
+        op = sum(1 for r in rows if r["status"] == "only_pcb")
+        os_ = [{"uid": uid, "sch": s["designator"], "page": s["page"]}
+               for uid, s in sorted(sch_by_uid.items(), key=lambda kv: natkey(kv[1]["designator"]))
+               if uid not in puids]
+        matched_total += m
+        renamed_total += r
+        only_pcb_total += op
+        report.append({"pcb": inv["title"],
+                       "comps": len(inv["comps"]),
+                       "nets": len(inv["nets"]),
+                       "pads": len(inv["pads"]),
+                       "matched": m, "renamed": r,
+                       "only_sch": os_, "only_pcb": op,
+                       "rows": rows})
+
+    if args.json:
+        outj({"sch_comps": len(sch_by_uid), "pcbs": report})
+        return
+
+    out(f"SCH 器件(uid): {len(sch_by_uid)}")
+    # 多 PCB 文档（历史快照/副本）时，仅匹配数最多的主板打印
+    # 仅SCH明细，其余只报数量，避免同清单重复刷屏
+    main_idx = max(range(len(report)),
+                   key=lambda i: report[i]["matched"]) if report else None
+    for idx, rep in enumerate(report):
+        out(f"\n== PCB「{rep['pcb']}」: 元件 {rep['comps']} 网络 "
+            f"{rep['nets']} 焊盘 {rep['pads']}")
+        out(f"   一致 {rep['matched']} | 改名 {rep['renamed']} | "
+            f"仅PCB {rep['only_pcb']} | 仅SCH {len(rep['only_sch'])}")
+        if rep["renamed"]:
+            out("   PCB 反标清单 (SCH → PCB):")
+            for row in rep["rows"]:
+                if row["status"] == "renamed":
+                    out(f"     {row['sch']:10s} → {row['pcb']:10s}"
+                        f"  [{row['device'][:28]}]")
+        if rep["only_sch"] and idx == main_idx:
+            out(f"   仅SCH有/未布局到PCB ({len(rep['only_sch'])} 个):")
+            for e in rep["only_sch"]:
+                out(f"     {e['sch']:10s} [{e['page']}]")
+        op_rows = [row for row in rep["rows"] if row["status"] == "only_pcb"]
+        if op_rows:
+            out(f"   仅PCB有/SCH中无 ({len(op_rows)} 个):")
+            for row in op_rows:
+                out(f"     {row['pcb']:10s} [{row['device'][:28]}]")
+    if not pcbs:
+        out("工程内无 PCB 文档")
+
+
 def cmd_datasheets(db, args):
     """提取 Datasheet URL 清单（经后端方法，LcedaDB/EproDB 均支持）。"""
     rows = db.datasheet_rows()
@@ -3412,6 +3600,8 @@ def main():
 
     sub.add_parser("datasheets", help="从 attributes 表导出 Datasheet URL 清单"
                    ).set_defaults(fn=cmd_datasheets)
+
+    sub.add_parser("pcbsch", help="PCB↔SCH 器件核对(Unique ID 映射: 反标/漏布局)").set_defaults(fn=cmd_pcbsch)
 
     p = sub.add_parser("attrs", help="导出页的全部属性(含@标题块)")
     p.add_argument("sheet")

@@ -10,6 +10,17 @@
 - CDP 导出路径（probes/export_newfmt.py）仍保留作为备选方案，
   可获取 INSTANCE 段的母图位号映射（直接解密路径暂不含此数据）。
 
+## PCB 解析（✅ 基础完成 2026-08-23，V2 SQLite）
+
+- **已完成**：`pcb_inventory()`（LcedaDB docType=3）解析
+  COMPONENT/ATTR/NET/PAD_NET；`pcbsch` 命令以 COMPONENT 内联
+  "Unique ID"(ggeN) 为 SCH↔PCB 全局映射键，输出反标改名清单/
+  仅SCH(未布局)/仅PCB。实测涡流 V1.0：主板 PCB1 265 元件，
+  一致 263 / 改名 2（SCH C75→PCB C29、C10→C30）/ 未布局 215。
+  工程内其余 PCB 文档（PCB1_1/PCB1_2/PCB2/PCB3）为历史快照。
+- **待做**：.epro/.epro2 的 PCB 访问（pcb_docs 返回 [] → 明确报错）；
+  PCB 网络/PAD 拓扑级审查（如 PCB 网络表 vs SCH 网络表逐 pin 对比）。
+
 ## BUS / BUSENTRY 总线支持（未实施）
 
 - **状态**：暂不做。等用户提供一个用到总线的工程例子后再实施。
@@ -32,7 +43,5 @@
 
 ## 其他未支持（记录，暂不做）
 
-- PCB 文档（docType=3）解析：NET/PAD/VIA/CONNECT——工具定位为原理图
-  读取工具，无 PCB 命令。
 - Sheet Symbol(20) 图纸重用、VARIANT/INSTANCE/元件分组：v3 规范概念，
   v2 数组格式文件无对应数据。

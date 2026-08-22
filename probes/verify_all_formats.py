@@ -14,7 +14,7 @@ FILES = [
     (r"C:\Users\dell\Documents\LCEDA-Pro\example-projects\示例工程_面板打印设计.eprj2", "?"),
     (r"C:\Users\dell\Documents\LCEDA-Pro\example-projects\示例工程_快速入门.eprj2", "?"),
     (r"C:\Users\dell\Documents\LCEDA-Pro\example-projects\示例工程_FPC补强设计.eprj2", "?"),
-    (r"C:\Users\dell\Documents\LCEDA-Pro\projects\Piezo_Driver.eprj2", "unsupported"),
+    (r"C:\Users\dell\Documents\LCEDA-Pro\projects\Piezo_Driver.eprj2", "ok"),
     (r"D:\WorkDesigns\2_WorkProjects\E_distance\1_sch\涡流传感器-V1.0-2026.04.01.eprj2", "ok"),
     (r"D:\WorkDesigns\2_WorkProjects\E_distance\1_sch\V1.1版主控原理图\MCU主控-V1.1-2026.05.06.eprj2", "?"),
     (r"D:\WorkDesigns\2_WorkProjects\E_distance\1_sch\涡流传感器.eprj2", "ok"),
@@ -28,7 +28,14 @@ FILES = [
 
 def smoke(path):
     """返回 dict(板数,页数,元件数,网络数) 或抛异常。"""
-    db = lr.detect_backend(path)(path)
+    r = lr.detect_backend(path)
+    if r == "DECRYPT_NEW":   # 新版加密 .eprj2：解密 → 临时 .epro2
+        tmp = lr._decrypt_new_eprj2(path)
+        db = lr.Epro2DB(tmp)
+        cls_name = "Epro2DB(解密)"
+    else:
+        db = r(path)
+        cls_name = type(db).__name__
     sheets = [s for s in db.sheets() if s[3] == 1]
     ncomp = 0
     for u, t, s, dt in sheets:
@@ -52,7 +59,7 @@ def smoke(path):
     return {"boards": len(db._boards) if hasattr(db, "_boards") else
             len(list(db.schematics())), "pages": len(sheets),
             "comps": ncomp, "nets": len(nets), "_db": db,
-            "_netset": nets}
+            "_netset": nets, "_cls": cls_name}
 
 print("=" * 100)
 print(f"{'文件':52s} {'路由结果':28s} {'板':>4s} {'页':>4s} {'元件':>6s} {'网络':>6s}  结果")
@@ -77,10 +84,10 @@ for path, expect in FILES:
         r = smoke(path)
         results[path] = {"status": "ok", **{k: v for k, v in r.items()
                                             if not k.startswith("_")}}
-        print(f"{name:52s} {cls.__name__:28s} {r['boards']:>4d} {r['pages']:>4d} "
+        print(f"{name:52s} {r['_cls']:28s} {r['boards']:>4d} {r['pages']:>4d} "
               f"{r['comps']:>6d} {r['nets']:>6d}  PASS")
     except Exception as e:
-        print(f"{name:52s} {cls.__name__:28s} 冒烟失败: "
+        print(f"{name:52s} {'?':28s} 冒烟失败: "
               f"{type(e).__name__}: {str(e)[:60]}  FAIL")
         results[path] = {"status": "smoke-error", "err": str(e)}
 
