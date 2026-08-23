@@ -62,9 +62,13 @@ description: Use when the user asks to read, query, search, extract, or verify c
   工程内多个 PCB 文档是历史快照，以匹配数最多的主板为准。
   注意 PCB ATTR 布局与 SCH 不同（key/value 在 [7]/[8]）。
   三后端（.eprj2/.epro/.epro2）均已支持 PCB 枚举与 pcbsch。
-- **render 渲染**：字体字号取自 FONTSTYLE、位号/值位置取自实例 ATTR 显示
-  坐标——即用户在 EDA 里看到的排版；不要硬编码字号。页内大段设计注释会
-  遮挡审查视图时用 `--no-texts`；引脚名/号默认关（`--pin-numbers` 开）。
+- **render 渲染**：**文件坐标系 Y 向上**（渲染时统一翻转，标题栏在右下才对）；
+  字体字号取自 FONTSTYLE、位号/值位置取自实例 ATTR 显示坐标（X/Y=null=
+  从未显示）、标题栏值走"符号模板显示位+实例值覆盖"机制——即用户在 EDA 里
+  看到的排版；不要硬编码字号。页内大段设计注释会遮挡审查视图时用
+  `--no-texts`；引脚号默认关（`--pin-numbers` 开），引脚名默认开。
+  字段依据查 `docs/工程文件字段字典.md`（含修正日志：FONTSTYLE 斜体/加粗
+  位置、PCB COMPONENT 层在 idx3 等）。
 
 - 格式规范依据官方文档：`reference/`（V3 md + V2.2 PDF），
   在线：https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md

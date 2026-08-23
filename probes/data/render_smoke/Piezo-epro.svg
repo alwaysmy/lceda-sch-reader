@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-300 -1500 2255 1800" font-family="Consolas, monospace">
+<rect x="-300" y="-1500" width="2255" height="1800" fill="#ffffff"/>
+<text x="1008.0" y="-100.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">审阅</text>
+<text x="1008.0" y="-120.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">绘制</text>
+<text x="1203.0" y="-60.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">版本</text>
+<text x="1393.0" y="-160.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">创建日期</text>
+<text x="1393.0" y="-140.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">物料编码</text>
+<text x="1410.0" y="-61.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">页</text>
+<text x="1517.0" y="-61.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">共</text>
+<text x="1008.0" y="-170.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">原理图</text>
+<text x="1393.0" y="-180.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">更新日期</text>
+<text x="1283.0" y="-60.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">尺寸</text>
+<text x="1008.0" y="-140.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">图页</text>
+<rect x="980.0" y="-190.0" width="665.0" height="180.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1243.0,-10.0 1243.0,-70.0 1243.0,-10.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1035.0,-50.0 1035.0,-190.0 1035.0,-50.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1383.0,-190.0 1383.0,-130.0 1383.0,-190.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1483.0,-130.0 1483.0,-190.0 1483.0,-130.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1163.0,-130.0 1163.0,-10.0 1163.0,-130.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1164.0,-110.0 980.0,-110.0 1164.0,-110.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-170.0 1383.0,-170.0 1645.0,-170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-50.0 980.0,-50.0 1645.0,-50.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-130.0 980.0,-130.0 1645.0,-130.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-70.0 980.0,-70.0 1645.0,-70.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1163.0,-90.0 980.0,-90.0 1163.0,-90.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-150.0 980.0,-150.0 1645.0,-150.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1323.0,-70.0 1323.0,-10.0 1323.0,-70.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<rect x="0.0" y="-1170.0" width="1655.0" height="1170.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<rect x="10.0" y="-1160.0" width="1635.0" height="1150.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="275.8,-0.0 275.8,-10.0 275.8,-0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="275.8,-1170.0 275.8,-1160.0 275.8,-1170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="137.9" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">1</text>
+<text x="137.9" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">1</text>
+<polyline points="551.7,-0.0 551.7,-10.0 551.7,-0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="551.7,-1170.0 551.7,-1160.0 551.7,-1170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="413.8" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">2</text>
+<text x="413.8" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">2</text>
+<polyline points="827.5,-0.0 827.5,-10.0 827.5,-0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="827.5,-1170.0 827.5,-1160.0 827.5,-1170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="689.6" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">3</text>
+<text x="689.6" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">3</text>
+<polyline points="1103.3,-0.0 1103.3,-10.0 1103.3,-0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1103.3,-1170.0 1103.3,-1160.0 1103.3,-1170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="965.4" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">4</text>
+<text x="965.4" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">4</text>
+<polyline points="1379.2,-0.0 1379.2,-10.0 1379.2,-0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1379.2,-1170.0 1379.2,-1160.0 1379.2,-1170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1241.2" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">5</text>
+<text x="1241.2" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">5</text>
+<text x="1517.1" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">6</text>
+<text x="1517.1" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">6</text>
+<polyline points="0.0,-877.5 10.0,-877.5 0.0,-877.5" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1655.0,-877.5 1645.0,-877.5 1655.0,-877.5" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="5.0" y="-1023.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">A</text>
+<text x="1650.0" y="-1023.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">A</text>
+<polyline points="0.0,-585.0 10.0,-585.0 0.0,-585.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1655.0,-585.0 1645.0,-585.0 1655.0,-585.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="5.0" y="-731.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">B</text>
+<text x="1650.0" y="-731.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">B</text>
+<polyline points="0.0,-292.5 10.0,-292.5 0.0,-292.5" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1655.0,-292.5 1645.0,-292.5 1655.0,-292.5" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="5.0" y="-438.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">C</text>
+<text x="1650.0" y="-438.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">C</text>
+<text x="5.0" y="-146.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">D</text>
+<text x="1650.0" y="-146.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">D</text>
+<text x="1495.0" y="-160.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">2025-11-27</text>
+<text x="1587.0" y="-61.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">12</text>
+<text x="1215.0" y="-140.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">Index</text>
+<text x="1470.0" y="-60.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1405.0" y="-100.0" font-size="10" fill="#000000" text-anchor="middle">Piezo_Driver</text>
+<text x="1215.0" y="-170.0" font-size="10" fill="#000000" text-anchor="middle">Schematic1</text>
+<text x="1495.0" y="-180.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">2026-03-06</text>
+<text x="1483.0" y="-30.0" font-size="10" fill="#000000" text-anchor="middle">Xxx Studio</text>
+<text x="1043.0" y="-120.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">A.W.2666</text>
+<text x="1280.0" y="-30.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">A3</text>
+<text x="1043.0" y="-100.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">A.W.2666</text>
+<text x="1203.0" y="-30.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">Rev.A.0</text>
+<text x="827.5" y="-1194.0" font-size="10" fill="#006600" text-anchor="middle" dominant-baseline="text-before-edge">3</text>
+<text x="740.0" y="-1045.0" font-size="80" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">目录</text>
+</svg>

@@ -1,0 +1,8830 @@
+{
+ "sqlite:tables": {
+  "meta": {
+   "attributes": {
+    "columns": [
+     "key",
+     "value",
+     "device_uuid"
+    ],
+    "rows": 4706
+   },
+   "backups": {
+    "columns": [
+     "uuid",
+     "limit",
+     "project_uuid",
+     "auto",
+     "name",
+     "description",
+     "archive",
+     "user_uuid",
+     "owner_uuid",
+     "project_name",
+     "createtime",
+     "path"
+    ],
+    "rows": 0
+   },
+   "block_symbol_attributes": {
+    "columns": [
+     "path",
+     "project_uuid",
+     "hash",
+     "ticket",
+     "attr"
+    ],
+    "rows": 0
+   },
+   "boards": {
+    "columns": [
+     "id",
+     "project_uuid",
+     "sch_uuid",
+     "name",
+     "sort"
+    ],
+    "rows": 0
+   },
+   "sqlite_sequence": {
+    "columns": [
+     "name",
+     "seq"
+    ],
+    "rows": 4
+   },
+   "categories": {
+    "columns": [
+     "uuid",
+     "name",
+     "type",
+     "user_uuid",
+     "parent_uuid",
+     "name_cn",
+     "order_no",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "coppers": {
+    "columns": [
+     "path",
+     "project_uuid",
+     "dataStr",
+     "ticket"
+    ],
+    "rows": 0
+   },
+   "notifications": {
+    "columns": [
+     "uuid",
+     "user_uuid",
+     "content",
+     "type",
+     "status",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "project_logs": {
+    "columns": [
+     "uuid",
+     "project_uuid",
+     "content",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "project_members": {
+    "columns": [
+     "role",
+     "project_uuid",
+     "user_uuid",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 1
+   },
+   "schematics": {
+    "columns": [
+     "uuid",
+     "description",
+     "ticket",
+     "sheet_count",
+     "project_uuid",
+     "name",
+     "display_name",
+     "createtime",
+     "updatetime",
+     "created_at",
+     "updated_at",
+     "sort"
+    ],
+    "rows": 6
+   },
+   "sessions": {
+    "columns": [
+     "uuid",
+     "key",
+     "value"
+    ],
+    "rows": 0
+   },
+   "system_attributes": {
+    "columns": [
+     "property",
+     "type",
+     "object",
+     "show_status"
+    ],
+    "rows": 0
+   },
+   "team_members": {
+    "columns": [
+     "uuid",
+     "role",
+     "team_uuid",
+     "user_uuid",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "users": {
+    "columns": [
+     "uuid",
+     "username",
+     "nickname",
+     "password",
+     "preference",
+     "avatar",
+     "team"
+    ],
+    "rows": 1
+   },
+   "system_config": {
+    "columns": [
+     "key",
+     "value"
+    ],
+    "rows": 2
+   },
+   "db_paths": {
+    "columns": [
+     "path",
+     "name",
+     "version",
+     "system",
+     "type",
+     "last_open_time"
+    ],
+    "rows": 0
+   },
+   "db_versions": {
+    "columns": [
+     "key",
+     "value"
+    ],
+    "rows": 1
+   },
+   "resources": {
+    "columns": [
+     "hash",
+     "dataStr",
+     "filename",
+     "owner_uuid",
+     "ticket"
+    ],
+    "rows": 4
+   },
+   "texts": {
+    "columns": [
+     "path",
+     "project_uuid",
+     "dataStr",
+     "ticket"
+    ],
+    "rows": 0
+   },
+   "editor_caches": {
+    "columns": [
+     "key",
+     "value"
+    ],
+    "rows": 0
+   },
+   "broadcast_messages": {
+    "columns": [
+     "id",
+     "key",
+     "value",
+     "created_at"
+    ],
+    "rows": 0
+   },
+   "components_tmp": {
+    "columns": [
+     "uuid",
+     "title",
+     "display_title",
+     "description",
+     "source",
+     "version",
+     "created_at",
+     "updated_at",
+     "ticket",
+     "docType",
+     "dataStr",
+     "createTime",
+     "updateTime",
+     "modifier_uuid",
+     "creator_uuid",
+     "owner_uuid",
+     "project_uuid",
+     "child_tag",
+     "parent_tag",
+     "custom_tags"
+    ],
+    "rows": 0
+   },
+   "documents": {
+    "columns": [
+     "uuid",
+     "title",
+     "display_title",
+     "description",
+     "docType",
+     "dataStr",
+     "sheet_id",
+     "ticket",
+     "sort_ticket",
+     "created_at",
+     "updated_at",
+     "creator_uuid",
+     "schematic_uuid",
+     "project_uuid",
+     "image",
+     "parent_uuid"
+    ],
+    "rows": 22
+   },
+   "component_fts_ids": {
+    "columns": [
+     "oid",
+     "id",
+     "comment"
+    ],
+    "rows": 0
+   },
+   "component_fts_inv_idx": {
+    "columns": [
+     "oid",
+     "token",
+     "weight"
+    ],
+    "rows": 0
+   },
+   "device_fts_ids": {
+    "columns": [
+     "oid",
+     "id",
+     "comment"
+    ],
+    "rows": 0
+   },
+   "device_fts_inv_idx": {
+    "columns": [
+     "oid",
+     "token",
+     "weight"
+    ],
+    "rows": 0
+   },
+   "component_histories": {
+    "columns": [
+     "id",
+     "uuid",
+     "parent",
+     "snapshot",
+     "key",
+     "iv",
+     "num",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "branches": {
+    "columns": [
+     "id",
+     "uuid",
+     "project_uuid",
+     "name",
+     "history_uuid",
+     "creator_uuid",
+     "description",
+     "parent_uuid",
+     "modifier_uuid",
+     "node",
+     "delete_status",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 2
+   },
+   "branch_locks": {
+    "columns": [
+     "id",
+     "document_uuid",
+     "user_uuid",
+     "branch_uuid",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "project_images": {
+    "columns": [
+     "id",
+     "uuid",
+     "ticket",
+     "project_uuid",
+     "branch_uuid",
+     "url",
+     "image_data"
+    ],
+    "rows": 3
+   },
+   "project_structures": {
+    "columns": [
+     "id",
+     "ticket",
+     "project_uuid",
+     "branch_uuid",
+     "structure"
+    ],
+    "rows": 11
+   },
+   "project_histories": {
+    "columns": [
+     "id",
+     "uuid",
+     "parent",
+     "snapshot",
+     "key",
+     "is_lock",
+     "num",
+     "snapshot_num",
+     "lock_time",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 0
+   },
+   "history_data": {
+    "columns": [
+     "id",
+     "uuid",
+     "history_uuid",
+     "dataStr",
+     "created_at",
+     "updated_at"
+    ],
+    "rows": 14
+   },
+   "components": {
+    "columns": [
+     "uuid",
+     "title",
+     "display_title",
+     "description",
+     "source",
+     "version",
+     "created_at",
+     "updated_at",
+     "ticket",
+     "docType",
+     "dataStr",
+     "createTime",
+     "updateTime",
+     "modifier_uuid",
+     "creator_uuid",
+     "owner_uuid",
+     "project_uuid",
+     "child_tag",
+     "parent_tag",
+     "custom_tags",
+     "history_uuid"
+    ],
+    "rows": 291
+   },
+   "devices": {
+    "columns": [
+     "uuid",
+     "description",
+     "title",
+     "display_title",
+     "images",
+     "source",
+     "version",
+     "ticket",
+     "footprint_type",
+     "symbol_type",
+     "created_at",
+     "updated_at",
+     "createTime",
+     "updateTime",
+     "modifier_uuid",
+     "creator_uuid",
+     "owner_uuid",
+     "project_uuid",
+     "child_tag",
+     "parent_tag",
+     "custom_tags",
+     "history_uuid"
+    ],
+    "rows": 202
+   },
+   "projects": {
+    "columns": [
+     "uuid",
+     "archive",
+     "name",
+     "content",
+     "cbb_project",
+     "thumb",
+     "ticket",
+     "g_ticket",
+     "owner_uuid",
+     "creator_uuid",
+     "created_at",
+     "updated_at",
+     "modifier_uuid",
+     "boards",
+     "block_symbol_attrs_groups",
+     "pcb_count",
+     "branch_uuid",
+     "default_sheet"
+    ],
+    "rows": 1
+   },
+   "project_history_be6f85d1311a4137acd40ab036da2ab8": {
+    "columns": [
+     "id",
+     "uuid",
+     "parent",
+     "snapshot",
+     "key",
+     "is_lock",
+     "num",
+     "created_at",
+     "updated_at",
+     "lock_time",
+     "snapshot_num"
+    ],
+    "rows": 14
+   }
+  }
+ },
+ "documents:docType=1:DOCTYPE": {
+  "count": 17,
+  "lengths": {
+   "3": 17
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 17
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 17
+    },
+    "examples": [
+     "\"SCH\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 17
+    },
+    "examples": [
+     "\"1.1\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:HEAD": {
+  "count": 17,
+  "lengths": {
+   "2": 17
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 17
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 17
+    },
+    "examples": [
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 62838}",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 31045}",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 35475}",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 15188}",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 9996}",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 52601}"
+    ],
+    "dict_keys": {
+     "originX": {
+      "types": {
+       "int": 17
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "originY": {
+      "types": {
+       "int": 17
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "version": {
+      "types": {
+       "str": 17
+      },
+      "examples": [
+       "\"2\""
+      ]
+     },
+     "maxId": {
+      "types": {
+       "int": 17
+      },
+      "examples": [
+       "62838",
+       "31045",
+       "35475",
+       "15188",
+       "9996"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "documents:docType=1:LINESTYLE": {
+  "count": 24,
+  "lengths": {
+   "7": 24
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"LINESTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st2\"",
+     "\"st3\"",
+     "\"st11\"",
+     "\"st9\"",
+     "\"st10\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 4,
+     "null": 20
+    },
+    "examples": [
+     "\"#000000\"",
+     "\"#FFFFCC\"",
+     "\"#0000FF\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 24
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 6,
+     "null": 18
+    },
+    "examples": [
+     "\"#FFFFCC\"",
+     "\"#FFCCFF\"",
+     "\"#CCFFCC\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 23,
+     "int": 1
+    },
+    "examples": [
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 24
+    },
+    "examples": [],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:RECT": {
+  "count": 21,
+  "lengths": {
+   "11": 21
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 21
+    },
+    "examples": [
+     "\"RECT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 21
+    },
+    "examples": [
+     "\"e27883\"",
+     "\"e27882\"",
+     "\"e8586\"",
+     "\"e28035\"",
+     "\"e27884\"",
+     "\"e8712\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 19,
+     "float": 2
+    },
+    "examples": [
+     "795",
+     "415",
+     "1370",
+     "945",
+     "55",
+     "65"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 19,
+     "float": 2
+    },
+    "examples": [
+     "1235",
+     "1520",
+     "1365",
+     "1505",
+     "880",
+     "1540"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 21
+    },
+    "examples": [
+     "970",
+     "795",
+     "1445",
+     "1365",
+     "2275",
+     "1625"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 19,
+     "float": 2
+    },
+    "examples": [
+     "1120",
+     "1295",
+     "1255",
+     "140",
+     "1080",
+     "455.0000000000002"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 21
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 21
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 21
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "str": 21
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st2\"",
+     "\"st10\"",
+     "\"st3\"",
+     "\"st11\""
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 21
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:COMPONENT": {
+  "count": 1573,
+  "lengths": {
+   "9": 1573
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1573
+    },
+    "examples": [
+     "\"COMPONENT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1573
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e62\"",
+     "\"e130\"",
+     "\"e257\"",
+     "\"e330\"",
+     "\"e363\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1573
+    },
+    "examples": [
+     "\"\"",
+     "\"CC0603KRX7R9BB104.1\"",
+     "\"SN74LVC74ABQAR.1\"",
+     "\"SN74LVC74ABQAR.2\"",
+     "\"CL10A106KP8NNNC.1\"",
+     "\"FSA3157L6X.1\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 1538,
+     "float": 35
+    },
+    "examples": [
+     "0",
+     "715",
+     "880",
+     "615.0000000000001",
+     "615",
+     "715.0000000000001"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1557,
+     "float": 16
+    },
+    "examples": [
+     "0",
+     "1235",
+     "1160",
+     "1275",
+     "1250",
+     "1305"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 1573
+    },
+    "examples": [
+     "0",
+     "90",
+     "180",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 1573
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "dict": 1573
+    },
+    "examples": [
+     "{}"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 1573
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:FONTSTYLE": {
+  "count": 333,
+  "lengths": {
+   "12": 333
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 333
+    },
+    "examples": [
+     "\"FONTSTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 333
+    },
+    "examples": [
+     "\"st4\"",
+     "\"st5\"",
+     "\"st6\"",
+     "\"st7\"",
+     "\"st8\"",
+     "\"st9\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 333
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 316,
+     "str": 17
+    },
+    "examples": [
+     "\"#0000FF\"",
+     "\"#000000\"",
+     "\"#FF0000\"",
+     "\"#000080\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 333
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 144,
+     "null": 157,
+     "str": 31,
+     "float": 1
+    },
+    "examples": [
+     "10",
+     "20",
+     "15",
+     "\"10\"",
+     "5",
+     "\"8\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 288,
+     "int": 45
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 288,
+     "int": 45
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 288,
+     "int": 45
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "null": 333
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 237,
+     "null": 96
+    },
+    "examples": [
+     "2",
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 247,
+     "null": 86
+    },
+    "examples": [
+     "0",
+     "2",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:ATTR": {
+  "count": 10838,
+  "lengths": {
+   "12": 10838
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 10838
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 10838
+    },
+    "examples": [
+     "\"e32\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 10838
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e62\"",
+     "\"e130\"",
+     "\"e130e198\"",
+     "\"e130e202\"",
+     "\"e257\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 10838
+    },
+    "examples": [
+     "\"Symbol\"",
+     "\"Company\"",
+     "\"Drawed\"",
+     "\"Reviewed\"",
+     "\"Version\"",
+     "\"Page Size\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 10005,
+     "int": 10,
+     "null": 823
+    },
+    "examples": [
+     "\"\"",
+     "\"623b4622e038428089dbdfa019668ee4\"",
+     "\"嘉立创EDA\"",
+     "\"V1.0\"",
+     "\"A4\"",
+     "\"涡流传感器-V1.0-2026.04.01\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 3878,
+     "int": 6960
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 2436,
+     "int": 8402
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 3423,
+     "null": 7114,
+     "float": 301
+    },
+    "examples": [
+     "1726",
+     "3674",
+     "2166",
+     "1886",
+     "1968",
+     "2088"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 3532,
+     "null": 7114,
+     "float": 192
+    },
+    "examples": [
+     "30",
+     "100",
+     "-116",
+     "120",
+     "61",
+     "180"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "null": 3804,
+     "int": 7034
+    },
+    "examples": [
+     "0",
+     "90"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "str": 10838
+    },
+    "examples": [
+     "\"st7\"",
+     "\"st5\"",
+     "\"st6\"",
+     "\"st4\"",
+     "\"st8\"",
+     "\"st9\""
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 10838
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:WIRE": {
+  "count": 1087,
+  "lengths": {
+   "5": 1087
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1087
+    },
+    "examples": [
+     "\"WIRE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1087
+    },
+    "examples": [
+     "\"e344\"",
+     "\"e996\"",
+     "\"e1026\"",
+     "\"e1043\"",
+     "\"e1062\"",
+     "\"e1208\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 1087
+    },
+    "examples": [
+     "[[615.0000000000001, 1255, 615, 1250]](len=1)",
+     "[[665, 1215, 590, 1215]](len=1)",
+     "[[705, 1180, 705, 1185]](len=1)",
+     "[[730, 1180, 730, 1185]](len=1)",
+     "[[765, 1215, 765, 1150], [765, 1215, 760, 1215]](len=5)",
+     "[[565, 1175, 565, 1180]](len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 1087
+    },
+    "examples": [
+     "\"st10\"",
+     "\"st11\"",
+     "\"st8\"",
+     "\"st9\"",
+     "\"st6\"",
+     "\"st7\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1087
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:TEXT": {
+  "count": 78,
+  "lengths": {
+   "8": 78
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"TEXT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"e1715\"",
+     "\"e1717\"",
+     "\"e3536\"",
+     "\"e7346\"",
+     "\"e7424\"",
+     "\"e8585\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 77,
+     "float": 1
+    },
+    "examples": [
+     "845",
+     "490",
+     "555",
+     "1140",
+     "855",
+     "1455"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 78
+    },
+    "examples": [
+     "1220",
+     "1205",
+     "1480",
+     "1405",
+     "425",
+     "1270"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 78
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"对于未使用的输入引脚接VCC和GND,输出悬空\"",
+     "\"OE接VCC或者悬空使能\"",
+     "\"DA1输出\"",
+     "\"2.048MHZ\"",
+     "\"与测温有关\"",
+     "\"电涡流探头\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"st17\"",
+     "\"st28\"",
+     "\"st30\"",
+     "\"st26\"",
+     "\"st29\"",
+     "\"st34\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 78
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:DOCTYPE": {
+  "count": 6,
+  "lengths": {
+   "3": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"PCB\"",
+     "\"FOOTPRINT\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"1.8\"",
+     "\"1.0\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:HEAD": {
+  "count": 5,
+  "lengths": {
+   "2": 5
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 5
+    },
+    "examples": [
+     "{\"editorVersion\": \"2.2.45.5\", \"importFlag\": 0}",
+     "{\"editorVersion\": \"2.2.43.4\", \"importFlag\": 0}",
+     "{\"editorVersion\": \"2.2.45.5\", \"importFlag\": 0, \"uuid\": \"a6d5…"
+    ],
+    "dict_keys": {
+     "editorVersion": {
+      "types": {
+       "str": 5
+      },
+      "examples": [
+       "\"2.2.45.5\"",
+       "\"2.2.43.4\""
+      ]
+     },
+     "importFlag": {
+      "types": {
+       "int": 5
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "uuid": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"a6d51bf71c14486fa798b2f1c109a719_e107\""
+      ]
+     },
+     "source": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"bf0d66748bba41b997d2d6ccd87922e5\""
+      ]
+     },
+     "title": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"WSON-10_L3.0-W3.0-P0.50-BL-EP\""
+      ]
+     }
+    }
+   }
+  }
+ },
+ "documents:docType=3:CANVAS": {
+  "count": 5,
+  "lengths": {
+   "13": 5
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"CANVAS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"mil\"",
+     "\"mm\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "5",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "5",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "5",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "5",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "2",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "5",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:LAYER": {
+  "count": 462,
+  "lengths": {
+   "9": 462
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 462
+    },
+    "examples": [
+     "\"LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 462
+    },
+    "examples": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "7",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 462
+    },
+    "examples": [
+     "\"TOP\"",
+     "\"BOTTOM\"",
+     "\"TOP_SILK\"",
+     "\"BOT_SILK\"",
+     "\"TOP_PASTE_MASK\"",
+     "\"BOT_PASTE_MASK\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 462
+    },
+    "examples": [
+     "\"Top Layer\"",
+     "\"Bottom Layer\"",
+     "\"Top Silkscreen Layer\"",
+     "\"Bottom Silkscreen Layer\"",
+     "\"Top Paste Mask Layer\"",
+     "\"Bottom Paste Mask Layer\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 462
+    },
+    "examples": [
+     "0",
+     "3",
+     "1",
+     "7"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 462
+    },
+    "examples": [
+     "\"#ff0000\"",
+     "\"#0000ff\"",
+     "\"#ffcc00\"",
+     "\"#66cc33\"",
+     "\"#808080\"",
+     "\"#800000\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 452,
+     "float": 10
+    },
+    "examples": [
+     "1",
+     "0",
+     "0.7"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 462
+    },
+    "examples": [
+     "\"#7f0000\"",
+     "\"#00007f\"",
+     "\"#7f6600\"",
+     "\"#336619\"",
+     "\"#404040\"",
+     "\"#400000\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 462
+    },
+    "examples": [
+     "0.5"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:LAYER_PHYS": {
+  "count": 61,
+  "lengths": {
+   "7": 61
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 61
+    },
+    "examples": [
+     "\"LAYER_PHYS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 61
+    },
+    "examples": [
+     "3",
+     "7",
+     "5",
+     "1",
+     "361",
+     "15"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 55,
+     "null": 6
+    },
+    "examples": [
+     "\"\"",
+     "\"外层铜厚1oz\"",
+     "\"7628 RC49% 8.6mil\"",
+     "\"内层铜厚\"",
+     "\"1.1mm H/HOZ Copper\"",
+     "\"FR4\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 28,
+     "float": 33
+    },
+    "examples": [
+     "0",
+     "1.378",
+     "8.283",
+     "0.598",
+     "41.929",
+     "0.394"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 52,
+     "null": 6,
+     "float": 3
+    },
+    "examples": [
+     "0",
+     "3.3",
+     "4.5"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 53,
+     "null": 6,
+     "float": 2
+    },
+    "examples": [
+     "0",
+     "0.02"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 61
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:ACTIVE_LAYER": {
+  "count": 5,
+  "lengths": {
+   "2": 5
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"ACTIVE_LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "1",
+     "3",
+     "15"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:NET": {
+  "count": 329,
+  "lengths": {
+   "8": 329
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 329
+    },
+    "examples": [
+     "\"NET\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 329
+    },
+    "examples": [
+     "\"\"",
+     "\"$2N7703\"",
+     "\"GND\"",
+     "\"V+13.6V\"",
+     "\"$2N4457\"",
+     "\"$2N4537\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 329
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 329
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 329
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 325,
+     "str": 4
+    },
+    "examples": [
+     "\"USB\"",
+     "\"串口_USB\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 329
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 329
+    },
+    "examples": [],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:RULE_TEMPLATE": {
+  "count": 4,
+  "lengths": {
+   "2": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"RULE_TEMPLATE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"自定义配置\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:RULE": {
+  "count": 59,
+  "lengths": {
+   "5": 59
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 59
+    },
+    "examples": [
+     "\"RULE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 59
+    },
+    "examples": [
+     "\"1\"",
+     "\"3\"",
+     "\"2\"",
+     "\"11\"",
+     "\"10\"",
+     "\"4\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 59
+    },
+    "examples": [
+     "\"copperThickness1oz\"",
+     "\"copperThickness2oz\"",
+     "\"otherClearance\"",
+     "\"netLength\"",
+     "\"differentialPair\"",
+     "\"blindVia\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 59
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 59
+    },
+    "examples": [
+     "[\"mm\", [[4.0157], [5.9843, 5.9843], [5.9843, 5.9843, 5.9843]…",
+     "[\"mm\", [[7.9921], [5.9843, 5.9843], [5.9843, 5.9843, 5.9843]…",
+     "[\"mm\", 0, 0, 11.811]",
+     "[\"mm\", 5, 10, 100]",
+     "[\"mm\", 7.9921, 10, 100]",
+     "[\"mm\", 0, 0]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:RULE_SELECTOR": {
+  "count": 332,
+  "lengths": {
+   "4": 332
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 332
+    },
+    "examples": [
+     "\"RULE_SELECTOR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "list": 332
+    },
+    "examples": [
+     "[\"NET\", \"\"]",
+     "[\"NET\", \"$2N7703\"]",
+     "[\"NET\", \"GND\"]",
+     "[\"NET\", \"V+13.6V\"]",
+     "[\"NET\", \"$2N4457\"]",
+     "[\"NET\", \"$2N4537\"]"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 332
+    },
+    "examples": [
+     "4",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "dict": 332
+    },
+    "examples": [
+     "{}",
+     "{\"7\": \"copperRegion1\"}"
+    ],
+    "dict_keys": {
+     "7": {
+      "types": {
+       "str": 4
+      },
+      "examples": [
+       "\"copperRegion1\""
+      ]
+     }
+    }
+   }
+  }
+ },
+ "documents:docType=3:PRIMITIVE": {
+  "count": 148,
+  "lengths": {
+   "4": 148
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 148
+    },
+    "examples": [
+     "\"PRIMITIVE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 148
+    },
+    "examples": [
+     "\"ALL\"",
+     "\"COMPONENT\"",
+     "\"PROPERTY\"",
+     "\"COMPONENTSILK\"",
+     "\"TRACK\"",
+     "\"VIA\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 148
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 148
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:SILK_OPTS": {
+  "count": 8,
+  "lengths": {
+   "4": 8
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"SILK_OPTS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "3",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"#000000\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"#FFFFFF\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:FONT": {
+  "count": 26,
+  "lengths": {
+   "12": 26
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"FONT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"电涡流探头\"",
+     "\"探头温度采集\"",
+     "\"SIGNAL_OUT\"",
+     "\"MUXOUT\"",
+     "\"V_REF\"",
+     "\"HDA-IN\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"黑体\"",
+     "\"Arial\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 23,
+     "float": 3
+    },
+    "examples": [
+     "6",
+     "5",
+     "8",
+     "3.93701",
+     "9",
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "bool": 26
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "bool": 26
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "bool": 26
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "float": 11,
+     "int": 15
+    },
+    "examples": [
+     "250.15151515151516",
+     "300.1515151515151",
+     "316.8181818181818",
+     "216.66666666666669",
+     "161.21212121212122",
+     "172.27272727272725"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "float": 11,
+     "int": 15
+    },
+    "examples": [
+     "60",
+     "55.90909090909091",
+     "80",
+     "39.3701",
+     "90",
+     "120"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "list": 26
+    },
+    "examples": [
+     "[[6.62121, 1.95455, \"L\", 6.62121, 0.66667, 7, 0.66667, 7, 2.…(len=26)",
+     "[[15.4697, 0.69697, \"L\", 15.50758, 0.68939, 15.53788, 0.7272…(len=34)",
+     "[[18.25758, 0.23485, \"L\", 18.25758, 0.07576, 21.16667, 0.075…(len=12)",
+     "[[5.70455, 1.02273, \"L\", 5.95455, 1.01515, 6.18939, 1.02273,…(len=7)",
+     "[[3.25758, 0.23485, \"L\", 3.25758, 0.07576, 6.16667, 0.07576,…(len=6)",
+     "[[0.39394, 2.86364, \"L\", 0.39394, 1.07576, 0.86364, 1.07576,…(len=8)"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:PREFERENCE": {
+  "count": 4,
+  "lengths": {
+   "21": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"PREFERENCE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "10",
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1,
+     "float": 3
+    },
+    "examples": [
+     "12.0078",
+     "20"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 1,
+     "float": 3
+    },
+    "examples": [
+     "24.0158",
+     "40"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"L45\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"JLC04161H-7628\""
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"OPTIMIZA_OPEN\""
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"OPTIMIZA_WEAK\""
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "bool": 4
+    },
+    "examples": [
+     "true"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "bool": 4
+    },
+    "examples": [
+     "true"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:PANELIZE": {
+  "count": 4,
+  "lengths": {
+   "7": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"PANELIZE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:PANELIZE_STAMP": {
+  "count": 8,
+  "lengths": {
+   "7": 8
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"PANELIZE_STAMP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "21.6535"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "33.4646"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:PANELIZE_SIDE": {
+  "count": 8,
+  "lengths": {
+   "7": 8
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"PANELIZE_SIDE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "236.2205"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "78.7402"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "39.3701"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "19.685"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:VIA": {
+  "count": 968,
+  "lengths": {
+   "14": 968
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 968
+    },
+    "examples": [
+     "\"VIA\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 968
+    },
+    "examples": [
+     "\"e302\"",
+     "\"e401\"",
+     "\"e402\"",
+     "\"e403\"",
+     "\"e404\"",
+     "\"e405\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 968
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 968
+    },
+    "examples": [
+     "\"GND\"",
+     "\"$6N3163\"",
+     "\"+3.9V\"",
+     "\"$6N5956\"",
+     "\"+3.3V\"",
+     "\"+6.8V\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 968
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 850,
+     "float": 118
+    },
+    "examples": [
+     "2880",
+     "2840",
+     "1435",
+     "2860",
+     "3156.3483",
+     "3136.3483"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 851,
+     "float": 117
+    },
+    "examples": [
+     "-370",
+     "-415",
+     "-710",
+     "-395",
+     "-1364.4615",
+     "-1344.4615"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 892,
+     "int": 76
+    },
+    "examples": [
+     "12.0078",
+     "20",
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 892,
+     "int": 76
+    },
+    "examples": [
+     "24.0158",
+     "40",
+     "24"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 968
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "null": 968
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "null": 968
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 968
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "list": 968
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:LINE": {
+  "count": 2817,
+  "lengths": {
+   "11": 2817
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 2817
+    },
+    "examples": [
+     "\"LINE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 2817
+    },
+    "examples": [
+     "\"e332\"",
+     "\"e337\"",
+     "\"e342\"",
+     "\"e352\"",
+     "\"e353\"",
+     "\"e354\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 2817
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 2817
+    },
+    "examples": [
+     "\"+24V\"",
+     "\"$6N5929\"",
+     "\"$6N5930\"",
+     "\"$6N5928\"",
+     "\"$6N12933\"",
+     "\"$6N2023\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 2817
+    },
+    "examples": [
+     "1",
+     "2",
+     "16"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 1501,
+     "int": 1316
+    },
+    "examples": [
+     "2946.4649",
+     "3221.46",
+     "3029.9664",
+     "2988.9764",
+     "3323.84",
+     "3320.3285"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 1408,
+     "int": 1409
+    },
+    "examples": [
+     "-413.9764",
+     "-1364.1415",
+     "-454.9664",
+     "-433.6564",
+     "-513.4064",
+     "-1344.4515"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 1328,
+     "int": 1489
+    },
+    "examples": [
+     "2988.9764",
+     "3049.8349",
+     "3029.9664",
+     "2946.4649",
+     "2947.3949",
+     "3323.84"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 1258,
+     "int": 1559
+    },
+    "examples": [
+     "-454.9664",
+     "-413.9764",
+     "-513.4064",
+     "-514.3364",
+     "-1364.1415",
+     "-1365.1315"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 2747,
+     "float": 70
+    },
+    "examples": [
+     "10",
+     "15",
+     "6.23",
+     "40",
+     "20",
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 2817
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:POLY": {
+  "count": 28,
+  "lengths": {
+   "8": 28
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 28
+    },
+    "examples": [
+     "\"POLY\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 28
+    },
+    "examples": [
+     "\"e68\"",
+     "\"e10\"",
+     "\"e18\"",
+     "\"e156\"",
+     "\"e91\"",
+     "\"e92\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 25,
+     "str": 3
+    },
+    "examples": [
+     "0",
+     "\"1\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 28
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 28
+    },
+    "examples": [
+     "3",
+     "11",
+     "6",
+     "5",
+     "13",
+     "48"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 19,
+     "float": 9
+    },
+    "examples": [
+     "5.906",
+     "10",
+     "12",
+     "15",
+     "2",
+     "9.8425"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 28
+    },
+    "examples": [
+     "[\"R\", 0, 0, 3937.0079, 3937.0079, 0, 118.1102]",
+     "[\"R\", 1065, -2210, 686.1426, 1727.0079, 0, 0]",
+     "[\"R\", 1751.1426, -2462.8323, 2188.8574, 1477.1677, 0, 0]",
+     "[\"R\", -1600, 1100, 3050, 2200, 0, 200]",
+     "[\"CIRCLE\", -750, 650, 141.5097]",
+     "[\"CIRCLE\", -750, -600, 141.5097]"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 28
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:POUR": {
+  "count": 58,
+  "lengths": {
+   "12": 58
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 58
+    },
+    "examples": [
+     "\"POUR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 58
+    },
+    "examples": [
+     "\"e3050\"",
+     "\"e3301\"",
+     "\"e3341\"",
+     "\"e3345\"",
+     "\"e362\"",
+     "\"e919\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 58
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 58
+    },
+    "examples": [
+     "\"GND\"",
+     "\"V+3.9V\"",
+     "\"+24V\"",
+     "\"$6N2672\"",
+     "\"V+6.8V\"",
+     "\"$6N1489\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 58
+    },
+    "examples": [
+     "1",
+     "2",
+     "15",
+     "16"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 58
+    },
+    "examples": [
+     "0.2"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 58
+    },
+    "examples": [
+     "\"POUR28\"",
+     "\"POUR29\"",
+     "\"POUR30\"",
+     "\"POUR31\"",
+     "\"POUR2\"",
+     "\"POUR24\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 58
+    },
+    "examples": [
+     "0",
+     "2",
+     "1",
+     "25",
+     "3",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "list": 58
+    },
+    "examples": [
+     "[[\"R\", 0, 0, 3940, 3940, 0, 0]](len=1)",
+     "[[3740, -1405, \"L\", 3730, -1415, 3275, -1415, 3270, -1410, 3…(len=1)",
+     "[[2130, -535, \"L\", 2160, -535, 2165, -540, 2165, -595, 2160,…(len=1)",
+     "[[2745, -425, \"L\", 2805, -425, 2805, -485, 2810, -490, 2905,…(len=1)",
+     "[[2350, -1490, \"L\", 2380, -1490, 2385, -1495, 2385, -1550, 2…(len=1)",
+     "[[3195, -505, \"L\", 3205, -515, 3205, -747.4746, 3184.696, -7…(len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "list": 58
+    },
+    "examples": [
+     "[\"SOLID\", 8]"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 58
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 58
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:REGION": {
+  "count": 18,
+  "lengths": {
+   "9": 18
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 18
+    },
+    "examples": [
+     "\"REGION\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 18
+    },
+    "examples": [
+     "\"e630\"",
+     "\"e264\"",
+     "\"e817\"",
+     "\"e99\"",
+     "\"e227\"",
+     "\"e648\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 18
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 18
+    },
+    "examples": [
+     "1",
+     "12",
+     "16"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 18
+    },
+    "examples": [
+     "0.2"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "list": 18
+    },
+    "examples": [
+     "[7]"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 18
+    },
+    "examples": [
+     "[[1533.065, -638.6787, \"L\", 1660.985, -638.6787, 1666.925, -…(len=1)",
+     "[[\"R\", -672.092, 86.866, 132.174, 159.732, 0, 0]](len=1)",
+     "[[\"R\", -923.0794, -658, 188.0794, 258.086, 0, 0]](len=1)",
+     "[[\"R\", 507.9828, 228, 242.0172, 303, 0, 0]](len=1)",
+     "[[\"R\", 750, 145.136, 60, 40.136, 0, 0]](len=1)",
+     "[[\"R\", -230, 210, 65, 445, 0, 0]](len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 18
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 18
+    },
+    "examples": [],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:STRING": {
+  "count": 111,
+  "lengths": {
+   "18": 111
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 111
+    },
+    "examples": [
+     "\"STRING\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 111
+    },
+    "examples": [
+     "\"e287\"",
+     "\"e288\"",
+     "\"e289\"",
+     "\"e290\"",
+     "\"e291\"",
+     "\"e293\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 70,
+     "float": 41
+    },
+    "examples": [
+     "2140",
+     "2205",
+     "3400",
+     "3120",
+     "1165",
+     "1660"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 71,
+     "float": 40
+    },
+    "examples": [
+     "-85",
+     "-1105",
+     "-1870",
+     "-940",
+     "-65",
+     "-530"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 111
+    },
+    "examples": [
+     "\"+3.3V\"",
+     "\"+5V\"",
+     "\"+6.8V\"",
+     "\"+3.9V\"",
+     "\"EXT-REF\"",
+     "\"CLK-2.088M\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 111
+    },
+    "examples": [
+     "\"default\"",
+     "\"黑体\"",
+     "\"Arial\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 107,
+     "float": 4
+    },
+    "examples": [
+     "40",
+     "50",
+     "60",
+     "45",
+     "80",
+     "39.3701"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 107,
+     "float": 4
+    },
+    "examples": [
+     "6",
+     "5",
+     "8",
+     "9",
+     "10",
+     "7.9921"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "990",
+     "1440",
+     "1530",
+     "720",
+     "450",
+     "1080"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 111
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:COMPONENT": {
+  "count": 511,
+  "lengths": {
+   "9": 511
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 511
+    },
+    "examples": [
+     "\"COMPONENT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 511
+    },
+    "examples": [
+     "\"e6\"",
+     "\"e7\"",
+     "\"e8\"",
+     "\"e9\"",
+     "\"e11\"",
+     "\"e12\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 510,
+     "str": 1
+    },
+    "examples": [
+     "0",
+     "\"1\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 511
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 197,
+     "int": 314
+    },
+    "examples": [
+     "532.44",
+     "1130",
+     "805",
+     "630",
+     "1820",
+     "1750"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 316,
+     "float": 195
+    },
+    "examples": [
+     "-735",
+     "-525",
+     "-615",
+     "-400",
+     "-305",
+     "-647.44"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 511
+    },
+    "examples": [
+     "0",
+     "-90",
+     "90",
+     "180",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "dict": 511
+    },
+    "examples": [
+     "{\"Unique ID\": \"gge120\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…",
+     "{\"Unique ID\": \"gge105\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…",
+     "{\"Unique ID\": \"gge114\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…",
+     "{\"Unique ID\": \"gge116\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…",
+     "{\"Unique ID\": \"gge103\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…",
+     "{\"Unique ID\": \"gge102\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…"
+    ],
+    "dict_keys": {
+     "Unique ID": {
+      "types": {
+       "str": 511
+      },
+      "examples": [
+       "\"gge120\"",
+       "\"gge105\"",
+       "\"gge114\"",
+       "\"gge116\"",
+       "\"gge103\""
+      ]
+     },
+     "Reuse Block": {
+      "types": {
+       "str": 511
+      },
+      "examples": [
+       "\"\""
+      ]
+     },
+     "Group ID": {
+      "types": {
+       "str": 511
+      },
+      "examples": [
+       "\"\""
+      ]
+     },
+     "Channel ID": {
+      "types": {
+       "str": 511
+      },
+      "examples": [
+       "\"$1e4136\"",
+       "\"$1e1846\"",
+       "\"$1e3558\"",
+       "\"$1e3723\"",
+       "\"$1e1346\""
+      ]
+     },
+     "Multi-Part Group": {
+      "types": {
+       "str": 4
+      },
+      "examples": [
+       "\"\""
+      ]
+     },
+     "Relevance": {
+      "types": {
+       "str": 4
+      },
+      "examples": [
+       "\"[]\""
+      ]
+     },
+     "JLCPCB Part Class": {
+      "types": {
+       "str": 4
+      },
+      "examples": [
+       "\"扩展库\"",
+       "\"Extended Part\"",
+       "\"基础库\""
+      ]
+     },
+     "Polarity": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"单向\""
+      ]
+     },
+     "Clamping Voltage": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"10.3V\""
+      ]
+     },
+     "Peak Pulse Current (Ipp)": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"58.25A\""
+      ]
+     },
+     "Peak Pulse Power Dissipation (Ppp)": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"600W\""
+      ]
+     },
+     "Voltage - Breakdown": {
+      "types": {
+       "str": 1
+      },
+      "examples": [
+       "\"7.37V\""
+      ]
+     },
+     "Maximum Clamping Voltage": {
+      "types": {
+       "str": 2
+      },
+      "examples": [
+       "\"9.2V\""
+      ]
+     },
+     "Peak Pulse Current (Ipp)@10/1000us": {
+      "types": {
+       "str": 2
+      },
+      "examples": [
+       "\"65.3A\""
+      ]
+     },
+     "Peak Pulse Power Dissipation (Ppp)@10/1000us": {
+      "types": {
+       "str": 2
+      },
+      "examples": [
+       "\"600W\""
+      ]
+     },
+     "Breakdown Voltage": {
+      "types": {
+       "str": 2
+      },
+      "examples": [
+       "\"6.4V\""
+      ]
+     },
+     "Overload Voltage (Max)": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"75V\""
+      ]
+     },
+     "Operating Temperature Range": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"-55℃~+155℃\""
+      ]
+     },
+     "Supplier Part": {
+      "types": {
+       "str": 5
+      },
+      "examples": [
+       "\"\"",
+       "\"\\\\\""
+      ]
+     },
+     "Value": {
+      "types": {
+       "str": 5
+      },
+      "examples": [
+       "\"NC\"",
+       "\"680\""
+      ]
+     },
+     "Voltage - Max": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"24V\""
+      ]
+     },
+     "Current - Max": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"100A\""
+      ]
+     },
+     "Time to Trip(Max)": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"100ms\""
+      ]
+     }
+    }
+   },
+   "8": {
+    "types": {
+     "int": 511
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:ATTR": {
+  "count": 1530,
+  "lengths": {
+   "22": 1530
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1530
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1530
+    },
+    "examples": [
+     "\"e6e17\"",
+     "\"e6e18\"",
+     "\"e6e0\"",
+     "\"e7e17\"",
+     "\"e7e18\"",
+     "\"e7e0\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 1530
+    },
+    "examples": [
+     "\"e6\"",
+     "\"e7\"",
+     "\"e8\"",
+     "\"e9\"",
+     "\"e11\"",
+     "\"e12\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 1017,
+     "int": 296,
+     "float": 217
+    },
+    "examples": [
+     "375",
+     "1087.8725",
+     "757.56",
+     "590",
+     "1800",
+     "1695"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 1017,
+     "int": 301,
+     "float": 212
+    },
+    "examples": [
+     "-850",
+     "-560",
+     "-550.4535",
+     "-370",
+     "-355",
+     "-600"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 1530
+    },
+    "examples": [
+     "\"Designator\"",
+     "\"Device\"",
+     "\"Footprint\"",
+     "\"Supplier Part\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 1530
+    },
+    "examples": [
+     "\"e2670b0ae4ed4789b31688ef4d0f73f9\"",
+     "\"C35\"",
+     "\"dec1d01344764c95b8e993ce74b8dd1b\"",
+     "\"C34\"",
+     "\"b3110643b9b14207aa8538cd16259664\"",
+     "\"C37\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "str": 1530
+    },
+    "examples": [
+     "\"default\""
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "50",
+     "45"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "5",
+     "6",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "540",
+     "1080",
+     "450",
+     "900",
+     "720",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "int": 1530
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:PAD_NET": {
+  "count": 1617,
+  "lengths": {
+   "5": 1617
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1617
+    },
+    "examples": [
+     "\"PAD_NET\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1617
+    },
+    "examples": [
+     "\"e6\"",
+     "\"e7\"",
+     "\"e8\"",
+     "\"e9\"",
+     "\"e11\"",
+     "\"e12\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1617
+    },
+    "examples": [
+     "\"2\"",
+     "\"1\"",
+     "\"5\"",
+     "\"4\"",
+     "\"3\"",
+     "\"6\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 1617
+    },
+    "examples": [
+     "\"$1N4878\"",
+     "\"$1N3910\"",
+     "\"+3.3V\"",
+     "\"GND\"",
+     "\"$1N3720\"",
+     "\"$1N3628\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 1617
+    },
+    "examples": [
+     "\"e15\"",
+     "\"e14\"",
+     "\"e7\"",
+     "\"e8\"",
+     "\"e16\"",
+     "\"e34\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:POURED": {
+  "count": 102,
+  "lengths": {
+   "6": 102
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 102
+    },
+    "examples": [
+     "\"POURED\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 102
+    },
+    "examples": [
+     "\"e4104\"",
+     "\"e4105\"",
+     "\"e4106\"",
+     "\"e4107\"",
+     "\"e4108\"",
+     "\"e4109\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 102
+    },
+    "examples": [
+     "\"e3050\"",
+     "\"e919\"",
+     "\"e3341\"",
+     "\"e362\"",
+     "\"e945\"",
+     "\"e448\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 102
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "bool": 102
+    },
+    "examples": [
+     "true"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "list": 102
+    },
+    "examples": [
+     "[[1.4099999999999984, -11.811020000000012, \"ARC\", -90.000000…(len=107)",
+     "[[215.83431457505074, -59.6, \"L\", 213.16568542494926, -59.6,…(len=1)",
+     "[[1.4099999999999984, -11.811020000000012, \"ARC\", -90.000000…(len=73)",
+     "[[298.9, -41.834314575050726, \"L\", 298.9, -41.33864, 317.272…(len=1)",
+     "[[237.83431457505074, -155.1, \"L\", 235.16568542494926, -155.…(len=1)",
+     "[[274.9, -47.5, \"L\", 274.9, -43.39919, 280.1, -43.39919, 280…(len=1)"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:CONNECT": {
+  "count": 915,
+  "lengths": {
+   "3": 915
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 915
+    },
+    "examples": [
+     "\"CONNECT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 915
+    },
+    "examples": [
+     "\"e65\"",
+     "\"e66\"",
+     "\"e67\"",
+     "\"e68\"",
+     "\"e75\"",
+     "\"e76\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 915
+    },
+    "examples": [
+     "[\"e1289\", \"e0e17\"]",
+     "[\"e1283\", \"e0e17\"]",
+     "[\"e1837\", \"e1e14\"]",
+     "[\"e165\", \"e1e15\"]",
+     "[\"e178\", \"e1e15\"]",
+     "[\"e171\", \"e2e14\"]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:ARC": {
+  "count": 6,
+  "lengths": {
+   "12": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"ARC\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"e303\"",
+     "\"e305\"",
+     "\"e307\"",
+     "\"e429\"",
+     "\"e431\"",
+     "\"e433\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"UD+\"",
+     "\"$3N1476\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "-1236.8581",
+     "-1226.8581",
+     "-1206.8581",
+     "-876.0398",
+     "-876.2093",
+     "-861.8977"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 5,
+     "int": 1
+    },
+    "examples": [
+     "-233.045",
+     "-210",
+     "-223.045",
+     "-281.6489",
+     "-295.9604",
+     "-309.9331"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "-1226.8581",
+     "-1206.8581",
+     "-1196.8581",
+     "-876.0398",
+     "-862.0672",
+     "-847.7556"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 5,
+     "int": 1
+    },
+    "examples": [
+     "-223.045",
+     "-210",
+     "-233.045",
+     "-295.791",
+     "-310.1026",
+     "-309.9331"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "90",
+     "-90",
+     "-180",
+     "180"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "6.23"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:TEARDROP": {
+  "count": 915,
+  "lengths": {
+   "6": 915
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 915
+    },
+    "examples": [
+     "\"TEARDROP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 915
+    },
+    "examples": [
+     "\"e65\"",
+     "\"e66\"",
+     "\"e67\"",
+     "\"e68\"",
+     "\"e75\"",
+     "\"e76\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 915
+    },
+    "examples": [
+     "\"GND\"",
+     "\"$2N25369\"",
+     "\"$2N5178\"",
+     "\"$2N13004\"",
+     "\"H_RESET\"",
+     "\"+3.3V\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 915
+    },
+    "examples": [
+     "1",
+     "2",
+     "16"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 915
+    },
+    "examples": [
+     "[-1140.4256, 320.7918, \"L\", -1169.7822, 312.6484, \"ARC\", 28.…",
+     "[-1107.324, 433.87, \"L\", -1092.324, 433.87, \"ARC\", 53.1301, …",
+     "[-504.6267, -107.672, \"L\", -515.0805, -101.1552, \"ARC\", 36.8…",
+     "[-523.7165, -35.44, \"L\", -523.7165, -25.44, \"ARC\", 53.1301, …",
+     "[-476.4598, -9.3887, \"L\", -467.9802, -15.0513, \"ARC\", 36.869…",
+     "[-505.9802, 16.3887, \"L\", -515.0198, 21.4913, \"ARC\", 36.8699…"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 915
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:OBJ": {
+  "count": 5,
+  "lengths": {
+   "11": 5
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"OBJ\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"e3917\"",
+     "\"e4879\"",
+     "\"e5889\"",
+     "\"e3593\"",
+     "\"e555\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 3,
+     "float": 2
+    },
+    "examples": [
+     "90",
+     "85",
+     "670",
+     "43.11694290976055",
+     "88.12"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 2,
+     "int": 3
+    },
+    "examples": [
+     "710.5899999999999",
+     "387.427652733119",
+     "745",
+     "650",
+     "615"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 2,
+     "float": 3
+    },
+    "examples": [
+     "236",
+     "325",
+     "434.7603833865812",
+     "250.88305709023945",
+     "250.88"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 2,
+     "int": 3
+    },
+    "examples": [
+     "341",
+     "98.58999999999992",
+     "172.42765273311898",
+     "126"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"blob:687702a2079e61cfc36e23c903ef15aa3a4077f6bcbc2e84a8af89…",
+     "\"blob:c2e447fe31f7d296b655aee9acbb6946ea049babd1d5cf5775c626…",
+     "\"blob:a5abaf0a2299b9ea1696af03d3d3ff925d677526c568126b285783…",
+     "\"blob:0ebf257c58f6fc07b617b0f1648bca5e6a59f02df1ecb14007e732…"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:PAD": {
+  "count": 11,
+  "lengths": {
+   "27": 11
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 11
+    },
+    "examples": [
+     "\"PAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 11
+    },
+    "examples": [
+     "\"e13\"",
+     "\"e14\"",
+     "\"e15\"",
+     "\"e16\"",
+     "\"e17\"",
+     "\"e18\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 11
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 11
+    },
+    "examples": [
+     "\"1\"",
+     "\"2\"",
+     "\"3\"",
+     "\"4\"",
+     "\"5\"",
+     "\"6\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 9,
+     "int": 2
+    },
+    "examples": [
+     "-39.4",
+     "-19.7",
+     "0",
+     "19.7",
+     "39.4",
+     "-0.004"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 11
+    },
+    "examples": [
+     "-55.115",
+     "55.115",
+     "-0.001"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "0",
+     "180"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "list": 11
+    },
+    "examples": [
+     "[\"RECT\", 9.843, 23.622, 0]",
+     "[\"POLYGON\", [-66.933, -4.922, \"L\", -47.248, -4.922, -47.248,…"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "list": 11
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "int": 11
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "22": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "23": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "24": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "25": {
+    "types": {
+     "null": 11
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "26": {
+    "types": {
+     "list": 11
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:FILL": {
+  "count": 12,
+  "lengths": {
+   "9": 12
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"FILL\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e24\"",
+     "\"e25\"",
+     "\"e26\"",
+     "\"e27\"",
+     "\"e28\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "50",
+     "49"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 12
+    },
+    "examples": [
+     "0.2"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "list": 12
+    },
+    "examples": [
+     "[[\"CIRCLE\", -59.22, -59.135, 2.361]](len=1)",
+     "[[-44.321, 59.089, \"L\", -34.479, 59.089, -34.479, 43.341, -4…(len=1)",
+     "[[-24.621, 59.089, \"L\", -14.779, 59.089, -14.779, 43.341, -2…(len=1)",
+     "[[-4.921, 59.089, \"L\", 4.921, 59.089, 4.921, 43.341, -4.921,…(len=1)",
+     "[[14.779, 59.089, \"L\", 24.621, 59.089, 24.621, 43.341, 14.77…(len=1)",
+     "[[34.479, 59.089, \"L\", 44.321, 59.089, 44.321, 43.341, 34.47…(len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=3:GROUP": {
+  "count": 1,
+  "lengths": {
+   "3": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"GROUP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"1\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"电流源板\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "documents:docType=1:POLY": {
+  "count": 24,
+  "lengths": {
+   "6": 24
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"POLY\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"e14955\"",
+     "\"e14956\"",
+     "\"e14957\"",
+     "\"e14967\"",
+     "\"e14966\"",
+     "\"e14968\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 24
+    },
+    "examples": [
+     "[85, 1135, 105, 1135]",
+     "[105, 1135, 100, 1140]",
+     "[105, 1135, 100, 1130]",
+     "[160, 1135, 180, 1135]",
+     "[180, 1135, 175, 1140]",
+     "[180, 1135, 175, 1130]"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "bool": 24
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"st23\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 24
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:DOCTYPE": {
+  "count": 291,
+  "lengths": {
+   "3": 291
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 291
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 291
+    },
+    "examples": [
+     "\"SYMBOL\"",
+     "\"FOOTPRINT\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 291
+    },
+    "examples": [
+     "\"1.1\"",
+     "\"1.8\"",
+     "\"1.0\"",
+     "\"1.3\"",
+     "\"1.6\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:HEAD": {
+  "count": 216,
+  "lengths": {
+   "2": 216
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 216
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 216
+    },
+    "examples": [
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2.1.19.48f65099\", \"…",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 307, \"…",
+     "{\"symbolType\": 2, \"originX\": 0, \"originY\": 0, \"version\": \"0.…",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 56, \"s…",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"maxId\": 35, \"s…",
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"1.4.2.4a8eee\", \"sym…"
+    ],
+    "dict_keys": {
+     "originX": {
+      "types": {
+       "int": 202
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "originY": {
+      "types": {
+       "int": 202
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "version": {
+      "types": {
+       "str": 202
+      },
+      "examples": [
+       "\"2\"",
+       "\"0.13.0\"",
+       "\"1.4.2.4a8eee\"",
+       "\"2.1.19.48f65099\"",
+       "\"1.5.21.17d6e6\""
+      ]
+     },
+     "maxId": {
+      "types": {
+       "int": 48
+      },
+      "examples": [
+       "680",
+       "307",
+       "56",
+       "35",
+       "47"
+      ]
+     },
+     "symbolType": {
+      "types": {
+       "int": 202
+      },
+      "examples": [
+       "2",
+       "18",
+       "19",
+       "20",
+       "22"
+      ]
+     },
+     "editorVersion": {
+      "types": {
+       "str": 14
+      },
+      "examples": [
+       "\"2.2.32.3\"",
+       "\"2.2.45.5\"",
+       "\"2.2.40.8\"",
+       "\"2.2.43.4\"",
+       "\"2.2.26.4\""
+      ]
+     },
+     "importFlag": {
+      "types": {
+       "int": 14
+      },
+      "examples": [
+       "0"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PART": {
+  "count": 206,
+  "lengths": {
+   "3": 206
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 206
+    },
+    "examples": [
+     "\"PART\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 206
+    },
+    "examples": [
+     "\"\"",
+     "\"SN74LVC74ABQAR.1\"",
+     "\"SN74LVC74ABQAR.2\"",
+     "\"CC0603KRX7R9BB104.1\"",
+     "\"OT2EL4C4JI-111OLP-40M.1\"",
+     "\"CL10A106KP8NNNC.1\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "dict": 206
+    },
+    "examples": [
+     "{\"BBOX\": [0, 825, 1170, 0]}",
+     "{\"BBOX\": [-40, 40, 35, -40]}",
+     "{\"BBOX\": [-35, 60, 35, -20]}",
+     "{\"BBOX\": [-10.5, -8.5, 10.5, 8.5]}",
+     "{\"BBOX\": [-10, -10, 10, -19]}",
+     "{\"BBOX\": [-5, 10, 5, 5]}"
+    ],
+    "dict_keys": {
+     "BBOX": {
+      "types": {
+       "list": 206
+      },
+      "examples": [
+       "[0, 825, 1170, 0]",
+       "[-40, 40, 35, -40]",
+       "[-35, 60, 35, -20]",
+       "[-10.5, -8.5, 10.5, 8.5]",
+       "[-10, -10, 10, -19]"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "components(SYMBOL):symbol:FONTSTYLE": {
+  "count": 700,
+  "lengths": {
+   "12": 700
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 700
+    },
+    "examples": [
+     "\"FONTSTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 700
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st2\"",
+     "\"st3\"",
+     "\"st4\"",
+     "\"st5\"",
+     "\"st7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 700
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 699,
+     "str": 1
+    },
+    "examples": [
+     "\"#000080\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 694,
+     "str": 6
+    },
+    "examples": [
+     "\"宋体\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 28,
+     "null": 672
+    },
+    "examples": [
+     "10",
+     "15",
+     "20",
+     "6",
+     "12",
+     "5"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 292,
+     "int": 408
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 292,
+     "int": 408
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 292,
+     "int": 408
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "null": 408,
+     "int": 292
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 476,
+     "null": 224
+    },
+    "examples": [
+     "2",
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 682,
+     "null": 18
+    },
+    "examples": [
+     "0",
+     "2",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:ATTR": {
+  "count": 3079,
+  "lengths": {
+   "12": 2904,
+   "22": 175
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3079
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 3079
+    },
+    "examples": [
+     "\"e8\"",
+     "\"e528\"",
+     "\"e529\"",
+     "\"e530\"",
+     "\"e531\"",
+     "\"e532\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 2904,
+     "int": 175
+    },
+    "examples": [
+     "\"\"",
+     "\"e5\"",
+     "\"e9\"",
+     "\"e13\"",
+     "\"e17\"",
+     "\"e21\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 3079
+    },
+    "examples": [
+     "\"Symbol\"",
+     "\"Company\"",
+     "\"Drawed\"",
+     "\"Reviewed\"",
+     "\"Version\"",
+     "\"Page Size\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 2904,
+     "int": 175
+    },
+    "examples": [
+     "\"\"",
+     "\"Sheet-Symbol_A4\"",
+     "\"~1CLR#\"",
+     "\"1\"",
+     "\"Undefined\"",
+     "\"1D\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 1238,
+     "null": 175,
+     "bool": 1666
+    },
+    "examples": [
+     "false",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 1238,
+     "null": 175,
+     "bool": 1666
+    },
+    "examples": [
+     "false",
+     "1",
+     "0",
+     "true"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 1637,
+     "float": 917,
+     "str": 175,
+     "null": 350
+    },
+    "examples": [
+     "558",
+     "2506",
+     "998",
+     "718",
+     "800",
+     "920"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 1000,
+     "float": 1554,
+     "str": 175,
+     "null": 350
+    },
+    "examples": [
+     "30",
+     "100",
+     "-116",
+     "120",
+     "61",
+     "180"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 3079
+    },
+    "examples": [
+     "0",
+     "90",
+     "360",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "str": 2904,
+     "int": 175
+    },
+    "examples": [
+     "\"st2\"",
+     "\"st3\"",
+     "\"st1\"",
+     "\"st5\"",
+     "\"st4\"",
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 2904,
+     "str": 175
+    },
+    "examples": [
+     "0",
+     "\"default\""
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "float": 172,
+     "int": 3
+    },
+    "examples": [
+     "67.5",
+     "50",
+     "45"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "6",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "int": 175
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:GROUP": {
+  "count": 1,
+  "lengths": {
+   "5": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"GROUP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"border\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 1
+    },
+    "examples": [
+     "[\"e607\", \"e608\", \"e609\", \"e611\", \"e613\", \"e615\", \"e617\", \"e6…"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:TEXT": {
+  "count": 57,
+  "lengths": {
+   "8": 57
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 57
+    },
+    "examples": [
+     "\"TEXT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 57
+    },
+    "examples": [
+     "\"e307\"",
+     "\"e308\"",
+     "\"e310\"",
+     "\"e313\"",
+     "\"e314\"",
+     "\"e315\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 45,
+     "float": 12
+    },
+    "examples": [
+     "468",
+     "908",
+     "718",
+     "925",
+     "1032",
+     "798"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 48,
+     "float": 9
+    },
+    "examples": [
+     "100",
+     "120",
+     "60",
+     "160",
+     "140",
+     "61"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 57
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 57
+    },
+    "examples": [
+     "\"审阅\"",
+     "\"绘制\"",
+     "\"版本\"",
+     "\"创建日期\"",
+     "\"物料编码\"",
+     "\"页\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 57
+    },
+    "examples": [
+     "\"st7\"",
+     "\"st4\"",
+     "\"st5\"",
+     "\"st6\"",
+     "\"st10\"",
+     "\"st9\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 57
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:LINESTYLE": {
+  "count": 216,
+  "lengths": {
+   "6": 11,
+   "7": 205
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 216
+    },
+    "examples": [
+     "\"LINESTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 216
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st6\"",
+     "\"st7\"",
+     "\"st4\"",
+     "\"st5\"",
+     "\"st9\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 214,
+     "str": 2
+    },
+    "examples": [
+     "\"#000000\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 5,
+     "null": 211
+    },
+    "examples": [
+     "3",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 205,
+     "str": 11
+    },
+    "examples": [
+     "\"#FF0000\"",
+     "\"none\"",
+     "\"#A00000\"",
+     "\"#0000FF\"",
+     "\"#00FF00\"",
+     "\"#FFFF00\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 5,
+     "null": 211
+    },
+    "examples": [
+     "1",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 203,
+     "int": 2
+    },
+    "examples": [
+     "4"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:RECT": {
+  "count": 118,
+  "lengths": {
+   "11": 118
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 118
+    },
+    "examples": [
+     "\"RECT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 118
+    },
+    "examples": [
+     "\"e3\"",
+     "\"e285\"",
+     "\"e607\"",
+     "\"e608\"",
+     "\"e197\"",
+     "\"e68\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 116,
+     "float": 2
+    },
+    "examples": [
+     "458",
+     "0",
+     "10",
+     "-40",
+     "-35",
+     "-50"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 117,
+     "float": 1
+    },
+    "examples": [
+     "190",
+     "825",
+     "815",
+     "50",
+     "60",
+     "30"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 117,
+     "float": 1
+    },
+    "examples": [
+     "1160",
+     "35",
+     "1170",
+     "0",
+     "40",
+     "25"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 117,
+     "float": 1
+    },
+    "examples": [
+     "10",
+     "-40",
+     "-20",
+     "0",
+     "-21",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 118
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 118
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 118
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "str": 118
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st6\"",
+     "\"st5\"",
+     "\"st10\"",
+     "\"st4\"",
+     "\"st8\""
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 118
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:POLY": {
+  "count": 1379,
+  "lengths": {
+   "6": 530,
+   "8": 849
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1379
+    },
+    "examples": [
+     "\"POLY\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1379
+    },
+    "examples": [
+     "\"e253\"",
+     "\"e256\"",
+     "\"e273\"",
+     "\"e274\"",
+     "\"e276\"",
+     "\"e277\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 530,
+     "int": 849
+    },
+    "examples": [
+     "[758, 10, 758, 70]",
+     "[550, 50, 550, 190]",
+     "[898, 190, 898, 130]",
+     "[998, 130, 998, 190]",
+     "[678, 130, 678, 10]",
+     "[678, 110, 458, 110]"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "bool": 230,
+     "str": 849,
+     "int": 300
+    },
+    "examples": [
+     "\"\"",
+     "0",
+     "false",
+     "true"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 530,
+     "int": 849
+    },
+    "examples": [
+     "\"st6\"",
+     "3",
+     "\"st1\"",
+     "48",
+     "13",
+     "\"st7\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 1092,
+     "float": 287
+    },
+    "examples": [
+     "0",
+     "10",
+     "6",
+     "2",
+     "7.874",
+     "5.984"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 849
+    },
+    "examples": [
+     "[\"CIRCLE\", -10, 80, 3.937]",
+     "[-49.213, 59.055, \"L\", 49.213, 59.055, 49.213, -59.055, -49.…",
+     "[22.854, -62.056, \"L\", 52.212, -62.056]",
+     "[52.212, -62.056, \"L\", 52.212, -52.383]",
+     "[22.854, 62.056, \"L\", 52.212, 62.056]",
+     "[52.212, 62.056, \"L\", 52.212, 52.383]"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 849
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:OBJ": {
+  "count": 1,
+  "lengths": {
+   "11": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"OBJ\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"e676\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "476"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "57"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "193"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "55"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZ…"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 1
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PIN": {
+  "count": 850,
+  "lengths": {
+   "11": 395,
+   "12": 455
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 850
+    },
+    "examples": [
+     "\"PIN\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 850
+    },
+    "examples": [
+     "\"e5\"",
+     "\"e9\"",
+     "\"e13\"",
+     "\"e17\"",
+     "\"e21\"",
+     "\"e25\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 850
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 826,
+     "int": 24
+    },
+    "examples": [
+     "1",
+     "2",
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 830,
+     "float": 20
+    },
+    "examples": [
+     "45",
+     "-50",
+     "15",
+     "0",
+     "-10",
+     "-45"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 823,
+     "float": 27
+    },
+    "examples": [
+     "30",
+     "0",
+     "-20",
+     "-19.999999999999993",
+     "-50",
+     "60"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 846,
+     "float": 4
+    },
+    "examples": [
+     "10",
+     "5",
+     "20",
+     "1",
+     "0.01",
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 850
+    },
+    "examples": [
+     "0",
+     "180",
+     "90",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 850
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 850
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 850
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 455
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:LAYER": {
+  "count": 2757,
+  "lengths": {
+   "9": 2757
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 2757
+    },
+    "examples": [
+     "\"LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 2757
+    },
+    "examples": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "7",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 2757
+    },
+    "examples": [
+     "\"TOP\"",
+     "\"BOTTOM\"",
+     "\"TOP_SILK\"",
+     "\"BOT_SILK\"",
+     "\"TOP_PASTE_MASK\"",
+     "\"BOT_PASTE_MASK\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 2757
+    },
+    "examples": [
+     "\"Top Layer\"",
+     "\"Bottom Layer\"",
+     "\"Top Silkscreen Layer\"",
+     "\"Bottom Silkscreen Layer\"",
+     "\"Top Paste Mask Layer\"",
+     "\"Bottom Paste Mask Layer\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 2757
+    },
+    "examples": [
+     "3",
+     "0",
+     "1",
+     "7",
+     "5"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 2757
+    },
+    "examples": [
+     "\"#FF0000\"",
+     "\"#0000FF\"",
+     "\"#FFCC00\"",
+     "\"#66CC33\"",
+     "\"#808080\"",
+     "\"#800000\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 2751,
+     "float": 6
+    },
+    "examples": [
+     "1",
+     "0.7"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 2757
+    },
+    "examples": [
+     "\"#7F0000\"",
+     "\"#00007F\"",
+     "\"#7F6600\"",
+     "\"#336619\"",
+     "\"#404040\"",
+     "\"#400000\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 2397,
+     "float": 360
+    },
+    "examples": [
+     "1",
+     "0.5"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:ACTIVE_LAYER": {
+  "count": 163,
+  "lengths": {
+   "2": 163
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 163
+    },
+    "examples": [
+     "\"ACTIVE_LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 163
+    },
+    "examples": [
+     "1",
+     "3",
+     "51",
+     "49",
+     "13",
+     "7"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:FILL": {
+  "count": 1154,
+  "lengths": {
+   "9": 1154
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1154
+    },
+    "examples": [
+     "\"FILL\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1154
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 1154
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 1154
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1154
+    },
+    "examples": [
+     "50",
+     "7",
+     "49",
+     "13",
+     "51",
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 1149,
+     "int": 5
+    },
+    "examples": [
+     "0.2",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 1154
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "list": 1154
+    },
+    "examples": [
+     "[[\"CIRCLE\", -49.213, 59.055, 2.362]](len=1)",
+     "[-15.748, 29.528, \"L\", 19.685, 29.528, 19.685, -29.528, -19.…",
+     "[-14.567, 43.307, \"L\", -5.118, 43.307, -5.118, 59.055, -14.5…",
+     "[5.118, 43.307, \"L\", 14.567, 43.307, 14.567, 59.055, 5.118, …",
+     "[49.213, 44.094, \"L\", 33.465, 44.094, 33.465, 34.646, 49.213…",
+     "[49.213, 24.409, \"L\", 33.465, 24.409, 33.465, 14.961, 49.213…"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 1154
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PAD": {
+  "count": 641,
+  "lengths": {
+   "22": 507,
+   "27": 134
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 641
+    },
+    "examples": [
+     "\"PAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 641
+    },
+    "examples": [
+     "\"e34\"",
+     "\"e35\"",
+     "\"e36\"",
+     "\"e37\"",
+     "\"e38\"",
+     "\"e39\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 641
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 641
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 641
+    },
+    "examples": [
+     "1",
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 641
+    },
+    "examples": [
+     "\"15\"",
+     "\"1\"",
+     "\"14\"",
+     "\"13\"",
+     "\"12\"",
+     "\"11\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 186,
+     "float": 455
+    },
+    "examples": [
+     "45.57",
+     "-45.57",
+     "-9.84",
+     "9.84",
+     "0",
+     "27.56"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 220,
+     "float": 421
+    },
+    "examples": [
+     "0",
+     "55.41",
+     "39.37",
+     "19.68",
+     "-19.69",
+     "-39.37"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 641
+    },
+    "examples": [
+     "0",
+     "90",
+     "180",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "null": 490,
+     "list": 151
+    },
+    "examples": [
+     "[\"ROUND\", 41.338, 35.4331]",
+     "[\"ROUND\", 37.4016, 35.4331]",
+     "[\"ROUND\", 118.1102, 118.1102]",
+     "[\"SLOT\", 55.118, 31.496]",
+     "[\"SLOT\", 62.991, 31.496]",
+     "[\"SLOT\", 62.993, 31.496]"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "list": 641
+    },
+    "examples": [
+     "[\"RECT\", 11.024, 26.181, 0]",
+     "[\"RECT\", 26.181, 11.024, 0]",
+     "[\"RECT\", 55.118, 47.244, 0]",
+     "[\"RECT\", 31.496, 35.433, 0]",
+     "[\"RECT\", 59.055, 39.37, 0]",
+     "[\"RECT\", 11.024, 23.031, 0]"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "list": 641
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 355,
+     "float": 286
+    },
+    "examples": [
+     "0.001",
+     "-0.001",
+     "-0.003",
+     "0.003",
+     "0",
+     "-0.005"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 360,
+     "float": 281
+    },
+    "examples": [
+     "0",
+     "0.005",
+     "0.003",
+     "-0.003",
+     "0.012",
+     "0.008"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 639,
+     "null": 2
+    },
+    "examples": [
+     "90",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 641
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 641
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "float": 81,
+     "null": 505,
+     "int": 55
+    },
+    "examples": [
+     "2",
+     "1.9689999999999999",
+     "1.9685",
+     "1.969",
+     "0.39399999999999996"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "float": 81,
+     "null": 505,
+     "int": 55
+    },
+    "examples": [
+     "2",
+     "1.9689999999999999",
+     "1.9685",
+     "1.969",
+     "0.39399999999999996"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 100,
+     "null": 505,
+     "float": 36
+    },
+    "examples": [
+     "-3937",
+     "0",
+     "-3937.0080000000003"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 100,
+     "null": 505,
+     "float": 36
+    },
+    "examples": [
+     "-3937",
+     "0",
+     "-3937.0080000000003"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "int": 641
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "22": {
+    "types": {
+     "null": 134
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "23": {
+    "types": {
+     "null": 134
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "24": {
+    "types": {
+     "null": 134
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "25": {
+    "types": {
+     "null": 134
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "26": {
+    "types": {
+     "list": 134
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:CANVAS": {
+  "count": 89,
+  "lengths": {
+   "8": 74,
+   "13": 14,
+   "11": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 89
+    },
+    "examples": [
+     "\"CANVAS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 89
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 89
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 89
+    },
+    "examples": [
+     "\"mm\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 82,
+     "float": 7
+    },
+    "examples": [
+     "10",
+     "5",
+     "1.968504",
+     "0.1",
+     "11.811024",
+     "15.590551"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 82,
+     "float": 7
+    },
+    "examples": [
+     "10",
+     "5",
+     "1.968504",
+     "0.1",
+     "11.811024",
+     "15.590551"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 77,
+     "int": 12
+    },
+    "examples": [
+     "0.5",
+     "0.03937",
+     "5",
+     "0.3937",
+     "0.19685",
+     "0.393701"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 77,
+     "int": 12
+    },
+    "examples": [
+     "0.5",
+     "0.03937",
+     "5",
+     "0.3937",
+     "0.19685",
+     "0.393701"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 14,
+     "float": 1
+    },
+    "examples": [
+     "1",
+     "1.181102",
+     "5"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 14,
+     "float": 1
+    },
+    "examples": [
+     "1",
+     "1.181102",
+     "5"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0",
+     "1",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 14
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 14
+    },
+    "examples": [
+     "5"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:ARC": {
+  "count": 8,
+  "lengths": {
+   "10": 8
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"ARC\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"e16\"",
+     "\"e17\"",
+     "\"e18\"",
+     "\"e11\"",
+     "\"e12\"",
+     "\"e13\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "-10",
+     "8",
+     "15",
+     "-5",
+     "-16",
+     "-8"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 4,
+     "float": 4
+    },
+    "examples": [
+     "0.02",
+     "8",
+     "27",
+     "25",
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 4,
+     "float": 4
+    },
+    "examples": [
+     "0",
+     "13",
+     "18",
+     "-11.98",
+     "-3.98",
+     "12.02"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "4",
+     "13",
+     "29",
+     "21",
+     "15"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "10",
+     "15",
+     "22",
+     "5",
+     "-8",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 4,
+     "float": 4
+    },
+    "examples": [
+     "-0.02",
+     "8",
+     "25",
+     "23",
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st3\"",
+     "\"st4\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:ELLIPSE": {
+  "count": 8,
+  "lengths": {
+   "9": 8
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"ELLIPSE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"e4\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "-5",
+     "-15",
+     "-10"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "25",
+     "100",
+     "20",
+     "10",
+     "30",
+     "15"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "1.5"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 8
+    },
+    "examples": [
+     "1.5"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 8
+    },
+    "examples": [
+     "\"st1\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 8
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:CIRCLE": {
+  "count": 26,
+  "lengths": {
+   "7": 26
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"CIRCLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"e3\"",
+     "\"e5\"",
+     "\"e15\"",
+     "\"e16\"",
+     "\"e1433\"",
+     "\"e4\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 25,
+     "float": 1
+    },
+    "examples": [
+     "-25",
+     "-35",
+     "-10",
+     "10",
+     "-85",
+     "-20"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 25,
+     "float": 1
+    },
+    "examples": [
+     "22",
+     "0",
+     "245",
+     "15",
+     "60",
+     "20"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 19,
+     "int": 7
+    },
+    "examples": [
+     "1.5",
+     "2.5",
+     "11",
+     "10",
+     "2",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st8\"",
+     "\"st4\"",
+     "\"st5\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:LAYER_PHYS": {
+  "count": 126,
+  "lengths": {
+   "7": 126
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 126
+    },
+    "examples": [
+     "\"LAYER_PHYS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 126
+    },
+    "examples": [
+     "3",
+     "7",
+     "5",
+     "1",
+     "361",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 84,
+     "str": 42
+    },
+    "examples": [
+     "\"\"",
+     "\"FR4\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 56,
+     "float": 70
+    },
+    "examples": [
+     "0",
+     "0.394",
+     "1.379",
+     "59.449",
+     "1.378"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 84,
+     "float": 42
+    },
+    "examples": [
+     "3.3",
+     "4.5"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 84,
+     "float": 28,
+     "int": 14
+    },
+    "examples": [
+     "0.02",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 126
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:NET": {
+  "count": 15,
+  "lengths": {
+   "8": 15
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 15
+    },
+    "examples": [
+     "\"NET\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 15
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 15
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 15
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 15
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 15
+    },
+    "examples": [],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:RULE_TEMPLATE": {
+  "count": 14,
+  "lengths": {
+   "2": 14
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 14
+    },
+    "examples": [
+     "\"RULE_TEMPLATE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 14
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:RULE": {
+  "count": 180,
+  "lengths": {
+   "5": 180
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 180
+    },
+    "examples": [
+     "\"RULE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 180
+    },
+    "examples": [
+     "\"1\"",
+     "\"2\"",
+     "\"3\"",
+     "\"11\"",
+     "\"10\"",
+     "\"4\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 180
+    },
+    "examples": [
+     "\"safeClearance\"",
+     "\"otherClearance\"",
+     "\"trackWidth\"",
+     "\"netLength\"",
+     "\"differentialPair\"",
+     "\"blindVia\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 180
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 180
+    },
+    "examples": [
+     "[\"mm\", [[6], [6, 6], [6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6, 6…",
+     "[\"mm\", 0, 0, 11.811]",
+     "[\"mm\", 5, 10, 100]",
+     "[\"mm\", 0, 0]",
+     "[\"mm\", 5, 10, 100, 6, 6, 50, 10]",
+     "[]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:RULE_SELECTOR": {
+  "count": 15,
+  "lengths": {
+   "4": 15
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 15
+    },
+    "examples": [
+     "\"RULE_SELECTOR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "list": 15
+    },
+    "examples": [
+     "[\"NET\", \"\"]"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "dict": 15
+    },
+    "examples": [
+     "{}"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PRIMITIVE": {
+  "count": 552,
+  "lengths": {
+   "4": 552
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 552
+    },
+    "examples": [
+     "\"PRIMITIVE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 552
+    },
+    "examples": [
+     "\"ALL\"",
+     "\"COMPONENT\"",
+     "\"PROPERTY\"",
+     "\"COMPONENTSILK\"",
+     "\"TRACK\"",
+     "\"VIA\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 552
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 552
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:SILK_OPTS": {
+  "count": 30,
+  "lengths": {
+   "4": 30
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 30
+    },
+    "examples": [
+     "\"SILK_OPTS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "3",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 30
+    },
+    "examples": [
+     "\"#000000\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 30
+    },
+    "examples": [
+     "\"#FFFFFF\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PREFERENCE": {
+  "count": 15,
+  "lengths": {
+   "21": 14,
+   "13": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 15
+    },
+    "examples": [
+     "\"PREFERENCE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 15
+    },
+    "examples": [
+     "12.0078"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 15
+    },
+    "examples": [
+     "24.0158"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "2",
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 15
+    },
+    "examples": [
+     "\"L45\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "null": 14
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 14
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 14
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "str": 14
+    },
+    "examples": [
+     "\"OPTIMIZA_OPEN\""
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 14
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "str": 14
+    },
+    "examples": [
+     "\"OPTIMIZA_WEAK\""
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "bool": 14
+    },
+    "examples": [
+     "true"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "bool": 14
+    },
+    "examples": [
+     "true"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PANELIZE": {
+  "count": 15,
+  "lengths": {
+   "7": 15
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 15
+    },
+    "examples": [
+     "\"PANELIZE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 15
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PANELIZE_STAMP": {
+  "count": 30,
+  "lengths": {
+   "7": 30
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 30
+    },
+    "examples": [
+     "\"PANELIZE_STAMP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 30
+    },
+    "examples": [
+     "21.6535"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 30
+    },
+    "examples": [
+     "33.4646"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PANELIZE_SIDE": {
+  "count": 30,
+  "lengths": {
+   "7": 30
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 30
+    },
+    "examples": [
+     "\"PANELIZE_SIDE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 30
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "float": 30
+    },
+    "examples": [
+     "236.2205"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 30
+    },
+    "examples": [
+     "78.7402"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 30
+    },
+    "examples": [
+     "39.3701"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 30
+    },
+    "examples": [
+     "19.685"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:STRING": {
+  "count": 6,
+  "lengths": {
+   "18": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"STRING\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"e25\"",
+     "\"e26\"",
+     "\"e0\"",
+     "\"e2\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "3",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 1,
+     "float": 5
+    },
+    "examples": [
+     "-149.9558",
+     "-89.326",
+     "-171",
+     "-122.5"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 5,
+     "int": 1
+    },
+    "examples": [
+     "141.732",
+     "-109.5",
+     "-109"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"+\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"default\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "100",
+     "80"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "10",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:VIA": {
+  "count": 12,
+  "lengths": {
+   "13": 12
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"VIA\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"e35\"",
+     "\"e36\"",
+     "\"e37\"",
+     "\"e38\"",
+     "\"e20\"",
+     "\"e21\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 6,
+     "float": 6
+    },
+    "examples": [
+     "0",
+     "-19.685",
+     "19.685",
+     "-37.401",
+     "37.402"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 8,
+     "int": 4
+    },
+    "examples": [
+     "-0.005",
+     "-22.638",
+     "22.638",
+     "-24.606",
+     "24.606",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 12
+    },
+    "examples": [
+     "11.812000000000001",
+     "7.874"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 12
+    },
+    "examples": [
+     "19.686",
+     "11.812000000000001"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):symbol:PROP": {
+  "count": 1,
+  "lengths": {
+   "3": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"PROP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"e0\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"#000000\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "components(SYMBOL):count": {
+  "n": 291
+ },
+ "sqlite:devices_sample": {
+  "rows": [
+   "{\"uuid\": \"074dcd2252cd48498680fe71ceecf91f\", \"description\": \"\", \"title\": \"sheet-symbol_a4\", \"display_title\": \"Sheet-Symbol_A4\", \"images\": \"\", \"source\": \"4b872d674c0b4b0e8ede0a73cf1a0316|0819f05c4eef4c…",
+   "{\"uuid\": \"3c966c7efeb24b87b63b88199df8f1f8\", \"description\": \"类型:D-型;工作电压:1.65V~3.6V;时钟频率(fc):100MHz;元件数:2;每个元件位数:1;传播延迟(tpd):5.2ns@3.3V,50pF;静态电流(Iq):10uA;\", \"title\": \"sn74lvc74abqar\", \"display_title\"…",
+   "{\"uuid\": \"b3110643b9b14207aa8538cd16259664\", \"description\": \"容值:100nF;精度:±10%;额定电压:50V;温度系数:X7R;\", \"title\": \"cc0603krx7r9bb104\", \"display_title\": \"CC0603KRX7R9BB104\", \"images\": \"https://alimg.szlcsc.c…"
+  ]
+ },
+ "sqlite:attributes_sample": {
+  "rows": [
+   "{\"key\": \"Symbol\", \"value\": \"623b4622e038428089dbdfa019668ee4\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Page Name\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Create Date\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Page Count\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Page No\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Project Name\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Schematic Name\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}",
+   "{\"key\": \"@Update Date\", \"value\": \"\", \"device_uuid\": \"074dcd2252cd48498680fe71ceecf91f\"}"
+  ]
+ }
+}

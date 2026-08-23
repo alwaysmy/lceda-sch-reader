@@ -1,0 +1,7581 @@
+{
+ "project.json": {
+  "config": {
+   "kind": "dict",
+   "size": 2,
+   "first_key": "title",
+   "first_val": "\"Piezo_Driver\""
+  },
+  "boards": {
+   "kind": "dict",
+   "size": 16,
+   "first_key": "quadPizeoDriver_RevA_1.1",
+   "first_val": "{\"schematic\": \"4f249e11bcc2d1d8\", \"pcb\": \"5c0a0ccd1d96fdc95ea96a636fc7d365\"}"
+  },
+  "devices": {
+   "kind": "dict",
+   "size": 266,
+   "first_key": "f6933cc82c468867",
+   "first_val": "{\"uuid\": \"f6933cc82c468867\", \"title\": \"FRC0402F3482TS\", \"description\": \"\", \"attributes\": {\"Symbol\": \"a2a925829a22dab1\", \"Footprint\": \"bb331f8fc32e469aa2dc6d15e0afb94f\", \"LCSC Part Name\": \"34.8kΩ ±1% 62.5mW 厚膜电阻\", \"Supplier Part\": \"C2998092\", \"Manufacturer\": \"FOJAN(富捷)\", \"Manufacturer Part\": \"FRC0402…"
+  },
+  "symbols": {
+   "kind": "dict",
+   "size": 276,
+   "first_key": "a2a925829a22dab1",
+   "first_val": "{\"uuid\": \"a2a925829a22dab1\", \"title\": \"FRC0402F3482TS\", \"display_title\": \"FRC0402F3482TS\", \"docType\": 2, \"type\": 2, \"description\": \"\", \"desc\": \"\", \"source\": \"87ddbc1d888e4f518654e0221d997d48|0819f05c4eef4c71ace90d822a990e87\", \"version\": \"1772271917\"}"
+  },
+  "footprints": {
+   "kind": "dict",
+   "size": 125,
+   "first_key": "f11cea69ba9ec569",
+   "first_val": "{\"uuid\": \"f11cea69ba9ec569\", \"title\": \"R0603\", \"display_title\": \"R0603\", \"docType\": 4, \"type\": 4, \"description\": \"0603;-;1206;1608;0201;SMD;0805;---;2.2KR;R0603;R603;603;插件;Res2;0603R;ESD0603;0603-S;0603-R;LC-0603_R;RES0603;RES0603-SMD-2P;5101%;Res0603;ROHM Semiconductor\", \"desc\": \"0603;-;1206;1608;…"
+  },
+  "schematics": {
+   "kind": "dict",
+   "size": 16,
+   "first_key": "4f249e11bcc2d1d8",
+   "first_val": "{\"name\": \"quadPizeoDriver_RevA.sch_1\", \"sheets\": [{\"uuid\": \"b325a68fef1028e8\", \"id\": 1, \"name\": \"Index\", \"display_title\": \"Index\"}, {\"uuid\": \"ea895865e264d28e\", \"id\": 7, \"name\": \"ControlDAC_A\", \"display_title\": \"ControlDAC_A\"}, {\"uuid\": \"c0a386e2698dc1c5\", \"id\": 13, \"name\": \"ControlDAC_B\", \"display_…"
+  },
+  "pcbs": {
+   "kind": "dict",
+   "size": 15,
+   "first_key": "5c0a0ccd1d96fdc95ea96a636fc7d365",
+   "first_val": "\"quadPiezoDriverRev1_1.brd\""
+  },
+  "panels": {
+   "kind": "dict",
+   "size": 0,
+   "first_key": null,
+   "first_val": null
+  }
+ },
+ "zip_groups": {
+  "BLOB": 1,
+  "SYMBOL": 276,
+  "FOOTPRINT": 125,
+  "INSTANCE": 46,
+  "SHEET": 89,
+  "PCB": 15
+ },
+ "BLOB/*:doc:DOCTYPE": {
+  "count": 1,
+  "lengths": {
+   "3": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"BLOB\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"1.0\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "BLOB/*:doc:BLOB": {
+  "count": 1,
+  "lengths": {
+   "4": 1
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"BLOB\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"704386ebc2d8e079f54a5ba5da1e7bc84c4cbda68f0c2a226fafaeed5e2…"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 1
+    },
+    "examples": [
+     "\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB38AAANgCAYAA…"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SYMBOL/*:doc:DOCTYPE": {
+  "count": 6,
+  "lengths": {
+   "3": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"SYMBOL\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"1.1\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SYMBOL/*:doc:HEAD": {
+  "count": 6,
+  "lengths": {
+   "2": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 6
+    },
+    "examples": [
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\", \"symbolType\": 2…"
+    ],
+    "dict_keys": {
+     "originX": {
+      "types": {
+       "int": 6
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "originY": {
+      "types": {
+       "int": 6
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "version": {
+      "types": {
+       "str": 6
+      },
+      "examples": [
+       "\"2\""
+      ]
+     },
+     "symbolType": {
+      "types": {
+       "int": 6
+      },
+      "examples": [
+       "2"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "SYMBOL/*:doc:PART": {
+  "count": 6,
+  "lengths": {
+   "3": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"PART\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"FRC0402F3482TS.1\"",
+     "\"FRC0603F3482TS.1\"",
+     "\"FRC0603F7872TS.1\"",
+     "\"0402WGJ0202TCE.1\"",
+     "\"0402WGF2401TCE.1\"",
+     "\"0402WGF5101TCE.1\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "dict": 6
+    },
+    "examples": [
+     "{\"BBOX\": [-10, -5, 10, 5]}",
+     "{\"BBOX\": [-10, -4, 10, 4]}"
+    ],
+    "dict_keys": {
+     "BBOX": {
+      "types": {
+       "list": 6
+      },
+      "examples": [
+       "[-10, -5, 10, 5]",
+       "[-10, -4, 10, 4]"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "SYMBOL/*:doc:LINESTYLE": {
+  "count": 6,
+  "lengths": {
+   "7": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"LINESTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st3\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 6
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 6
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SYMBOL/*:doc:RECT": {
+  "count": 6,
+  "lengths": {
+   "11": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"RECT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"e0\"",
+     "\"e8\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "-10"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "5",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "-5",
+     "-4"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st3\""
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SYMBOL/*:doc:PIN": {
+  "count": 12,
+  "lengths": {
+   "11": 12
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"PIN\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"e4\"",
+     "\"e8\"",
+     "\"e3\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "20",
+     "-20"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "180",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SYMBOL/*:doc:FONTSTYLE": {
+  "count": 12,
+  "lengths": {
+   "12": 12
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"FONTSTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 12
+    },
+    "examples": [
+     "\"st2\"",
+     "\"st3\"",
+     "\"st1\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 12
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 12
+    },
+    "examples": [
+     "2",
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SYMBOL/*:doc:ATTR": {
+  "count": 42,
+  "lengths": {
+   "12": 42
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 42
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 42
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e2\"",
+     "\"e3\"",
+     "\"e5\"",
+     "\"e6\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 42
+    },
+    "examples": [
+     "\"e4\"",
+     "\"e8\"",
+     "\"e3\"",
+     "\"e7\"",
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 42
+    },
+    "examples": [
+     "\"NAME\"",
+     "\"NUMBER\"",
+     "\"Pin Type\"",
+     "\"Designator\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 42
+    },
+    "examples": [
+     "\"2\"",
+     "\"1\"",
+     "\"Undefined\"",
+     "\"R?\"",
+     "\"IN\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 42
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 42
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 42
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 42
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 42
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "str": 42
+    },
+    "examples": [
+     "\"st2\"",
+     "\"st3\"",
+     "\"st1\""
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 42
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:DOCTYPE": {
+  "count": 3,
+  "lengths": {
+   "3": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"FOOTPRINT\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"1.8\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:HEAD": {
+  "count": 3,
+  "lengths": {
+   "2": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 3
+    },
+    "examples": [
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0, \"uuid\": \"f11cea6…",
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0, \"uuid\": \"d39d9b2…",
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0, \"uuid\": \"8ac75ca…"
+    ],
+    "dict_keys": {
+     "editorVersion": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"2.2.C\""
+      ]
+     },
+     "importFlag": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "uuid": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"f11cea69ba9ec569\"",
+       "\"d39d9b294b92491bbf915efb13298ac9\"",
+       "\"8ac75ca71577816a\""
+      ]
+     },
+     "title": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"R0603\"",
+       "\"CONN-TH_3511348AFSS0BNA1\"",
+       "\"CONN-TH_9001-36101C00A\""
+      ]
+     },
+     "source": {
+      "types": {
+       "str": 3
+      },
+      "examples": [
+       "\"50b4943912284dab97752312e589e9e2|0819f05c4eef4c71ace90d822a…",
+       "\"024abbfd334844c98146fde67050e9e1|62e18c246aee4894b3df54fb59…",
+       "\"c27d12496d94450a82209b39edbfb628|0819f05c4eef4c71ace90d822a…"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:CANVAS": {
+  "count": 3,
+  "lengths": {
+   "13": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"CANVAS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"mm\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 3
+    },
+    "examples": [
+     "0.03937",
+     "0.393701",
+     "0.5"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 3
+    },
+    "examples": [
+     "0.03937",
+     "0.393701",
+     "0.5"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "5"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:LAYER": {
+  "count": 270,
+  "lengths": {
+   "9": 270
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 270
+    },
+    "examples": [
+     "\"LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 270
+    },
+    "examples": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "7",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 270
+    },
+    "examples": [
+     "\"TOP\"",
+     "\"BOTTOM\"",
+     "\"TOP_SILK\"",
+     "\"BOT_SILK\"",
+     "\"TOP_PASTE_MASK\"",
+     "\"BOT_PASTE_MASK\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 270
+    },
+    "examples": [
+     "\"Top Layer\"",
+     "\"Bottom Layer\"",
+     "\"Top Silkscreen Layer\"",
+     "\"Bottom Silkscreen Layer\"",
+     "\"Top Paste Mask Layer\"",
+     "\"Bottom Paste Mask Layer\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 270
+    },
+    "examples": [
+     "0",
+     "3",
+     "7"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 270
+    },
+    "examples": [
+     "\"#ff0000\"",
+     "\"#0000ff\"",
+     "\"#ffcc00\"",
+     "\"#66cc33\"",
+     "\"#808080\"",
+     "\"#800000\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 270
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 270
+    },
+    "examples": [
+     "\"#7f0000\"",
+     "\"#00007f\"",
+     "\"#7f6600\"",
+     "\"#336619\"",
+     "\"#404040\"",
+     "\"#400000\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 34,
+     "float": 236
+    },
+    "examples": [
+     "0.5",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:ACTIVE_LAYER": {
+  "count": 3,
+  "lengths": {
+   "2": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"ACTIVE_LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:LAYER_PHYS": {
+  "count": 24,
+  "lengths": {
+   "7": 24
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"LAYER_PHYS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 24
+    },
+    "examples": [
+     "3",
+     "7",
+     "5",
+     "1",
+     "2",
+     "6"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 12,
+     "float": 12
+    },
+    "examples": [
+     "0",
+     "0.394",
+     "1.379",
+     "1.378"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 18,
+     "float": 6
+    },
+    "examples": [
+     "0",
+     "3.3"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 18,
+     "float": 6
+    },
+    "examples": [
+     "0",
+     "0.02"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 24
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:PREFERENCE": {
+  "count": 3,
+  "lengths": {
+   "21": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"PREFERENCE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "24"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"L45\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"OPTIMIZA_NONE\""
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"OPTIMIZA_NONE\""
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:ATTR": {
+  "count": 3,
+  "lengths": {
+   "22": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"e1\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 3
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 3
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"Designator\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"U?\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"default\""
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "float": 3
+    },
+    "examples": [
+     "67.5"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "6"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "bool": 3
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:FILL": {
+  "count": 72,
+  "lengths": {
+   "9": 72
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 72
+    },
+    "examples": [
+     "\"FILL\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 72
+    },
+    "examples": [
+     "\"e2\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 72
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 72
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 72
+    },
+    "examples": [
+     "50",
+     "12",
+     "49",
+     "13",
+     "7"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 72
+    },
+    "examples": [
+     "0.2",
+     "0.1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 72
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "list": 72
+    },
+    "examples": [
+     "[[\"CIRCLE\", -31.5, -15.75, 2.361]](len=1)",
+     "[[-31.496, -15.748, \"L\", -31.496, 15.748, -19.685, 15.748, -…(len=1)",
+     "[[31.496, -15.748, \"L\", 31.496, 15.748, 19.685, 15.748, 19.6…(len=1)",
+     "[[47.048, 17.716, \"L\", 15.552, 17.716, 13.583, 15.747, 13.58…(len=1)",
+     "[[-47.048, -17.716, \"L\", -15.552, -17.716, -13.583, -15.747,…(len=1)",
+     "[[\"CIRCLE\", -1066.929, -206.697, 2.362]](len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 72
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:POLY": {
+  "count": 39,
+  "lengths": {
+   "8": 39
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 39
+    },
+    "examples": [
+     "\"POLY\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 39
+    },
+    "examples": [
+     "\"e7\"",
+     "\"e8\"",
+     "\"e9\"",
+     "\"e10\"",
+     "\"e11\"",
+     "\"e12\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 39
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 39
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 39
+    },
+    "examples": [
+     "3",
+     "13",
+     "48"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 35,
+     "float": 4
+    },
+    "examples": [
+     "10",
+     "6",
+     "2",
+     "51.181",
+     "55.118"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 39
+    },
+    "examples": [
+     "[-31.496, -15.748, \"L\", -31.496, 15.748, 31.496, 15.748, 31.…",
+     "[16.78, -26.008, \"L\", 54.531, -26.008]",
+     "[54.531, -26.008, \"L\", 54.531, 26.008]",
+     "[54.531, 26.008, \"L\", 16.78, 26.008]",
+     "[-16.78, -26.008, \"L\", -54.531, -26.008]",
+     "[-54.531, -26.008, \"L\", -54.531, 26.008]"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 39
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:PAD": {
+  "count": 60,
+  "lengths": {
+   "22": 60
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 60
+    },
+    "examples": [
+     "\"PAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 60
+    },
+    "examples": [
+     "\"e14\"",
+     "\"e15\"",
+     "\"e73\"",
+     "\"e74\"",
+     "\"e75\"",
+     "\"e76\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 60
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "12",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 60
+    },
+    "examples": [
+     "\"2\"",
+     "\"1\"",
+     "\"C10\"",
+     "\"C9\"",
+     "\"C8\"",
+     "\"C7\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 12,
+     "int": 48
+    },
+    "examples": [
+     "29.66",
+     "-29.66",
+     "150",
+     "50",
+     "-50",
+     "-150"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 50,
+     "float": 10
+    },
+    "examples": [
+     "0",
+     "100",
+     "-100",
+     "49.999",
+     "-50.001"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "180",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "list": 60
+    },
+    "examples": [
+     "[\"ROUND\", 39.3701, 39.3701]",
+     "[\"ROUND\", 0, 0]"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "list": 60
+    },
+    "examples": [
+     "[\"ELLIPSE\", 55.1181, 55.1181]",
+     "[\"RECT\", 31.751, 34.016, 0]"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "list": 60
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 2,
+     "float": 58
+    },
+    "examples": [
+     "-0.004",
+     "0.004",
+     "0.003",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 50,
+     "float": 10
+    },
+    "examples": [
+     "0",
+     "0.001"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 2,
+     "null": 48,
+     "float": 10
+    },
+    "examples": [
+     "1.9685",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "int": 2,
+     "null": 48,
+     "float": 10
+    },
+    "examples": [
+     "1.9685",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "float": 2,
+     "null": 48,
+     "int": 10
+    },
+    "examples": [
+     "0",
+     "-3937.0080000000003"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "float": 2,
+     "null": 48,
+     "int": 10
+    },
+    "examples": [
+     "0",
+     "-3937.0080000000003"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "int": 60
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "FOOTPRINT/*:doc:STRING": {
+  "count": 5,
+  "lengths": {
+   "18": 5
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"STRING\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"e70\"",
+     "\"e71\"",
+     "\"e72\"",
+     "\"e33\"",
+     "\"e34\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 3,
+     "int": 2
+    },
+    "examples": [
+     "-830",
+     "-835.24",
+     "-289.373",
+     "-292.683"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 5
+    },
+    "examples": [
+     "-116.37",
+     "79.97",
+     "-20.03",
+     "27.559",
+     "-68.501"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"A\"",
+     "\"B\"",
+     "\"C\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 5
+    },
+    "examples": [
+     "\"default\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 5
+    },
+    "examples": [
+     "39.37"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 5
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "INSTANCE/*:doc:DOCTYPE": {
+  "count": 4,
+  "lengths": {
+   "3": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"INSTANCE\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"1.0\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "INSTANCE/*:doc:OVERRIDE": {
+  "count": 4,
+  "lengths": {
+   "3": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"OVERRIDE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "list": 4
+    },
+    "examples": [
+     "[\"4f249e11bcc2d1d8\", \"$4e14754\", \"$1\"]",
+     "[\"4f249e11bcc2d1d8\", \"$4e14762\", \"$1\"]",
+     "[\"4f249e11bcc2d1d8\", \"$4.5e107\", \"$1\"]",
+     "[\"4f249e11bcc2d1d8\", \"$4.5e108\", \"$1\"]"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "dict": 4
+    },
+    "examples": [
+     "{\"e2\": {\"Unique ID\": \"gge655\"}, \"e4\": {\"Unique ID\": \"gge656\"…",
+     "{\"e2\": {\"Unique ID\": \"gge677\"}, \"e4\": {\"Unique ID\": \"gge678\"…",
+     "{\"e2\": {\"Unique ID\": \"gge699\"}, \"e4\": {\"Unique ID\": \"gge700\"…",
+     "{\"e94\": {\"Unique ID\": \"gge721\"}}"
+    ],
+    "dict_keys": {
+     "e2": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge655\"}",
+       "{\"Unique ID\": \"gge677\"}",
+       "{\"Unique ID\": \"gge699\"}"
+      ]
+     },
+     "e4": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge656\"}",
+       "{\"Unique ID\": \"gge678\"}",
+       "{\"Unique ID\": \"gge700\"}"
+      ]
+     },
+     "e12": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge657\"}",
+       "{\"Unique ID\": \"gge679\"}",
+       "{\"Unique ID\": \"gge701\"}"
+      ]
+     },
+     "e13": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge658\"}",
+       "{\"Unique ID\": \"gge680\"}",
+       "{\"Unique ID\": \"gge702\"}"
+      ]
+     },
+     "e14": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge659\"}",
+       "{\"Unique ID\": \"gge681\"}",
+       "{\"Unique ID\": \"gge703\"}"
+      ]
+     },
+     "e15": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge660\"}",
+       "{\"Unique ID\": \"gge682\"}",
+       "{\"Unique ID\": \"gge704\"}"
+      ]
+     },
+     "e20": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge661\"}",
+       "{\"Unique ID\": \"gge683\"}",
+       "{\"Unique ID\": \"gge705\"}"
+      ]
+     },
+     "e22": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge662\"}",
+       "{\"Unique ID\": \"gge684\"}",
+       "{\"Unique ID\": \"gge706\"}"
+      ]
+     },
+     "e23": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge663\"}",
+       "{\"Unique ID\": \"gge685\"}",
+       "{\"Unique ID\": \"gge707\"}"
+      ]
+     },
+     "e24": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge664\"}",
+       "{\"Unique ID\": \"gge686\"}",
+       "{\"Unique ID\": \"gge708\"}"
+      ]
+     },
+     "e28": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge665\"}",
+       "{\"Unique ID\": \"gge687\"}",
+       "{\"Unique ID\": \"gge709\"}"
+      ]
+     },
+     "e52": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge666\"}",
+       "{\"Unique ID\": \"gge688\"}",
+       "{\"Unique ID\": \"gge710\"}"
+      ]
+     },
+     "e68": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge667\"}",
+       "{\"Unique ID\": \"gge689\"}",
+       "{\"Unique ID\": \"gge711\"}"
+      ]
+     },
+     "e70": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge668\"}",
+       "{\"Unique ID\": \"gge690\"}",
+       "{\"Unique ID\": \"gge712\"}"
+      ]
+     },
+     "e74": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge669\"}",
+       "{\"Unique ID\": \"gge691\"}",
+       "{\"Unique ID\": \"gge713\"}"
+      ]
+     },
+     "e75": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge670\"}",
+       "{\"Unique ID\": \"gge692\"}",
+       "{\"Unique ID\": \"gge714\"}"
+      ]
+     },
+     "e76": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge671\"}",
+       "{\"Unique ID\": \"gge693\"}",
+       "{\"Unique ID\": \"gge715\"}"
+      ]
+     },
+     "e77": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge672\"}",
+       "{\"Unique ID\": \"gge694\"}",
+       "{\"Unique ID\": \"gge716\"}"
+      ]
+     },
+     "e78": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge673\"}",
+       "{\"Unique ID\": \"gge695\"}",
+       "{\"Unique ID\": \"gge717\"}"
+      ]
+     },
+     "e79": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge674\"}",
+       "{\"Unique ID\": \"gge696\"}",
+       "{\"Unique ID\": \"gge718\"}"
+      ]
+     },
+     "e80": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge675\"}",
+       "{\"Unique ID\": \"gge697\"}",
+       "{\"Unique ID\": \"gge719\"}"
+      ]
+     },
+     "e94": {
+      "types": {
+       "dict": 4
+      },
+      "examples": [
+       "{\"Unique ID\": \"gge676\"}",
+       "{\"Unique ID\": \"gge698\"}",
+       "{\"Unique ID\": \"gge720\"}",
+       "{\"Unique ID\": \"gge721\"}"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "SHEET/*:doc:DOCTYPE": {
+  "count": 7,
+  "lengths": {
+   "3": 7
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 7
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 7
+    },
+    "examples": [
+     "\"SCH\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 7
+    },
+    "examples": [
+     "\"1.1\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:HEAD": {
+  "count": 7,
+  "lengths": {
+   "2": 7
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 7
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 7
+    },
+    "examples": [
+     "{\"originX\": 0, \"originY\": 0, \"version\": \"2\"}"
+    ],
+    "dict_keys": {
+     "originX": {
+      "types": {
+       "int": 7
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "originY": {
+      "types": {
+       "int": 7
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "version": {
+      "types": {
+       "str": 7
+      },
+      "examples": [
+       "\"2\""
+      ]
+     }
+    }
+   }
+  }
+ },
+ "SHEET/*:doc:COMPONENT": {
+  "count": 299,
+  "lengths": {
+   "9": 299
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 299
+    },
+    "examples": [
+     "\"COMPONENT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 299
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e4425\"",
+     "\"e4469\"",
+     "\"e4503\"",
+     "\"e4514\"",
+     "\"e4525\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 299
+    },
+    "examples": [
+     "\"CC0402KRX7R9BB104.1\"",
+     "\"\"",
+     "\"d4567a73e568fa94\"",
+     "\"OPA2189ID.2\"",
+     "\"OPA2189ID.1\"",
+     "\"OPA2189ID.3\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 299
+    },
+    "examples": [
+     "1290",
+     "1360",
+     "1250",
+     "0",
+     "1255",
+     "1335"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 299
+    },
+    "examples": [
+     "0",
+     "740",
+     "625",
+     "520",
+     "570",
+     "760"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 299
+    },
+    "examples": [
+     "0",
+     "90",
+     "270",
+     "180"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 299
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "dict": 299
+    },
+    "examples": [
+     "{}"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 299
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:FONTSTYLE": {
+  "count": 64,
+  "lengths": {
+   "12": 64
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 64
+    },
+    "examples": [
+     "\"FONTSTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 64
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st2\"",
+     "\"st3\"",
+     "\"st4\"",
+     "\"st5\"",
+     "\"st7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 64
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 64
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 64
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 60,
+     "float": 4
+    },
+    "examples": [
+     "8",
+     "15",
+     "40",
+     "20",
+     "80",
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 64
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 64
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 64
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 64
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 64
+    },
+    "examples": [
+     "1",
+     "2",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 64
+    },
+    "examples": [
+     "0",
+     "1",
+     "2"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:ATTR": {
+  "count": 3191,
+  "lengths": {
+   "12": 3191
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3191
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 3191
+    },
+    "examples": [
+     "\"e0\"",
+     "\"e2\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 3191
+    },
+    "examples": [
+     "\"e4425\"",
+     "\"e1\"",
+     "\"e4469\"",
+     "\"e4503\"",
+     "\"e4514\"",
+     "\"e4525\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 3191
+    },
+    "examples": [
+     "\"Device\"",
+     "\"Symbol\"",
+     "\"@Project Name\"",
+     "\"Part Number\"",
+     "\"Name\"",
+     "\"@Create Time\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 3191
+    },
+    "examples": [
+     "\"\"",
+     "\"412ae3d5b724ed29\"",
+     "\"0c62dd860b67ab7f\"",
+     "\"Piezo_Driver\"",
+     "\"18:55:00\"",
+     "\"00:32:52\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 3191
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 3191
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 2180,
+     "int": 997,
+     "float": 14
+    },
+    "examples": [
+     "1370",
+     "1235",
+     "1260",
+     "1300",
+     "1390",
+     "1205"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "null": 2180,
+     "int": 1009,
+     "float": 2
+    },
+    "examples": [
+     "625",
+     "760",
+     "710",
+     "700",
+     "640",
+     "636"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 3191
+    },
+    "examples": [
+     "0",
+     "90"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "str": 3191
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st4\"",
+     "\"st2\"",
+     "\"st3\"",
+     "\"st5\"",
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 3191
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:TEXT": {
+  "count": 78,
+  "lengths": {
+   "7": 78
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"TEXT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"e31\"",
+     "\"e92\"",
+     "\"e93\"",
+     "\"e94\"",
+     "\"e95\"",
+     "\"e96\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 78
+    },
+    "examples": [
+     "335",
+     "825",
+     "740",
+     "500",
+     "870",
+     "830"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 78
+    },
+    "examples": [
+     "885",
+     "1045",
+     "695",
+     "865",
+     "900",
+     "940"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 78
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"目录\"",
+     "\"电压建立时间 3uS，330Ksps\"",
+     "\"AVDD必须比基准先上电，否则添加一个二极管(CBB已有）\"",
+     "\"AVSS和VDDIO上电顺序无所谓\"",
+     "\"VREF至少比AVDD低0.1V\"",
+     "\"6.5mA MAX\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 78
+    },
+    "examples": [
+     "\"st1\"",
+     "\"st5\"",
+     "\"st8\"",
+     "\"st3\"",
+     "\"st7\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:LINESTYLE": {
+  "count": 9,
+  "lengths": {
+   "7": 9
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 9
+    },
+    "examples": [
+     "\"LINESTYLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 9
+    },
+    "examples": [
+     "\"st10\"",
+     "\"st6\"",
+     "\"st9\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 9
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 9
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "null": 9
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 9
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 9
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:TABLE": {
+  "count": 4,
+  "lengths": {
+   "9": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"TABLE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"e32\"",
+     "\"e63\"",
+     "\"e79\"",
+     "\"e82\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "380",
+     "210"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "1025",
+     "285"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 4
+    },
+    "examples": [
+     "[42.5, 42.5]",
+     "[49.33333333333337, 49.33333333333326, 49.33333333333326, 49…",
+     "[49.33333333333337, 49.33333333333337, 49.33333333333337, 49…"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "list": 4
+    },
+    "examples": [
+     "[532.5, 532.5]",
+     "[170]"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 4
+    },
+    "examples": [
+     "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",
+     "[0, 0]"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "list": 4
+    },
+    "examples": [
+     "[0, 0]",
+     "[0]"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:TABEL_CELL": {
+  "count": 51,
+  "lengths": {
+   "14": 51
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"TABEL_CELL\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"e33\"",
+     "\"e34\"",
+     "\"e35\"",
+     "\"e36\"",
+     "\"e37\"",
+     "\"e38\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"e32\"",
+     "\"e63\"",
+     "\"e82\"",
+     "\"e79\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"\"",
+     "\"图页名称\"",
+     "\"备注\"",
+     "\"Index\"",
+     "\"ControlDAC_A\"",
+     "\"ControlDAC_B\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 51
+    },
+    "examples": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 51
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 51
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 51
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "str": 51
+    },
+    "examples": [
+     "\"st8\"",
+     "\"st7\""
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "float": 51
+    },
+    "examples": [
+     "1.2"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:WIRE": {
+  "count": 269,
+  "lengths": {
+   "5": 269
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 269
+    },
+    "examples": [
+     "\"WIRE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 269
+    },
+    "examples": [
+     "\"e495\"",
+     "\"e497\"",
+     "\"e499\"",
+     "\"e501\"",
+     "\"e503\"",
+     "\"e505\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 269
+    },
+    "examples": [
+     "[[1250, 610, 1250, 625, 1270, 625], [1250, 660, 1250, 625]](len=2)",
+     "[[1300, 520, 1360, 520]](len=1)",
+     "[[1270, 520, 1250, 520, 1250, 530], [1250, 485, 1250, 520]](len=2)",
+     "[[1215, 750, 1180, 750, 1180, 785, 1310, 785, 1310, 740, 129…(len=2)",
+     "[[1300, 625, 1360, 625]](len=1)",
+     "[[1210, 580, 1150, 580, 1150, 680, 1390, 680, 1390, 570, 129…(len=2)"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 269
+    },
+    "examples": [
+     "\"st10\"",
+     "\"st9\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 269
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "SHEET/*:doc:POLY": {
+  "count": 4,
+  "lengths": {
+   "6": 4
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"POLY\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"e262\"",
+     "\"e263\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 4
+    },
+    "examples": [
+     "[265, 875, 305, 1065]",
+     "[260, 430, 300, 620]"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "bool": 4
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 4
+    },
+    "examples": [
+     "\"st6\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 4
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:DOCTYPE": {
+  "count": 16,
+  "lengths": {
+   "3": 16
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"DOCTYPE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"FOOTPRINT\"",
+     "\"PCB\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"1.8\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:HEAD": {
+  "count": 16,
+  "lengths": {
+   "2": 16
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"HEAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "dict": 16
+    },
+    "examples": [
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0, \"uuid\": \"5c0a0cc…",
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0, \"uuid\": \"2eb60a6…",
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0}",
+     "{\"editorVersion\": \"2.2.C\", \"importFlag\": 0, \"uuid\": \"2b89f98…"
+    ],
+    "dict_keys": {
+     "editorVersion": {
+      "types": {
+       "str": 16
+      },
+      "examples": [
+       "\"2.2.C\""
+      ]
+     },
+     "importFlag": {
+      "types": {
+       "int": 16
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "uuid": {
+      "types": {
+       "str": 13
+      },
+      "examples": [
+       "\"5c0a0ccd1d96fdc95ea96a636fc7d365_e2757\"",
+       "\"5c0a0ccd1d96fdc95ea96a636fc7d365_e2781\"",
+       "\"5c0a0ccd1d96fdc95ea96a636fc7d365_e2805\"",
+       "\"5c0a0ccd1d96fdc95ea96a636fc7d365_e2829\"",
+       "\"5c0a0ccd1d96fdc95ea96a636fc7d365_e2853\""
+      ]
+     },
+     "title": {
+      "types": {
+       "str": 13
+      },
+      "examples": [
+       "\"C2220\""
+      ]
+     },
+     "source": {
+      "types": {
+       "str": 13
+      },
+      "examples": [
+       "\"21224cbfadc4408da362a38112e9eb98|261a75a351144d7d89ed0d76ce…"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "PCB/*:doc:CANVAS": {
+  "count": 16,
+  "lengths": {
+   "13": 16
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"CANVAS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 13,
+     "float": 3
+    },
+    "examples": [
+     "0",
+     "-1139.3701"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 13,
+     "float": 3
+    },
+    "examples": [
+     "0",
+     "-1560.5762"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"mm\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 16
+    },
+    "examples": [
+     "3.93701"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 16
+    },
+    "examples": [
+     "3.93701"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 16
+    },
+    "examples": [
+     "3.93701"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 16
+    },
+    "examples": [
+     "3.93701"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 16
+    },
+    "examples": [
+     "0.01"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "float": 16
+    },
+    "examples": [
+     "0.01"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "5"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:LAYER": {
+  "count": 4114,
+  "lengths": {
+   "9": 4114
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 4114
+    },
+    "examples": [
+     "\"LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 4114
+    },
+    "examples": [
+     "1",
+     "2",
+     "3",
+     "4",
+     "7",
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 4114
+    },
+    "examples": [
+     "\"TOP\"",
+     "\"BOTTOM\"",
+     "\"TOP_SILK\"",
+     "\"BOT_SILK\"",
+     "\"TOP_PASTE_MASK\"",
+     "\"BOT_PASTE_MASK\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 4114
+    },
+    "examples": [
+     "\"Top Layer\"",
+     "\"Bottom Layer\"",
+     "\"Top Silkscreen Layer\"",
+     "\"Bottom Silkscreen Layer\"",
+     "\"Top Paste Mask Layer\"",
+     "\"Bottom Paste Mask Layer\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 4114
+    },
+    "examples": [
+     "0",
+     "3",
+     "1",
+     "7"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 4114
+    },
+    "examples": [
+     "\"#ff3333\"",
+     "\"#008400\"",
+     "\"#008484\"",
+     "\"#840084\"",
+     "\"#840000\"",
+     "\"#00c2c2\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 4082,
+     "float": 32
+    },
+    "examples": [
+     "1",
+     "0",
+     "0.7"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 4114
+    },
+    "examples": [
+     "\"#7f0000\"",
+     "\"#00007f\"",
+     "\"#7f6600\"",
+     "\"#336619\"",
+     "\"#404040\"",
+     "\"#400000\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 4114
+    },
+    "examples": [
+     "0.5"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:ACTIVE_LAYER": {
+  "count": 16,
+  "lengths": {
+   "2": 16
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"ACTIVE_LAYER\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "2",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:LAYER_PHYS": {
+  "count": 272,
+  "lengths": {
+   "7": 272
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 272
+    },
+    "examples": [
+     "\"LAYER_PHYS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 272
+    },
+    "examples": [
+     "3",
+     "7",
+     "5",
+     "1",
+     "361",
+     "15"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 272
+    },
+    "examples": [
+     "\"\"",
+     "\"Inner layer thickness\"",
+     "\"Outer layer thickness 1oz\"",
+     "\"3313 RC57% 4.2mil\"",
+     "\"0.55mm H/H No copper\"",
+     "\"2116 RC54% 4.9mil\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 96,
+     "float": 176
+    },
+    "examples": [
+     "0",
+     "0.598",
+     "1.378",
+     "3.913",
+     "21.654",
+     "4.283"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 272
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 272
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 272
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PREFERENCE": {
+  "count": 16,
+  "lengths": {
+   "21": 16
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"PREFERENCE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 13,
+     "float": 3
+    },
+    "examples": [
+     "10",
+     "19.685"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 13,
+     "float": 3
+    },
+    "examples": [
+     "24",
+     "11.811"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 13,
+     "float": 3
+    },
+    "examples": [
+     "12",
+     "17.7166"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"L45\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"\"",
+     "\"JLC06161H-3313\""
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1",
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"OPTIMIZA_NONE\"",
+     "\"OPTIMIZA_OPEN\""
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "str": 16
+    },
+    "examples": [
+     "\"OPTIMIZA_NONE\"",
+     "\"OPTIMIZA_WEAK\""
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 16
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:ATTR": {
+  "count": 5277,
+  "lengths": {
+   "22": 5277
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 5277
+    },
+    "examples": [
+     "\"ATTR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 5277
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e111\"",
+     "\"e112\"",
+     "\"e113\"",
+     "\"e115\"",
+     "\"e116\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 5277
+    },
+    "examples": [
+     "\"\"",
+     "\"e110\"",
+     "\"e114\"",
+     "\"e118\"",
+     "\"e122\"",
+     "\"e126\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "3",
+     "4",
+     "13"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 3073,
+     "float": 2195,
+     "int": 9
+    },
+    "examples": [
+     "3591.8759",
+     "3589.9607",
+     "2019.6959",
+     "2208.1642",
+     "2206.249",
+     "1307.2383"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "null": 3073,
+     "float": 2201,
+     "int": 3
+    },
+    "examples": [
+     "420.7835",
+     "311.315",
+     "452.0866",
+     "639.9133",
+     "749.3818",
+     "785.0809"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 5277
+    },
+    "examples": [
+     "\"Designator\"",
+     "\"Footprint\"",
+     "\"Device\"",
+     "\"VALUE\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "str": 5277
+    },
+    "examples": [
+     "\"U?\"",
+     "\"b4a8026c7c5644e58d687e48983c6d3a\"",
+     "\"8d33b66b5cba42d2bb32112ae8457b81\"",
+     "\"C1\"",
+     "\"2b0612b1f6e0425a897fb5dfe86f86f0\"",
+     "\"4cc5d8b47af248369f1703bdddb0cdd7\""
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "str": 5277
+    },
+    "examples": [
+     "\"方正姚体\"",
+     "\"default\"",
+     "\"Aldrich Regular\""
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "float": 5242,
+     "int": 35
+    },
+    "examples": [
+     "47.2441",
+     "39.3701",
+     "100",
+     "55.1181",
+     "67.5"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 48,
+     "float": 5229
+    },
+    "examples": [
+     "5.9843",
+     "6"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0",
+     "900",
+     "-180",
+     "-900",
+     "720",
+     "630"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "int": 5277
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "bool": 5277
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:POLY": {
+  "count": 146,
+  "lengths": {
+   "8": 146
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 146
+    },
+    "examples": [
+     "\"POLY\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 146
+    },
+    "examples": [
+     "\"e2\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 146
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 146
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 146
+    },
+    "examples": [
+     "3",
+     "48",
+     "11"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 146
+    },
+    "examples": [
+     "6",
+     "2",
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 146
+    },
+    "examples": [
+     "[144.142, 115.299, \"L\", 65.008, 115.299]",
+     "[65.008, -115.299, \"L\", 144.142, -115.299]",
+     "[150.142, -109.299, \"L\", 150.142, 109.299]",
+     "[-144.142, 115.299, \"L\", -65.008, 115.299]",
+     "[-65.008, -115.299, \"L\", -144.142, -115.299]",
+     "[-150.142, -109.299, \"L\", -150.142, 109.299]"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 146
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PAD": {
+  "count": 26,
+  "lengths": {
+   "22": 26
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"PAD\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"e13\"",
+     "\"e14\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "str": 26
+    },
+    "examples": [
+     "\"2\"",
+     "\"1\""
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 26
+    },
+    "examples": [
+     "101.58",
+     "-101.58"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "list": 26
+    },
+    "examples": [
+     "[\"ROUND\", 0, 0]"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "list": 26
+    },
+    "examples": [
+     "[\"RECT\", 79.134, 212.598, 20]"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "list": 26
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "18": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "19": {
+    "types": {
+     "float": 26
+    },
+    "examples": [
+     "-3937.008"
+    ],
+    "dict_keys": {}
+   },
+   "20": {
+    "types": {
+     "float": 26
+    },
+    "examples": [
+     "-3937.008"
+    ],
+    "dict_keys": {}
+   },
+   "21": {
+    "types": {
+     "int": 26
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:FILL": {
+  "count": 431,
+  "lengths": {
+   "9": 431
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 431
+    },
+    "examples": [
+     "\"FILL\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 431
+    },
+    "examples": [
+     "\"e15\"",
+     "\"e16\"",
+     "\"e17\"",
+     "\"e18\"",
+     "\"e19\"",
+     "\"e86\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 74,
+     "str": 357
+    },
+    "examples": [
+     "0",
+     "\"2\"",
+     "\"3\"",
+     "\"11\"",
+     "\"1\"",
+     "\"12\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 431
+    },
+    "examples": [
+     "\"\"",
+     "\"AGND\"",
+     "\"VCC_12V\"",
+     "\"$3I8493\\\\$1N1545\"",
+     "\"VCC_3V3\"",
+     "\"VCC_10.5V\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 431
+    },
+    "examples": [
+     "1",
+     "2",
+     "50",
+     "7",
+     "49",
+     "12"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 431
+    },
+    "examples": [
+     "0.2",
+     "0.1"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 431
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "list": 431
+    },
+    "examples": [
+     "[[\"CIRCLE\", -112.2, -98.43, 2.361]](len=1)",
+     "[[-112.205, -98.425, \"L\", -112.205, 98.425, -78.74, 98.425, …(len=1)",
+     "[[112.205, -98.425, \"L\", 112.205, 98.425, 78.74, 98.425, 78.…(len=1)",
+     "[[62.008, -102.362, \"L\", 62.008, -40.079, 65.945, -36.142, 8…(len=1)",
+     "[[-62.008, -102.362, \"L\", -62.008, -40.079, -65.945, -36.142…(len=1)",
+     "[[\"R\", 3920.4724, 1187.4016, 62.9921, 78.7402, 180, 0]](len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 431
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:NET": {
+  "count": 923,
+  "lengths": {
+   "8": 923
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 923
+    },
+    "examples": [
+     "\"NET\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 923
+    },
+    "examples": [
+     "\"VCC_3V3\"",
+     "\"VCC_110V\"",
+     "\"MOADC_SPI_SCLK\"",
+     "\"$2N1083\"",
+     "\"$2N1078\"",
+     "\"$2N1073\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "null": 923
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "null": 923
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 923
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "null": 923
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 923
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "null": 923
+    },
+    "examples": [],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:RULE": {
+  "count": 96,
+  "lengths": {
+   "5": 96
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"RULE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"10\"",
+     "\"1\"",
+     "\"3\"",
+     "\"2\"",
+     "\"11\"",
+     "\"4\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"copperThickness1oz\"",
+     "\"copperThickness2oz\"",
+     "\"Plane_innerPlane\"",
+     "\"Copper_copperRegion\"",
+     "\"Copper_copperRegionHV\"",
+     "\"Copper_copperRegionL\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 72,
+     "dict": 24
+    },
+    "examples": [
+     "[\"mm\", [[3.937], [3.937, 3.937], [5.9843, 5.9843, 5.9843], […",
+     "[\"mm\", [[7.9921], [5.9843, 5.9843], [5.9843, 5.9843, 5.9843]…",
+     "[\"mm\", [[29.5276], [29.5276, 29.5276], [29.5276, 29.5276, 29…",
+     "[\"mm\", [[6], [6, 6], [6, 6, 6], [6, 6, 6, 6], [6, 6, 6, 6, 6…",
+     "{\"unit\": \"mm\", \"deviceClearance\": 0, \"thru2SmdClearance\": 11…",
+     "[\"mm\", 3.937, 5.7087, 393.7008]"
+    ],
+    "dict_keys": {
+     "unit": {
+      "types": {
+       "str": 18
+      },
+      "examples": [
+       "\"mm\""
+      ]
+     },
+     "deviceClearance": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "thru2SmdClearance": {
+      "types": {
+       "float": 3
+      },
+      "examples": [
+       "11.811"
+      ]
+     },
+     "holeClearance": {
+      "types": {
+       "float": 3
+      },
+      "examples": [
+       "11.811"
+      ]
+     },
+     "netLenMin": {
+      "types": {
+       "null": 3
+      },
+      "examples": []
+     },
+     "netLenMax": {
+      "types": {
+       "null": 3
+      },
+      "examples": []
+     },
+     "blinds": {
+      "types": {
+       "dict": 3
+      },
+      "examples": [
+       "{\"content\": []}"
+      ]
+     },
+     "minRadius": {
+      "types": {
+       "float": 6
+      },
+      "examples": [
+       "7.874",
+       "9.8425"
+      ]
+     },
+     "defRadius": {
+      "types": {
+       "float": 6
+      },
+      "examples": [
+       "8.8583",
+       "9.8425"
+      ]
+     },
+     "maxRadius": {
+      "types": {
+       "float": 6
+      },
+      "examples": [
+       "196.8504"
+      ]
+     },
+     "minInner": {
+      "types": {
+       "float": 6
+      },
+      "examples": [
+       "5.9055"
+      ]
+     },
+     "defInner": {
+      "types": {
+       "float": 6
+      },
+      "examples": [
+       "5.9055",
+       "6.8898"
+      ]
+     },
+     "maxInner": {
+      "types": {
+       "float": 6
+      },
+      "examples": [
+       "124.0157"
+      ]
+     },
+     "padTopExpan": {
+      "types": {
+       "int": 3,
+       "float": 3
+      },
+      "examples": [
+       "0",
+       "2.0079"
+      ]
+     },
+     "padBotExpan": {
+      "types": {
+       "int": 3,
+       "float": 3
+      },
+      "examples": [
+       "0",
+       "2.0079"
+      ]
+     },
+     "testPointTopExpan": {
+      "types": {
+       "int": 3,
+       "float": 3
+      },
+      "examples": [
+       "-1000",
+       "2.0079"
+      ]
+     },
+     "testPointBotExpan": {
+      "types": {
+       "int": 3,
+       "float": 3
+      },
+      "examples": [
+       "-1000",
+       "2.0079"
+      ]
+     },
+     "viaTopExpan": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "-1000"
+      ]
+     },
+     "viaBotExpan": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "-1000"
+      ]
+     },
+     "routingCorner": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "isKeep": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "1"
+      ]
+     },
+     "viaQuantity": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "0"
+      ]
+     },
+     "routingEffectPriority": {
+      "types": {
+       "int": 3
+      },
+      "examples": [
+       "1"
+      ]
+     },
+     "layers": {
+      "types": {
+       "list": 3
+      },
+      "examples": [
+       "[1, 2]"
+      ]
+     },
+     "ignoreNets": {
+      "types": {
+       "list": 3
+      },
+      "examples": [
+       "[]"
+      ]
+     }
+    }
+   }
+  }
+ },
+ "PCB/*:doc:RULE_SELECTOR": {
+  "count": 165,
+  "lengths": {
+   "4": 165
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 165
+    },
+    "examples": [
+     "\"RULE_SELECTOR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "list": 165
+    },
+    "examples": [
+     "[\"NET\", \"VCC_3V3\"]",
+     "[\"NET\", \"VCC_110V\"]",
+     "[\"NET\", \"VCC_3V3_ISO\"]",
+     "[\"NET\", \"GND_ISO\"]",
+     "[\"NET\", \"VREF_5V_OUT\"]",
+     "[\"NET\", \"VCC_110V_DIVED_BUFFERED\"]"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 165
+    },
+    "examples": [
+     "4",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "dict": 165
+    },
+    "examples": [
+     "{\"3\": \"trackWidth1oz_POWER\"}",
+     "{\"1\": \"Copper_copperRegionHV\", \"7\": \"copperRegion_Copper_cop…",
+     "{\"1\": \"Copper_copperRegion\", \"7\": \"copperRegion_Copper_coppe…",
+     "{\"1\": \"Copper_copperRegionHV\", \"3\": \"trackWidth1oz_POWER\", \"…"
+    ],
+    "dict_keys": {
+     "3": {
+      "types": {
+       "str": 78
+      },
+      "examples": [
+       "\"trackWidth1oz_POWER\""
+      ]
+     },
+     "1": {
+      "types": {
+       "str": 111
+      },
+      "examples": [
+       "\"Copper_copperRegionHV\"",
+       "\"Copper_copperRegion\""
+      ]
+     },
+     "7": {
+      "types": {
+       "str": 111
+      },
+      "examples": [
+       "\"copperRegion_Copper_copperRegionHV\"",
+       "\"copperRegion_Copper_copperRegion\""
+      ]
+     }
+    }
+   }
+  }
+ },
+ "PCB/*:doc:PRIMITIVE": {
+  "count": 135,
+  "lengths": {
+   "4": 135
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 135
+    },
+    "examples": [
+     "\"PRIMITIVE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 135
+    },
+    "examples": [
+     "\"ALL\"",
+     "\"COMPONENT\"",
+     "\"COMPONENTSILK\"",
+     "\"PROPERTY\"",
+     "\"DESIGNATOR\"",
+     "\"TRACK\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 135
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 135
+    },
+    "examples": [
+     "1",
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:SILK_OPTS": {
+  "count": 6,
+  "lengths": {
+   "4": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"SILK_OPTS\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "3",
+     "4"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"#000000\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"#ffffff\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PANELIZE": {
+  "count": 3,
+  "lengths": {
+   "7": 3
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 3
+    },
+    "examples": [
+     "\"PANELIZE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 3
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PANELIZE_STAMP": {
+  "count": 6,
+  "lengths": {
+   "7": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"PANELIZE_STAMP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "21.6535"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "8"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "33.4646"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PANELIZE_SIDE": {
+  "count": 6,
+  "lengths": {
+   "7": 6
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 6
+    },
+    "examples": [
+     "\"PANELIZE_SIDE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 6
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "236.2205"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "78.7402"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "39.3701"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 6
+    },
+    "examples": [
+     "19.685"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PROP": {
+  "count": 2363,
+  "lengths": {
+   "3": 2363
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 2363
+    },
+    "examples": [
+     "\"PROP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 2363
+    },
+    "examples": [
+     "\"e108\"",
+     "\"e109\"",
+     "\"e757\"",
+     "\"e823\"",
+     "\"e4751\"",
+     "\"e4752\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 2363
+    },
+    "examples": [
+     "\"#000000\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:GROUP": {
+  "count": 146,
+  "lengths": {
+   "3": 146
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 146
+    },
+    "examples": [
+     "\"GROUP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 146
+    },
+    "examples": [
+     "\"1\"",
+     "\"2\"",
+     "\"3\"",
+     "\"4\"",
+     "\"5\"",
+     "\"6\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 146
+    },
+    "examples": [
+     "\"_CBB_SMPS_TPS563201_BUCK_ONELAYER_1\"",
+     "\"_CBB_LDO_TPS7A4901_2Layer_1\"",
+     "\"_CBB_LDO_TPS7A3001_2LAYER_1\"",
+     "\"MOADC0\"",
+     "\"ADC1\"",
+     "\"REF\""
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:VIA": {
+  "count": 2879,
+  "lengths": {
+   "14": 2879
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 2879
+    },
+    "examples": [
+     "\"VIA\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 2879
+    },
+    "examples": [
+     "\"e1\"",
+     "\"e2\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 2108,
+     "int": 771
+    },
+    "examples": [
+     "\"1\"",
+     "\"2\"",
+     "\"3\"",
+     "\"11\"",
+     "\"12\"",
+     "\"9\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 2879
+    },
+    "examples": [
+     "\"AGND\"",
+     "\"VCC_12V\"",
+     "\"VCC_3V3\"",
+     "\"VCC_10.5V\"",
+     "\"$3I10223\\\\EN\"",
+     "\"VCC_-12V\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 2879
+    },
+    "examples": [
+     "\"\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 2876,
+     "int": 3
+    },
+    "examples": [
+     "4007.0866",
+     "3877.1652",
+     "4117.3228",
+     "4115.3542",
+     "3896.8503",
+     "4259.0552"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 2876,
+     "int": 3
+    },
+    "examples": [
+     "1254.3309",
+     "1140.1576",
+     "1226.7718",
+     "1226.7714",
+     "1256.2994",
+     "1230.7088"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 2879
+    },
+    "examples": [
+     "11.811",
+     "12.0078",
+     "11.8504"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 2879
+    },
+    "examples": [
+     "17.7166",
+     "19.685",
+     "24.0158"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 2879
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "null": 2879
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "null": 2879
+    },
+    "examples": [],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 2879
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "list": 2879
+    },
+    "examples": [
+     "[]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:LINE": {
+  "count": 13703,
+  "lengths": {
+   "11": 13703
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 13703
+    },
+    "examples": [
+     "\"LINE\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 13703
+    },
+    "examples": [
+     "\"e47\"",
+     "\"e48\"",
+     "\"e49\"",
+     "\"e50\"",
+     "\"e51\"",
+     "\"e52\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 6536,
+     "int": 7167
+    },
+    "examples": [
+     "\"2\"",
+     "\"11\"",
+     "\"3\"",
+     "\"12\"",
+     "\"1\"",
+     "\"18\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 13703
+    },
+    "examples": [
+     "\"$3I8493\\\\$1N1937\"",
+     "\"AGND\"",
+     "\"$3I10223\\\\$1N530\"",
+     "\"$3I8493\\\\$1N1545\"",
+     "\"$3I8493\\\\$1N1697\"",
+     "\"$3I10223\\\\EN\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 13703
+    },
+    "examples": [
+     "1",
+     "2",
+     "17",
+     "15",
+     "18",
+     "16"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 13643,
+     "int": 60
+    },
+    "examples": [
+     "3912.5983",
+     "3955.9054",
+     "4061.4172",
+     "4023.6221",
+     "4185.0392",
+     "4234.9956"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 13679,
+     "int": 24
+    },
+    "examples": [
+     "970.8662",
+     "797.4362",
+     "1101.5749",
+     "1060.6299",
+     "1022.8347",
+     "768.1102"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 13646,
+     "int": 57
+    },
+    "examples": [
+     "3912.5983",
+     "4061.4172",
+     "4023.6221",
+     "3886.9403",
+     "4234.9956",
+     "4239.5278"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 13670,
+     "int": 33
+    },
+    "examples": [
+     "1101.5749",
+     "1050.0115",
+     "992.7857",
+     "1022.8347",
+     "797.4362",
+     "801.9684"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 41,
+     "float": 13662
+    },
+    "examples": [
+     "5.7087",
+     "11.811",
+     "10",
+     "15.748",
+     "13.7795",
+     "7.874"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 13703
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:ARC": {
+  "count": 24,
+  "lengths": {
+   "12": 24
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"ARC\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"e80\"",
+     "\"e81\"",
+     "\"e82\"",
+     "\"e83\"",
+     "\"e84\"",
+     "\"e85\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"1\"",
+     "\"56\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 24
+    },
+    "examples": [
+     "\"$3I8493\\\\EN\"",
+     "\"$3I8493\\\\$1N1937\"",
+     "\"$3I8493\\\\$1N1697\"",
+     "\"$3I8493\\\\$1N1545\"",
+     "\"VCC_3V3\"",
+     "\"AGND\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 24
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 24
+    },
+    "examples": [
+     "4009.0547",
+     "4023.6221",
+     "4061.4172",
+     "3879.0663",
+     "3886.9403",
+     "-147.6464"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "float": 24
+    },
+    "examples": [
+     "1065.3544",
+     "1102.7544",
+     "992.7857",
+     "1050.0115",
+     "1139.3701",
+     "1022.8347"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "float": 24
+    },
+    "examples": [
+     "3955.9054",
+     "4009.0547",
+     "4074.0157",
+     "3877.1652",
+     "3885.0392",
+     "-94.4971"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 24
+    },
+    "examples": [
+     "1052.7559",
+     "1101.5749",
+     "1027.9544",
+     "1065.3544",
+     "1140.1576",
+     "1022.0473"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "float": 24
+    },
+    "examples": [
+     "26.67050000000002",
+     "2.5424999999999756",
+     "44.999999999999964",
+     "-78.78090000000044",
+     "-44.99999999999818",
+     "44.999999999999005"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "float": 4,
+     "int": 20
+    },
+    "examples": [
+     "10",
+     "9.8425"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 24
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:FONT": {
+  "count": 133,
+  "lengths": {
+   "12": 133
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 133
+    },
+    "examples": [
+     "\"FONT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 133
+    },
+    "examples": [
+     "\"FB\"",
+     "\"PiezoDriver_Rev1_1_2026\"",
+     "\"→\"",
+     "\"OUT1\"",
+     "\"OUT0\"",
+     "\"OUT3\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 133
+    },
+    "examples": [
+     "\"方正姚体\"",
+     "\"Anton Regular\"",
+     "\"IBM 3270\"",
+     "\"宋体\"",
+     "\"Verdana\"",
+     "\"Aldrich Regular\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "float": 130,
+     "int": 3
+    },
+    "examples": [
+     "5.90551",
+     "3.93701",
+     "7.87402",
+     "12",
+     "1.9685",
+     "4.72441"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 133
+    },
+    "examples": [
+     "10"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "bool": 133
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "bool": 133
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "bool": 133
+    },
+    "examples": [
+     "false"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "int": 133
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "float": 130,
+     "int": 3
+    },
+    "examples": [
+     "131.1739",
+     "757.8148",
+     "42.5913",
+     "120",
+     "24.815",
+     "91.9828"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "float": 130,
+     "int": 3
+    },
+    "examples": [
+     "66.7502",
+     "118.5875",
+     "39.489399999999996",
+     "120",
+     "23.9799",
+     "57.1463"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "list": 133
+    },
+    "examples": [
+     "[[35.33765, 1.65832, \"L\", 35.33765, 1.21689, 37.84302, 1.216…(len=34)",
+     "[[0.22668, 2.07588, \"L\", 0.22668, 1.00215, 0.46528, 1.00215,…(len=4)",
+     "[[6.98182, 4.6, \"L\", 7.00455, 4.56364, 7.07273, 4.56364, 7.3…(len=1)",
+     "[[0.19088, 1.13636, \"L\", 0.19088, 0.42353, 0.38177, 0.42353,…(len=4)",
+     "[[1.62849, 0.77845, \"L\", 1.78955, 0.76951, 1.94166, 0.77845,…(len=5)",
+     "[[1.62849, 0.77845, \"L\", 1.78955, 0.76951, 1.94166, 0.77845,…(len=6)"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:STRING": {
+  "count": 96,
+  "lengths": {
+   "18": 96
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"STRING\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"e106\"",
+     "\"e107\"",
+     "\"e108\"",
+     "\"e109\"",
+     "\"e757\"",
+     "\"e823\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 63,
+     "str": 33
+    },
+    "examples": [
+     "0",
+     "\"1\"",
+     "\"2\"",
+     "\"3\"",
+     "\"11\"",
+     "\"12\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "3",
+     "13"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 96
+    },
+    "examples": [
+     "-222.0472",
+     "3888.9763",
+     "4158.4252",
+     "4157.4802",
+     "3727.7166",
+     "3746.4566"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 96
+    },
+    "examples": [
+     "-761.4173",
+     "1132.2836",
+     "955.2362",
+     "738.5824",
+     "1226.1024",
+     "962.9917"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"FB\"",
+     "\"→\"",
+     "\"PiezoDriver_Rev1_1_2026\"",
+     "\"B\"",
+     "\"A\"",
+     "\"OUT1\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "str": 96
+    },
+    "examples": [
+     "\"宋体\"",
+     "\"Verdana\"",
+     "\"default\"",
+     "\"Anton Regular\"",
+     "\"IBM 3270\"",
+     "\"方正姚体\""
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "float": 76,
+     "int": 20
+    },
+    "examples": [
+     "59.0551",
+     "120",
+     "19.685",
+     "39.3701",
+     "78.7402"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "float": 96
+    },
+    "examples": [
+     "7.9921"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "12": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "13": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0",
+     "180",
+     "90",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "14": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "15": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "16": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "17": {
+    "types": {
+     "int": 96
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:COMPONENT": {
+  "count": 1743,
+  "lengths": {
+   "9": 1743
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 1743
+    },
+    "examples": [
+     "\"COMPONENT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 1743
+    },
+    "examples": [
+     "\"e110\"",
+     "\"e114\"",
+     "\"e118\"",
+     "\"e122\"",
+     "\"e126\"",
+     "\"e130\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 1425,
+     "int": 318
+    },
+    "examples": [
+     "\"4\"",
+     "\"7\"",
+     "\"5\"",
+     "\"6\"",
+     "0",
+     "\"1\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 1743
+    },
+    "examples": [
+     "1",
+     "2"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 1732,
+     "int": 11
+    },
+    "examples": [
+     "3621.2599",
+     "1848.8189",
+     "2237.5482",
+     "1277.8543",
+     "3466.9354",
+     "3785.8268"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 1732,
+     "int": 11
+    },
+    "examples": [
+     "332.2835",
+     "600.7874",
+     "728.4133",
+     "696.5809",
+     "300.897",
+     "329.9213"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 1743
+    },
+    "examples": [
+     "180",
+     "0",
+     "90",
+     "270"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "dict": 1743
+    },
+    "examples": [
+     "{\"Unique ID\": \"gge3\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"Ch…",
+     "{\"Unique ID\": \"gge5\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"Ch…",
+     "{\"JLCPCB Part Class\": \"Extended Part\", \"Unique ID\": \"gge153\"…",
+     "{\"JLCPCB Part Class\": \"Extended Part\", \"Unique ID\": \"gge153_…",
+     "{\"Unique ID\": \"gge188\", \"Reuse Block\": \"\", \"Group ID\": \"\", \"…",
+     "{\"Unique ID\": \"gge188_1\", \"Reuse Block\": \"\", \"Group ID\": \"\",…"
+    ],
+    "dict_keys": {
+     "Unique ID": {
+      "types": {
+       "str": 1743
+      },
+      "examples": [
+       "\"gge3\"",
+       "\"gge5\"",
+       "\"gge153\"",
+       "\"gge153_2\"",
+       "\"gge188\""
+      ]
+     },
+     "Reuse Block": {
+      "types": {
+       "str": 1743
+      },
+      "examples": [
+       "\"\"",
+       "\"_CBB_LDO_TPS7A4901_2Layer\"",
+       "\"_CBB_SMPS_TPS563201_BUCK_ONELAYER\"",
+       "\"LDO_LT3042_GM1200_MSOP10_ONELAYER\"",
+       "\"_CBB_LDO_TPS7A3001_2LAYER\""
+      ]
+     },
+     "Group ID": {
+      "types": {
+       "str": 1743
+      },
+      "examples": [
+       "\"\"",
+       "\"$3e10223\"",
+       "\"$3e8493\"",
+       "\"1\"",
+       "\"$3e10456\""
+      ]
+     },
+     "Channel ID": {
+      "types": {
+       "str": 1743
+      },
+      "examples": [
+       "\"$1e616\"",
+       "\"$2e1006\"",
+       "\"$6e291\"",
+       "\"$2e1399\"",
+       "\"$2e1471\""
+      ]
+     },
+     "JLCPCB Part Class": {
+      "types": {
+       "str": 165
+      },
+      "examples": [
+       "\"Extended Part\"",
+       "\"Basic Part\""
+      ]
+     },
+     "Add into BOM": {
+      "types": {
+       "str": 227
+      },
+      "examples": [
+       "\"no\""
+      ]
+     },
+     "Multi-Part Group": {
+      "types": {
+       "str": 66
+      },
+      "examples": [
+       "\"\""
+      ]
+     },
+     "Relevance": {
+      "types": {
+       "str": 66
+      },
+      "examples": [
+       "\"[]\""
+      ]
+     },
+     "Supplier Part": {
+      "types": {
+       "str": 153
+      },
+      "examples": [
+       "\"\"",
+       "\"C67239\"",
+       "\"C2999622\""
+      ]
+     },
+     "Value": {
+      "types": {
+       "str": 149
+      },
+      "examples": [
+       "\"0Ω_NC\"",
+       "\"49.9Ω_NC\"",
+       "\"20kΩ_NC\"",
+       "\"NC_10pF\"",
+       "\"100nF_NC\""
+      ]
+     },
+     "Voltage Rated": {
+      "types": {
+       "str": 72
+      },
+      "examples": [
+       "\"\""
+      ]
+     },
+     "Datasheet": {
+      "types": {
+       "str": 24
+      },
+      "examples": [
+       "\"https://item.szlcsc.com/datasheet/CC0402KRX7R9BB103/61185.h…",
+       "\"https://item.szlcsc.com/datasheet/0402WGF7872TCE/68329.html…"
+      ]
+     },
+     "Description": {
+      "types": {
+       "str": 24
+      },
+      "examples": [
+       "\"容值:10nF;精度:±10%;额定电压:50V;温度系数:X7R;\"",
+       "\"电阻类型:厚膜电阻;阻值:78.7kΩ;精度:±1%;功率:62.5mW;工作电压:50V;温度系数:±100ppm/…"
+      ]
+     },
+     "Voltage Rating": {
+      "types": {
+       "str": 30
+      },
+      "examples": [
+       "\"50V\"",
+       "\"\""
+      ]
+     },
+     "LCSC Part Name": {
+      "types": {
+       "str": 12
+      },
+      "examples": [
+       "\"78.7kΩ ±1% 62.5mW 厚膜电阻\"",
+       "\"78.7kΩ ±1% 100mW 厚膜电阻\"",
+       "\"\""
+      ]
+     },
+     "Manufacturer": {
+      "types": {
+       "str": 12
+      },
+      "examples": [
+       "\"UNI-ROYAL(厚声)\"",
+       "\"FOJAN(富捷)\"",
+       "\"\""
+      ]
+     },
+     "Manufacturer Part": {
+      "types": {
+       "str": 10
+      },
+      "examples": [
+       "\"0402WGF7872TCE\"",
+       "\"FRC0603F7872TS\""
+      ]
+     }
+    }
+   },
+   "8": {
+    "types": {
+     "int": 1743
+    },
+    "examples": [
+     "0",
+     "1"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:PAD_NET": {
+  "count": 22827,
+  "lengths": {
+   "6": 22827
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 22827
+    },
+    "examples": [
+     "\"PAD_NET\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 22827
+    },
+    "examples": [
+     "\"e114\"",
+     "\"e110\"",
+     "\"e118\"",
+     "\"e122\"",
+     "\"e126\"",
+     "\"e130\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 22827
+    },
+    "examples": [
+     "\"\"",
+     "\"2\"",
+     "\"1\"",
+     "\"6\"",
+     "\"5\"",
+     "\"4\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 22827
+    },
+    "examples": [
+     "\"\"",
+     "\"AGND\"",
+     "\"VCC_3V3\"",
+     "\"$6N2308\"",
+     "\"VCM_2V5_B\"",
+     "\"VEXC_5V\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 22827
+    },
+    "examples": [
+     "\"e2\"",
+     "\"e3\"",
+     "\"e4\"",
+     "\"e5\"",
+     "\"e6\"",
+     "\"e7\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 22827
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:DIMENSION": {
+  "count": 35,
+  "lengths": {
+   "10": 35
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 35
+    },
+    "examples": [
+     "\"DIMENSION\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 35
+    },
+    "examples": [
+     "\"e830\"",
+     "\"e978\"",
+     "\"e979\"",
+     "\"e3278\"",
+     "\"e3395\"",
+     "\"e3517\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 35
+    },
+    "examples": [
+     "\"LENGTH\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 35
+    },
+    "examples": [
+     "13"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "str": 35
+    },
+    "examples": [
+     "\"mm\""
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "int": 35
+    },
+    "examples": [
+     "6"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "int": 35
+    },
+    "examples": [
+     "3"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 35
+    },
+    "examples": [
+     "1"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "list": 35
+    },
+    "examples": [
+     "[-1170.6299, 1490, -1420, 1490, -1420, -1600, -1170.6299, -1…",
+     "[-619.0724, 932.715, -1015, 932.715, -1015, -1202.717, -634.…",
+     "[-433.9667, 932.715, -433.9667, 2420, -841.677, 2420, -841.6…",
+     "[3599.0212, -552.7559, 3599.0212, -271.2599, 3640.1576, -271…",
+     "[1417.9188, -544.8818, 1417.9188, -263.3858, 1459.0552, -263…",
+     "[2866.7377, -556.6928, 2866.7377, -275.1968, 2907.8741, -275…"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "int": 35
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:POUR": {
+  "count": 33,
+  "lengths": {
+   "12": 33
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 33
+    },
+    "examples": [
+     "\"POUR\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 33
+    },
+    "examples": [
+     "\"e4941\"",
+     "\"e4948\"",
+     "\"e5151\"",
+     "\"e7503\"",
+     "\"e7526\"",
+     "\"e7556\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 33
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "str": 33
+    },
+    "examples": [
+     "\"AGND\"",
+     "\"GND_ISO\"",
+     "\"VCC_3V3_ISO\"",
+     "\"VCC_5.3V\"",
+     "\"VCC_10.5V\"",
+     "\"VCC_3V3\""
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "int": 33
+    },
+    "examples": [
+     "16",
+     "18",
+     "15",
+     "2",
+     "17"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "float": 33
+    },
+    "examples": [
+     "0.2"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "str": 33
+    },
+    "examples": [
+     "\"POUR1\"",
+     "\"POUR2\"",
+     "\"POUR3\"",
+     "\"POUR4\"",
+     "\"POUR8\"",
+     "\"POUR5\""
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 33
+    },
+    "examples": [
+     "0",
+     "1",
+     "4",
+     "5",
+     "6",
+     "7"
+    ],
+    "dict_keys": {}
+   },
+   "8": {
+    "types": {
+     "list": 33
+    },
+    "examples": [
+     "[[\"R\", 11.2677, 2140.1575, 4684.0079, 3701.5748, 0, 78.7402]…(len=1)",
+     "[[\"R\", -1207.0866, 2140.1575, 1143.3071, 3699.2126, 0, 0]](len=1)",
+     "[[-399.2126, 1085.0394, \"L\", -261.4173, 1085.0394, -225.9842…(len=1)",
+     "[[303.8014, 844.8819, \"L\", 3204.3131, 844.8819, 3382.8652, 1…(len=1)",
+     "[[489.9495, 190.0592, \"L\", 531.5038, 231.6136, 1029.6879, 23…(len=1)",
+     "[[131.8096, 1337.0079, \"L\", 3947.2441, 1337.0079, 4033.8583,…(len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "9": {
+    "types": {
+     "list": 33
+    },
+    "examples": [
+     "[\"SOLID\", 8]",
+     "[\"SOLID\", 3.937]"
+    ],
+    "dict_keys": {}
+   },
+   "10": {
+    "types": {
+     "int": 33
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "11": {
+    "types": {
+     "int": 33
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:POURED": {
+  "count": 39,
+  "lengths": {
+   "6": 39
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 39
+    },
+    "examples": [
+     "\"POURED\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 39
+    },
+    "examples": [
+     "\"e4942\"",
+     "\"e4949\"",
+     "\"e5152\"",
+     "\"e7504\"",
+     "\"e7527\"",
+     "\"e7557\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 39
+    },
+    "examples": [
+     "\"e4941\"",
+     "\"e4948\"",
+     "\"e5151\"",
+     "\"e7503\"",
+     "\"e7526\"",
+     "\"e7556\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 39
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "bool": 39
+    },
+    "examples": [
+     "true"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "list": 39
+    },
+    "examples": [
+     "[[1.52677, 156.32228, \"L\", 437.52692, 156.32228, 437.52692, …(len=484)",
+     "[[-110.55063, -124.2014, \"L\", -110.55063, 127.73451, -82.535…(len=61)",
+     "[[-23.38046, 93.07731, \"L\", -23.38046, 87.80442, -26.01637, …(len=1)",
+     "[[27.7355, 66.06629, \"ARC\", 114.74992, 25.23622, 65.91749, \"…(len=115)",
+     "[[49.61335, 0.87789, \"ARC\", 29.45604, 49.39495, 1.70873, \"L\"…(len=56)",
+     "[[21.09606, 43.14961, \"L\", 21.09606, 36.87121, \"ARC\", 45.348…(len=107)"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:REGION": {
+  "count": 45,
+  "lengths": {
+   "8": 45
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 45
+    },
+    "examples": [
+     "\"REGION\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 45
+    },
+    "examples": [
+     "\"e6103\"",
+     "\"e6104\"",
+     "\"e6105\"",
+     "\"e6106\"",
+     "\"e6107\"",
+     "\"e7173\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "int": 45
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 45
+    },
+    "examples": [
+     "12",
+     "15",
+     "18",
+     "16",
+     "17"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "float": 45
+    },
+    "examples": [
+     "0.2"
+    ],
+    "dict_keys": {}
+   },
+   "5": {
+    "types": {
+     "list": 45
+    },
+    "examples": [
+     "[7]",
+     "[5, 6, 7, 8]"
+    ],
+    "dict_keys": {}
+   },
+   "6": {
+    "types": {
+     "list": 45
+    },
+    "examples": [
+     "[[\"R\", 4392.126, 482.6772, 212.5984, 212.5984, 0, 0]](len=1)",
+     "[[\"CIRCLE\", 4536.6142, 104.3307, 106.2992]](len=1)",
+     "[[\"CIRCLE\", 4536.6142, 947.6412, 106.2992]](len=1)",
+     "[[\"CIRCLE\", -462.5504, -681.8862, 106.2992]](len=1)",
+     "[[\"CIRCLE\", -462.5504, 1261.4138, 106.2992]](len=1)",
+     "[[\"R\", 695.2756, -1306.788, 850.3937, 122.0472, 0, 0]](len=1)"
+    ],
+    "dict_keys": {}
+   },
+   "7": {
+    "types": {
+     "int": 45
+    },
+    "examples": [
+     "0"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:TEARDROP": {
+  "count": 12831,
+  "lengths": {
+   "5": 12831
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 12831
+    },
+    "examples": [
+     "\"TEARDROP\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 12831
+    },
+    "examples": [
+     "\"e7674\"",
+     "\"e7675\"",
+     "\"e7676\"",
+     "\"e7677\"",
+     "\"e7678\"",
+     "\"e7679\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "str": 12831
+    },
+    "examples": [
+     "\"AGND\"",
+     "\"$3I10324\\\\$1N530\"",
+     "\"$3I8493\\\\$1N1697\"",
+     "\"$3I8493\\\\EN\"",
+     "\"$3I8493\\\\$1N1937\"",
+     "\"$3I10324\\\\EN\""
+    ],
+    "dict_keys": {}
+   },
+   "3": {
+    "types": {
+     "int": 12831
+    },
+    "examples": [
+     "1",
+     "2",
+     "17",
+     "15",
+     "18",
+     "16"
+    ],
+    "dict_keys": {}
+   },
+   "4": {
+    "types": {
+     "list": 12831
+    },
+    "examples": [
+     "[3897.8277, 1027.8347, \"L\", 3899.0088, 1017.8347, 3897.2264,…",
+     "[4027.4049, 1004.2646, \"L\", 4018.1399, 999.3361, \"ARC\", 57.9…",
+     "[3973.9627, 1054.8714, \"L\", 3972.1486, 1064.6242, \"ARC\", 29.…",
+     "[3972.4957, 1097.1941, \"L\", 3972.315, 1107.1933, \"ARC\", 29.1…",
+     "[3790.4527, 1071.1567, \"L\", 3790.4527, 1065.448, \"ARC\", 53.1…",
+     "[3794.646, 1065.4481, \"L\", 3790.02, 1071.1567, \"ARC\", 53.130…"
+    ],
+    "dict_keys": {}
+   }
+  }
+ },
+ "PCB/*:doc:CONNECT": {
+  "count": 9543,
+  "lengths": {
+   "3": 9543
+  },
+  "fields": {
+   "0": {
+    "types": {
+     "str": 9543
+    },
+    "examples": [
+     "\"CONNECT\""
+    ],
+    "dict_keys": {}
+   },
+   "1": {
+    "types": {
+     "str": 9543
+    },
+    "examples": [
+     "\"e7674\"",
+     "\"e7675\"",
+     "\"e7676\"",
+     "\"e7677\"",
+     "\"e7704\"",
+     "\"e7705\""
+    ],
+    "dict_keys": {}
+   },
+   "2": {
+    "types": {
+     "list": 9543
+    },
+    "examples": [
+     "[\"e81\"]",
+     "[\"e51\", \"e12\"]",
+     "[\"e82\"]",
+     "[\"e80\"]",
+     "[\"e828\"]",
+     "[\"e47\"]"
+    ],
+    "dict_keys": {}
+   }
+  }
+ }
+}

@@ -22,14 +22,17 @@
 - **待做**：PCB 网络拓扑级审查（PCB 网络表 vs SCH 网络表逐 pin 对比，
   需解析 PAD 几何/Footprint 引脚位置，当前仅 PAD_NET 归属清单）。
 
-## 渲染 render（✅ 基础完成 2026-08-23）
+## 渲染 render（✅ 基础完成 2026-08-23，含 Y 向上修正）
 
-- SVG 输出：导线/结点/网络名、符号图形原语(POLY/RECT/CIRCLE/ARC 三点弧)、
-  引脚桩+NC 叉、位号/值（FONTSTYLE 字号 + ATTR 显示坐标=EDA 排版）、
-  DNP 标记、页文本。配置：render_config.json 自动加载 / --config /
-  --no-labels/--no-texts/--pin-numbers。
-- **待做**：图纸边框区域裁剪（标题块外留白过大）；NetFlag 符号文字
-  （VCC/GND 名在符号 TEXT 里已画但字号小）；多页批量渲染；PDF 出图。
+- SVG 输出：导线/结点/网络名、符号图形原语(POLY/RECT/CIRCLE/ARC 三点弧/
+  **符号内 TEXT**)、引脚桩+NC 叉、位号/值/@标题块（FONTSTYLE 字号 +
+  ATTR 显示坐标 + 模板覆盖机制=EDA 排版）、DNP 标记、页文本。
+  **文件坐标系 Y 向上**（渲染统一翻转，实证：标题栏右下）。
+  配置：render_config.json / --config / --no-labels/--no-texts/
+  --pin-numbers。多格式冒烟 7/7 PASS（eprj2/epro/epro2）。
+- **待做**：Epro2DB.symbol_records（V3 符号图形转换，当前 V3 页器件退化为
+  占位框）；图纸边框区域裁剪；多页批量渲染；PDF 出图；
+  PIN a[3] 电气特性回退 symbol_pins.pin_type。
 
 ## BUS / BUSENTRY 总线支持（未实施）
 

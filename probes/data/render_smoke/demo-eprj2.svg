@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-300 -1470 2255 1770" font-family="Consolas, monospace">
+<rect x="-300" y="-1470" width="2255" height="1770" fill="#ffffff"/>
+<circle cx="1110" cy="-745" r="8" fill="#006600"/>
+<circle cx="1300" cy="-645" r="8" fill="#006600"/>
+<circle cx="1240" cy="-645" r="8" fill="#006600"/>
+<circle cx="1145" cy="-700" r="8" fill="#006600"/>
+<circle cx="1145" cy="-755" r="8" fill="#006600"/>
+<circle cx="1145" cy="-770" r="8" fill="#006600"/>
+<circle cx="1225" cy="-370" r="8" fill="#006600"/>
+<circle cx="1365" cy="-360" r="8" fill="#006600"/>
+<circle cx="1225" cy="-290" r="8" fill="#006600"/>
+<circle cx="1430" cy="-360" r="8" fill="#006600"/>
+<circle cx="1250" cy="-420" r="8" fill="#006600"/>
+<circle cx="1135" cy="-370" r="8" fill="#006600"/>
+<circle cx="1155" cy="-370" r="8" fill="#006600"/>
+<circle cx="1155" cy="-330" r="8" fill="#006600"/>
+<circle cx="1050" cy="-370" r="8" fill="#006600"/>
+<circle cx="1340" cy="-780" r="8" fill="#006600"/>
+<circle cx="1110" cy="-795" r="8" fill="#006600"/>
+<circle cx="1230" cy="-850" r="8" fill="#006600"/>
+<circle cx="1250" cy="-850" r="8" fill="#006600"/>
+<line x1="1030.0" y1="-1090.0" x2="1040.0" y2="-1090.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1040.0" y1="-1090.0" x2="1050.0" y2="-1090.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1100.0" y1="-1090.0" x2="1090.0" y2="-1090.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1010.0" y1="-1010.0" x2="1015.0" y2="-1010.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1015.0" y1="-1010.0" x2="1020.0" y2="-1010.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1060.0" y1="-1010.0" x2="1070.0" y2="-1010.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1130.0" y1="-1000.0" x2="1010.0" y2="-1000.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1130.0" y1="-1000.0" x2="1130.0" y2="-1010.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-1010.0" x2="1130.0" y2="-1010.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1080.0" x2="1200.0" y2="-1090.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1205.0" y1="-1080.0" x2="1200.0" y2="-1080.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1545.0" y1="-1020.0" x2="1540.0" y2="-1020.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1540.0" y1="-1020.0" x2="1540.0" y2="-1030.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1540.0" y1="-1070.0" x2="1540.0" y2="-1080.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1545.0" y1="-1070.0" x2="1540.0" y2="-1070.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1340.0" y1="-810.0" x2="1340.0" y2="-810.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1300.0" y1="-760.0" x2="1300.0" y2="-720.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1300.0" y1="-760.0" x2="1280.0" y2="-760.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-850.0" x2="1110.0" y2="-840.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1250.0" y1="-850.0" x2="1340.0" y2="-850.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1250.0" y1="-820.0" x2="1250.0" y2="-850.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1230.0" y1="-850.0" x2="1110.0" y2="-850.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1230.0" y1="-850.0" x2="1250.0" y2="-850.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1230.0" y1="-850.0" x2="1230.0" y2="-820.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-785.0" x2="1200.0" y2="-820.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-820.0" x2="1200.0" y2="-820.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-800.0" x2="1110.0" y2="-795.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-795.0" x2="1125.0" y2="-795.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1125.0" y1="-820.0" x2="1145.0" y2="-820.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1125.0" y1="-820.0" x2="1125.0" y2="-795.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-795.0" x2="1110.0" y2="-790.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1280.0" y1="-780.0" x2="1340.0" y2="-780.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1340.0" y1="-780.0" x2="1340.0" y2="-720.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1340.0" y1="-780.0" x2="1365.0" y2="-780.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1050.0" y1="-430.0" x2="1050.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1050.0" y1="-485.0" x2="1050.0" y2="-470.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1045.0" y1="-485.0" x2="1050.0" y2="-485.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1050.0" y1="-290.0" x2="1050.0" y2="-310.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1050.0" y1="-370.0" x2="1050.0" y2="-350.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1050.0" y1="-370.0" x2="1050.0" y2="-380.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1050.0" y1="-370.0" x2="1080.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1135.0" y1="-310.0" x2="1135.0" y2="-290.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1155.0" y1="-290.0" x2="1155.0" y2="-330.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1155.0" y1="-290.0" x2="1160.0" y2="-290.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1155.0" y1="-330.0" x2="1155.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1155.0" y1="-330.0" x2="1150.0" y2="-330.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1155.0" y1="-370.0" x2="1170.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1155.0" y1="-370.0" x2="1135.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1135.0" y1="-370.0" x2="1120.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1135.0" y1="-370.0" x2="1135.0" y2="-350.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1260.0" y1="-420.0" x2="1250.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1250.0" y1="-420.0" x2="1240.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1250.0" y1="-350.0" x2="1250.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1270.0" y1="-350.0" x2="1250.0" y2="-350.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1430.0" y1="-345.0" x2="1430.0" y2="-360.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1430.0" y1="-360.0" x2="1440.0" y2="-360.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1430.0" y1="-360.0" x2="1415.0" y2="-360.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1430.0" y1="-305.0" x2="1430.0" y2="-300.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-420.0" x2="1195.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1225.0" y1="-290.0" x2="1225.0" y2="-305.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1225.0" y1="-290.0" x2="1365.0" y2="-290.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1365.0" y1="-290.0" x2="1365.0" y2="-360.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1365.0" y1="-360.0" x2="1350.0" y2="-360.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1375.0" y1="-360.0" x2="1365.0" y2="-360.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-290.0" x2="1225.0" y2="-290.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1310.0" y1="-320.0" x2="1310.0" y2="-320.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1225.0" y1="-370.0" x2="1270.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1225.0" y1="-370.0" x2="1210.0" y2="-370.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1225.0" y1="-370.0" x2="1225.0" y2="-345.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1300.0" y1="-420.0" x2="1310.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1310.0" y1="-400.0" x2="1310.0" y2="-420.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-770.0" x2="1145.0" y2="-770.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-780.0" x2="1145.0" y2="-770.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-770.0" x2="1145.0" y2="-755.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-755.0" x2="1145.0" y2="-755.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-755.0" x2="1145.0" y2="-700.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-690.0" x2="1145.0" y2="-700.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-700.0" x2="1110.0" y2="-700.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1030.0" y1="-1070.0" x2="1040.0" y2="-1070.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1030.0" y1="-1070.0" x2="1030.0" y2="-1080.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1240.0" y1="-645.0" x2="1240.0" y2="-720.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-645.0" x2="1240.0" y2="-645.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1145.0" y1="-645.0" x2="1145.0" y2="-650.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1300.0" y1="-645.0" x2="1300.0" y2="-680.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1300.0" y1="-645.0" x2="1240.0" y2="-645.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1340.0" y1="-645.0" x2="1300.0" y2="-645.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1340.0" y1="-645.0" x2="1340.0" y2="-680.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-745.0" x2="1110.0" y2="-750.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1110.0" y1="-745.0" x2="1110.0" y2="-740.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1125.0" y1="-745.0" x2="1110.0" y2="-745.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1125.0" y1="-770.0" x2="1125.0" y2="-745.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1030.0" x2="1385.0" y2="-1020.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1020.0" x2="1390.0" y2="-1020.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1390.0" y1="-1070.0" x2="1385.0" y2="-1070.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1070.0" x2="1385.0" y2="-1080.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1010.0" x2="1200.0" y2="-1000.0" stroke="#006600" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1000.0" x2="1205.0" y2="-1000.0" stroke="#006600" stroke-width="3.0"/>
+<rect x="1000.0" y="-1096.0" width="4.0" height="12.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1030.0" y1="-1080.0" x2="1010.0" y2="-1080.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1030.0" y1="-1070.0" x2="1010.0" y2="-1070.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1030.0" y1="-1090.0" x2="1010.0" y2="-1090.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="993.0,-1070.0 994.0,-1075.0 993.0,-1070.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1010.0,-1080.0 993.0,-1080.0 993.0,-1080.0 993.0,-1070.0 993.0,-1070.0 992.0,-1075.0 1010.0,-1080.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1010.0,-1070.0 981.0,-1070.0 981.0,-1070.0 979.0,-1074.0 979.0,-1074.0 977.0,-1070.0 1010.0,-1070.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1000.0,-1086.0 980.0,-1086.0 1000.0,-1086.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1000.0,-1094.0 980.0,-1094.0 1000.0,-1094.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1010.0,-1090.0 1004.0,-1090.0 1010.0,-1090.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="980.0,-1086.0 979.5,-1086.0 979.0,-1086.1 978.5,-1086.3 978.0,-1086.5 977.6,-1086.8 977.2,-1087.2 976.8,-1087.6 976.5,-1088.0 976.3,-1088.5 976.1,-1089.0 976.0,-1089.5 976.0,-1090.0 976.0,-1090.5 976.1,-1091.0 976.3,-1091.5 976.5,-1092.0 976.8,-1092.4 977.2,-1092.8 977.6,-1093.2 978.0,-1093.5 978.5,-1093.7 979.0,-1093.9 979.5,-1094.0 980.0,-1094.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="995.0" y="-1060.0" font-size="10" fill="#000000" text-anchor="start">DC1</text>
+<line x1="1040.0" y1="-1070.0" x2="1050.0" y2="-1070.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1050.0,-1060.0 1050.0,-1080.0 1050.0,-1060.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1059.0,-1069.0 1059.0,-1071.0 1059.0,-1069.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1056.0,-1066.0 1056.0,-1074.0 1056.0,-1066.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1053.0,-1063.0 1053.0,-1077.0 1053.0,-1063.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1050.0" y="-1070.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1050.0 -1070.0)">Pin1</text>
+<line x1="1050.0" y1="-1090.0" x2="1065.0" y2="-1090.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1090.0" y1="-1090.0" x2="1075.0" y2="-1090.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1075.0,-1096.0 1075.0,-1084.0 1075.0,-1096.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1065.0,-1084.0 1075.0,-1090.0 1075.0,-1090.0 1065.0,-1096.0 1065.0,-1096.0 1065.0,-1084.0 1065.0,-1084.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1065.0" y="-1098.0" font-size="10" fill="#000000" text-anchor="start">D1</text>
+<line x1="1040.0" y1="-1090.0" x2="1040.0" y2="-1095.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1030.0,-1105.0 1050.0,-1105.0 1030.0,-1105.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1040.0,-1105.0 1040.0,-1095.0 1040.0,-1105.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1040.0" y="-1095.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 1040.0 -1095.0)">Pin1</text>
+<text x="1025.0" y="-1105.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">VCC_IN</text>
+<line x1="1100.0" y1="-1090.0" x2="1100.0" y2="-1095.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1110.0,-1105.0 1090.0,-1105.0 1110.0,-1105.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1100.0,-1105.0 1100.0,-1095.0 1100.0,-1105.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1100.0" y="-1095.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 1100.0 -1095.0)">Pin1</text>
+<text x="1110.0" y="-1105.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VCC</text>
+<rect x="980.0" y="-1020.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1010.0" y1="-1000.0" x2="1000.0" y2="-1000.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1010.0" y1="-1010.0" x2="1000.0" y2="-1010.0" stroke="#000000" stroke-width="3.0"/>
+<circle cx="995.0" cy="-995.0" r="1.5" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="996.3" y="-1005.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="996.3" y="-1015.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="980.0" y="-1021.5" font-size="10" fill="#000000" text-anchor="start">U1</text>
+<rect x="1030.0" y="-1014.0" width="20.0" height="8.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1060.0" y1="-1010.0" x2="1050.0" y2="-1010.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1020.0" y1="-1010.0" x2="1030.0" y2="-1010.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1025.0" y="-1015.0" font-size="10" fill="#000000" text-anchor="start">R1</text>
+<text x="1040.0" y="-1015.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1k</text>
+<rect x="1046.0" y="-410.0" width="8.0" height="20.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1050.0" y1="-420.0" x2="1050.0" y2="-410.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1050.0" y1="-380.0" x2="1050.0" y2="-390.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1045.0" y="-410.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R2</text>
+<text x="1045.0" y="-400.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">20k</text>
+<rect x="1046.0" y="-340.0" width="8.0" height="20.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1050.0" y1="-350.0" x2="1050.0" y2="-340.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1050.0" y1="-310.0" x2="1050.0" y2="-320.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1045.0" y="-340.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R3</text>
+<text x="1045.0" y="-330.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">100k</text>
+<rect x="1210.0" y="-424.0" width="20.0" height="8.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-420.0" x2="1210.0" y2="-420.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1240.0" y1="-420.0" x2="1230.0" y2="-420.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1225.0" y="-435.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R6</text>
+<text x="1225.0" y="-415.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">47k</text>
+<rect x="1221.0" y="-335.0" width="8.0" height="20.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1225.0" y1="-345.0" x2="1225.0" y2="-335.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1225.0" y1="-305.0" x2="1225.0" y2="-315.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1218.9" y="-315.0" font-size="10" fill="#000000" text-anchor="start" transform="rotate(-90 1218.9 -315.0)">R7</text>
+<text x="1239.9" y="-315.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto" transform="rotate(-90 1239.9 -315.0)">16k</text>
+<line x1="1110.0" y1="-800.0" x2="1110.0" y2="-810.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1125.0" y1="-820.0" x2="1115.0" y2="-820.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1110.0" y1="-840.0" x2="1110.0" y2="-830.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1114.0,-830.0 1114.0,-810.0 1114.0,-810.0 1104.0,-810.0 1104.0,-810.0 1104.0,-830.0 1104.0,-830.0 1114.0,-830.0 1114.0,-830.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1116.0,-820.0 1121.0,-820.0 1116.0,-820.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1114.0,-820.0 1119.0,-822.0 1119.0,-822.0 1119.0,-818.0 1119.0,-818.0 1114.0,-820.0 1114.0,-820.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1100.0" y="-830.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R8</text>
+<text x="1100.0" y="-820.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">10k</text>
+<line x1="1135.0" y1="-310.0" x2="1135.0" y2="-320.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1150.0" y1="-330.0" x2="1140.0" y2="-330.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1135.0" y1="-350.0" x2="1135.0" y2="-340.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1139.0,-340.0 1139.0,-320.0 1139.0,-320.0 1129.0,-320.0 1129.0,-320.0 1129.0,-340.0 1129.0,-340.0 1139.0,-340.0 1139.0,-340.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1141.0,-330.0 1146.0,-330.0 1141.0,-330.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1139.0,-330.0 1144.0,-332.0 1144.0,-332.0 1144.0,-328.0 1144.0,-328.0 1139.0,-330.0 1139.0,-330.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1125.0" y="-340.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R10</text>
+<text x="1125.0" y="-330.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">100</text>
+<line x1="1070.0" y1="-1010.0" x2="1085.0" y2="-1010.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1110.0" y1="-1010.0" x2="1095.0" y2="-1010.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1085.0,-1004.0 1095.0,-1010.0 1095.0,-1010.0 1085.0,-1016.0 1085.0,-1016.0 1085.0,-1004.0 1085.0,-1004.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1092.0,-1018.0 1099.0,-1025.0 1092.0,-1018.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1088.0,-1022.0 1095.0,-1029.0 1088.0,-1022.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1099.0,-1025.0 1095.0,-1023.0 1095.0,-1023.0 1097.0,-1021.0 1097.0,-1021.0 1099.0,-1025.0 1099.0,-1025.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1095.0,-1029.0 1091.0,-1027.0 1091.0,-1027.0 1093.0,-1025.0 1093.0,-1025.0 1095.0,-1029.0 1095.0,-1029.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1095.0,-1016.0 1095.0,-1004.0 1095.0,-1016.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1100.0" y="-1010.0" font-size="10" fill="#000000" text-anchor="start">LED1</text>
+<rect x="1170.0" y="-1020.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1000.0" x2="1190.0" y2="-1000.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1010.0" x2="1190.0" y2="-1010.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1185.0" y="-1004.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1185.0" y="-1014.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="1170.0" y="-1020.1" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">P2</text>
+<rect x="1170.0" y="-1100.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1080.0" x2="1190.0" y2="-1080.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-1090.0" x2="1190.0" y2="-1090.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1185.0" y="-1084.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1185.0" y="-1094.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="1195.0" y="-1065.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">P1</text>
+<line x1="1130.0" y1="-1000.0" x2="1140.0" y2="-1000.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1140.0,-990.0 1140.0,-1010.0 1140.0,-990.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1149.0,-999.0 1149.0,-1001.0 1149.0,-999.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1146.0,-996.0 1146.0,-1004.0 1146.0,-996.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1143.0,-993.0 1143.0,-1007.0 1143.0,-993.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1140.0" y="-1000.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1140.0 -1000.0)">Pin1</text>
+<line x1="1205.0" y1="-1000.0" x2="1215.0" y2="-1000.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1215.0,-990.0 1215.0,-1010.0 1215.0,-990.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1224.0,-999.0 1224.0,-1001.0 1224.0,-999.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1221.0,-996.0 1221.0,-1004.0 1221.0,-996.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1218.0,-993.0 1218.0,-1007.0 1218.0,-993.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1215.0" y="-1000.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1215.0 -1000.0)">Pin1</text>
+<line x1="1205.0" y1="-1080.0" x2="1210.0" y2="-1080.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1220.0,-1090.0 1220.0,-1070.0 1220.0,-1090.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1220.0,-1080.0 1210.0,-1080.0 1220.0,-1080.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1210.0" y="-1080.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 1210.0 -1080.0)">Pin1</text>
+<text x="1255.0" y="-1085.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">VCC_IN</text>
+<rect x="1355.0" y="-1040.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1020.0" x2="1375.0" y2="-1020.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1030.0" x2="1375.0" y2="-1030.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1370.0" y="-1024.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1370.0" y="-1034.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="1380.0" y="-1005.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">P5</text>
+<rect x="1355.0" y="-1090.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1070.0" x2="1375.0" y2="-1070.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1385.0" y1="-1080.0" x2="1375.0" y2="-1080.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1370.0" y="-1074.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1370.0" y="-1084.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="1380.0" y="-1055.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">P3</text>
+<line x1="1390.0" y1="-1020.0" x2="1400.0" y2="-1020.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1400.0,-1010.0 1400.0,-1030.0 1400.0,-1010.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1409.0,-1019.0 1409.0,-1021.0 1409.0,-1019.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1406.0,-1016.0 1406.0,-1024.0 1406.0,-1016.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1403.0,-1013.0 1403.0,-1027.0 1403.0,-1013.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1400.0" y="-1020.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1400.0 -1020.0)">Pin1</text>
+<rect x="1510.0" y="-1040.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1540.0" y1="-1020.0" x2="1530.0" y2="-1020.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1540.0" y1="-1030.0" x2="1530.0" y2="-1030.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1525.0" y="-1024.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1525.0" y="-1034.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="1535.0" y="-1005.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">P6</text>
+<rect x="1510.0" y="-1090.0" width="20.0" height="30.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1540.0" y1="-1070.0" x2="1530.0" y2="-1070.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1540.0" y1="-1080.0" x2="1530.0" y2="-1080.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1525.0" y="-1074.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">1</text>
+<text x="1525.0" y="-1084.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">2</text>
+<text x="1535.0" y="-1055.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">P4</text>
+<line x1="1545.0" y1="-1020.0" x2="1555.0" y2="-1020.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1555.0,-1010.0 1555.0,-1030.0 1555.0,-1010.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1564.0,-1019.0 1564.0,-1021.0 1564.0,-1019.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1561.0,-1016.0 1561.0,-1024.0 1561.0,-1016.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1558.0,-1013.0 1558.0,-1027.0 1558.0,-1013.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1555.0" y="-1020.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1555.0 -1020.0)">Pin1</text>
+<line x1="1390.0" y1="-1070.0" x2="1400.0" y2="-1070.0" stroke="#000000" stroke-width="3.0"/>
+<polygon points="1400.0,-1070.0 1410.0,-1065.0 1430.0,-1065.0 1430.0,-1075.0 1410.0,-1075.0 1400.0,-1070.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1400.0" y="-1070.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
+<text x="1435.0" y="-1070.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">VO1</text>
+<line x1="1545.0" y1="-1070.0" x2="1555.0" y2="-1070.0" stroke="#000000" stroke-width="3.0"/>
+<polygon points="1555.0,-1070.0 1565.0,-1065.0 1585.0,-1065.0 1585.0,-1075.0 1565.0,-1075.0 1555.0,-1070.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1555.0" y="-1070.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
+<text x="1590.0" y="-1070.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">VO2</text>
+<line x1="1145.0" y1="-650.0" x2="1145.0" y2="-660.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1145.0" y1="-690.0" x2="1145.0" y2="-680.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1153.0,-668.0 1137.0,-668.0 1153.0,-668.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1145.0,-680.0 1145.0,-672.0 1145.0,-680.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1137.0,-672.0 1153.0,-672.0 1137.0,-672.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1145.0,-668.0 1145.0,-660.0 1145.0,-668.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1170.0" y="-680.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">C1</text>
+<text x="1175.0" y="-670.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">47nF</text>
+<line x1="1300.0" y1="-720.0" x2="1300.0" y2="-710.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1300.0" y1="-680.0" x2="1300.0" y2="-690.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1292.0,-702.0 1308.0,-702.0 1292.0,-702.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1300.0,-690.0 1300.0,-698.0 1300.0,-690.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1308.0,-698.0 1292.0,-698.0 1308.0,-698.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1300.0,-702.0 1300.0,-710.0 1300.0,-702.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1320.0" y="-705.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">C2</text>
+<text x="1325.0" y="-695.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">10nF</text>
+<line x1="1340.0" y1="-680.0" x2="1340.0" y2="-690.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1340.0" y1="-720.0" x2="1340.0" y2="-710.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1348.0,-698.0 1332.0,-698.0 1348.0,-698.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1340.0,-710.0 1340.0,-702.0 1340.0,-710.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1332.0,-702.0 1348.0,-702.0 1332.0,-702.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1340.0,-698.0 1340.0,-690.0 1340.0,-698.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1365.0" y="-705.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">C4</text>
+<text x="1345.0" y="-685.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">100nF</text>
+<rect x="1344.9" y="-840.0" width="0.1" height="4.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<rect x="1343.0" y="-838.0" width="4.0" height="0.1" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1340.0" y1="-810.0" x2="1340.0" y2="-829.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1340.0" y1="-850.0" x2="1340.0" y2="-833.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1350.0,-833.0 1330.0,-833.0 1350.0,-833.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1350.0,-826.0 1349.8,-826.1 1349.6,-826.3 1349.5,-826.4 1349.3,-826.5 1349.1,-826.6 1348.9,-826.7 1348.7,-826.8 1348.5,-826.9 1348.3,-827.1 1348.1,-827.2 1347.9,-827.3 1347.7,-827.4 1347.5,-827.5 1347.3,-827.5 1347.1,-827.6 1346.9,-827.7 1346.7,-827.8 1346.5,-827.9 1346.3,-828.0 1346.1,-828.0 1345.9,-828.1 1345.7,-828.2 1345.5,-828.3 1345.2,-828.3" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1340.0,-829.0 1339.8,-829.0 1339.6,-829.0 1339.3,-829.0 1339.1,-829.0 1338.9,-829.0 1338.7,-829.0 1338.5,-829.0 1338.2,-829.0 1338.0,-829.0 1337.8,-828.9 1337.6,-828.9 1337.3,-828.9 1337.1,-828.9 1336.9,-828.8 1336.7,-828.8 1336.5,-828.7 1336.3,-828.7 1336.0,-828.7 1335.8,-828.6 1335.6,-828.6 1335.4,-828.5 1335.2,-828.5 1335.0,-828.4 1334.7,-828.3" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1350.0" y="-831.5" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">C5</text>
+<text x="1370.0" y="-825.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">100uF</text>
+<line x1="1145.0" y1="-820.0" x2="1145.0" y2="-805.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1145.0" y1="-780.0" x2="1145.0" y2="-795.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1151.0,-795.0 1139.0,-795.0 1151.0,-795.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1139.0,-805.0 1145.0,-795.0 1145.0,-795.0 1151.0,-805.0 1151.0,-805.0 1139.0,-805.0 1139.0,-805.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1156.0" y="-805.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge" transform="rotate(-90 1156.0 -805.0)">D3</text>
+<line x1="1340.0" y1="-850.0" x2="1340.0" y2="-855.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1350.0,-865.0 1330.0,-865.0 1350.0,-865.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1340.0,-865.0 1340.0,-855.0 1340.0,-865.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1340.0" y="-855.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 1340.0 -855.0)">Pin1</text>
+<text x="1350.0" y="-865.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VCC</text>
+<line x1="1340.0" y1="-810.0" x2="1340.0" y2="-800.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1330.0,-800.0 1350.0,-800.0 1330.0,-800.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1339.0,-791.0 1341.0,-791.0 1339.0,-791.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1336.0,-794.0 1344.0,-794.0 1336.0,-794.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1333.0,-797.0 1347.0,-797.0 1333.0,-797.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1340.0" y="-800.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1340.0 -800.0)">Pin1</text>
+<line x1="1110.0" y1="-750.0" x2="1110.0" y2="-760.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1125.0" y1="-770.0" x2="1115.0" y2="-770.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1110.0" y1="-790.0" x2="1110.0" y2="-780.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1114.0,-780.0 1114.0,-760.0 1114.0,-760.0 1104.0,-760.0 1104.0,-760.0 1104.0,-780.0 1104.0,-780.0 1114.0,-780.0 1114.0,-780.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1116.0,-770.0 1121.0,-770.0 1116.0,-770.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1114.0,-770.0 1119.0,-772.0 1119.0,-772.0 1119.0,-768.0 1119.0,-768.0 1114.0,-770.0 1114.0,-770.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1100.0" y="-780.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R5</text>
+<text x="1100.0" y="-770.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">10k</text>
+<line x1="1110.0" y1="-700.0" x2="1110.0" y2="-715.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1110.0" y1="-740.0" x2="1110.0" y2="-725.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1104.0,-725.0 1116.0,-725.0 1104.0,-725.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1116.0,-715.0 1110.0,-725.0 1110.0,-725.0 1104.0,-715.0 1104.0,-715.0 1116.0,-715.0 1116.0,-715.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1100.0" y="-725.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">D2</text>
+<line x1="1240.0" y1="-645.0" x2="1240.0" y2="-635.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1230.0,-635.0 1250.0,-635.0 1230.0,-635.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1239.0,-626.0 1241.0,-626.0 1239.0,-626.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1236.0,-629.0 1244.0,-629.0 1236.0,-629.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1233.0,-632.0 1247.0,-632.0 1233.0,-632.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1240.0" y="-635.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1240.0 -635.0)">Pin1</text>
+<line x1="1365.0" y1="-780.0" x2="1375.0" y2="-780.0" stroke="#000000" stroke-width="3.0"/>
+<polygon points="1375.0,-785.0 1395.0,-785.0 1405.0,-780.0 1395.0,-775.0 1375.0,-775.0 1375.0,-785.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1375.0" y="-780.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">OUT</text>
+<text x="1410.0" y="-780.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">VO1</text>
+<line x1="1045.0" y1="-485.0" x2="1035.0" y2="-485.0" stroke="#000000" stroke-width="3.0"/>
+<polygon points="1035.0,-485.0 1025.0,-490.0 1005.0,-490.0 1005.0,-480.0 1025.0,-480.0 1035.0,-485.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1035.0" y="-485.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
+<text x="1000.0" y="-485.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">VO1</text>
+<line x1="1050.0" y1="-470.0" x2="1050.0" y2="-460.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1050.0" y1="-430.0" x2="1050.0" y2="-440.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1057.0,-452.0 1043.0,-452.0 1057.0,-452.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1050.0,-460.0 1050.0,-452.0 1050.0,-460.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1050.0,-448.0 1050.0,-440.0 1050.0,-448.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1055.0,-459.0 1055.0,-455.0 1055.0,-459.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1057.0,-457.0 1053.0,-457.0 1057.0,-457.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1043.1,-445.6 1043.6,-446.0 1044.1,-446.4 1044.6,-446.8 1045.2,-447.1 1045.7,-447.4 1046.3,-447.6 1046.9,-447.8 1047.5,-448.0 1048.2,-448.2 1048.8,-448.3 1049.4,-448.3 1050.1,-448.3 1050.7,-448.3 1051.4,-448.2 1052.0,-448.1 1052.6,-448.0 1053.2,-447.8 1053.8,-447.6 1054.4,-447.3 1055.0,-447.0 1055.5,-446.7 1056.1,-446.3 1056.6,-445.9 1057.0,-445.5" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1030.0" y="-445.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">C6</text>
+<text x="1045.0" y="-445.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">10uF</text>
+<line x1="1050.0" y1="-290.0" x2="1050.0" y2="-280.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1040.0,-280.0 1060.0,-280.0 1040.0,-280.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1049.0,-271.0 1051.0,-271.0 1049.0,-271.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1046.0,-274.0 1054.0,-274.0 1046.0,-274.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1043.0,-277.0 1057.0,-277.0 1043.0,-277.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1050.0" y="-280.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1050.0 -280.0)">Pin1</text>
+<line x1="1350.0" y1="-360.0" x2="1330.0" y2="-360.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1270.0" y1="-370.0" x2="1290.0" y2="-370.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1270.0" y1="-350.0" x2="1290.0" y2="-350.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1310.0" y1="-320.0" x2="1310.0" y2="-340.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1310.0" y1="-400.0" x2="1310.0" y2="-380.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1290.0,-340.0 1330.0,-360.0 1330.0,-360.0 1290.0,-380.0 1290.0,-380.0 1290.0,-340.0 1290.0,-340.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1294.0,-370.0 1300.0,-370.0 1294.0,-370.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1294.0,-350.0 1300.0,-350.0 1294.0,-350.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1297.0,-353.0 1297.0,-347.0 1297.0,-353.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1310.0,-350.0 1310.0,-340.0 1310.0,-350.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1310.0,-380.0 1310.0,-370.0 1310.0,-380.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1315.0" y="-340.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">U3</text>
+<rect x="1090.0" y="-375.0" width="20.0" height="10.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1120.0" y1="-370.0" x2="1110.0" y2="-370.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1080.0" y1="-370.0" x2="1090.0" y2="-370.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1090.0" y="-375.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">R11</text>
+<text x="1090.0" y="-355.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">8.2kΩ</text>
+<line x1="1135.0" y1="-290.0" x2="1135.0" y2="-280.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1125.0,-280.0 1145.0,-280.0 1125.0,-280.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1134.0,-271.0 1136.0,-271.0 1134.0,-271.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1131.0,-274.0 1139.0,-274.0 1131.0,-274.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1128.0,-277.0 1142.0,-277.0 1128.0,-277.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1135.0" y="-280.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1135.0 -280.0)">Pin1</text>
+<line x1="1210.0" y1="-370.0" x2="1200.0" y2="-370.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1170.0" y1="-370.0" x2="1180.0" y2="-370.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1192.0,-378.0 1192.0,-362.0 1192.0,-378.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1180.0,-370.0 1188.0,-370.0 1180.0,-370.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1188.0,-362.0 1188.0,-378.0 1188.0,-362.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1192.0,-370.0 1200.0,-370.0 1192.0,-370.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1175.0" y="-370.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">C3</text>
+<text x="1220.0" y="-380.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">100nF</text>
+<line x1="1200.0" y1="-290.0" x2="1190.0" y2="-290.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1160.0" y1="-290.0" x2="1170.0" y2="-290.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1182.0,-298.0 1182.0,-282.0 1182.0,-298.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1170.0,-290.0 1178.0,-290.0 1170.0,-290.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1178.0,-282.0 1178.0,-298.0 1178.0,-282.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1182.0,-290.0 1190.0,-290.0 1182.0,-290.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1165.0" y="-289.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">C7</text>
+<text x="1210.0" y="-300.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">100nF</text>
+<rect x="1270.0" y="-424.0" width="20.0" height="8.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1260.0" y1="-420.0" x2="1270.0" y2="-420.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1300.0" y1="-420.0" x2="1290.0" y2="-420.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1285.0" y="-435.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R4</text>
+<text x="1285.0" y="-415.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">47k</text>
+<line x1="1195.0" y1="-420.0" x2="1185.0" y2="-420.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1185.0,-430.0 1185.0,-410.0 1185.0,-430.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1176.0,-421.0 1176.0,-419.0 1176.0,-421.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1179.0,-424.0 1179.0,-416.0 1179.0,-424.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1182.0,-427.0 1182.0,-413.0 1182.0,-427.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1185.0" y="-420.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1185.0 -420.0)">Pin1</text>
+<line x1="1310.0" y1="-420.0" x2="1310.0" y2="-425.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1320.0,-435.0 1300.0,-435.0 1320.0,-435.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1310.0,-435.0 1310.0,-425.0 1310.0,-435.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1310.0" y="-425.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 1310.0 -425.0)">Pin1</text>
+<text x="1320.0" y="-435.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VCC</text>
+<line x1="1310.0" y1="-320.0" x2="1310.0" y2="-310.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1300.0,-310.0 1320.0,-310.0 1300.0,-310.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1309.0,-301.0 1311.0,-301.0 1309.0,-301.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1306.0,-304.0 1314.0,-304.0 1306.0,-304.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1303.0,-307.0 1317.0,-307.0 1303.0,-307.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1310.0" y="-310.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1310.0 -310.0)">Pin1</text>
+<line x1="1375.0" y1="-360.0" x2="1385.0" y2="-360.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1415.0" y1="-360.0" x2="1405.0" y2="-360.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1393.0,-367.0 1393.0,-353.0 1393.0,-367.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1385.0,-360.0 1393.0,-360.0 1385.0,-360.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1397.0,-360.0 1405.0,-360.0 1397.0,-360.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1386.0,-365.0 1390.0,-365.0 1386.0,-365.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1388.0,-367.0 1388.0,-363.0 1388.0,-367.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1399.4,-353.1 1399.0,-353.6 1398.6,-354.1 1398.2,-354.6 1397.9,-355.2 1397.6,-355.7 1397.4,-356.3 1397.2,-356.9 1397.0,-357.5 1396.8,-358.2 1396.7,-358.8 1396.7,-359.4 1396.7,-360.1 1396.7,-360.7 1396.8,-361.4 1396.9,-362.0 1397.0,-362.6 1397.2,-363.2 1397.4,-363.8 1397.7,-364.4 1398.0,-365.0 1398.3,-365.5 1398.7,-366.1 1399.1,-366.6 1399.5,-367.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1400.0" y="-380.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">C8</text>
+<text x="1385.0" y="-340.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">10uF</text>
+<rect x="1426.0" y="-335.0" width="8.0" height="20.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1430.0" y1="-345.0" x2="1430.0" y2="-335.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1430.0" y1="-305.0" x2="1430.0" y2="-315.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1445.0" y="-335.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">R9</text>
+<text x="1445.0" y="-325.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">1k</text>
+<line x1="1430.0" y1="-300.0" x2="1430.0" y2="-290.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1420.0,-290.0 1440.0,-290.0 1420.0,-290.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1429.0,-281.0 1431.0,-281.0 1429.0,-281.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1426.0,-284.0 1434.0,-284.0 1426.0,-284.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1423.0,-287.0 1437.0,-287.0 1423.0,-287.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="1430.0" y="-290.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central" transform="rotate(-90 1430.0 -290.0)">Pin1</text>
+<line x1="1440.0" y1="-360.0" x2="1450.0" y2="-360.0" stroke="#000000" stroke-width="3.0"/>
+<polygon points="1450.0,-365.0 1470.0,-365.0 1480.0,-360.0 1470.0,-355.0 1450.0,-355.0 1450.0,-365.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1450.0" y="-360.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">OUT</text>
+<text x="1485.0" y="-360.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">VO2</text>
+<line x1="1370.0" y1="-415.0" x2="1390.0" y2="-415.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1358.0" y1="-403.0" x2="1382.0" y2="-427.0" stroke="#dd0000" stroke-width="3.5999999999999996"/><line x1="1358.0" y1="-427.0" x2="1382.0" y2="-403.0" stroke="#dd0000" stroke-width="3.5999999999999996"/>
+<line x1="1370.0" y1="-435.0" x2="1390.0" y2="-435.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1358.0" y1="-423.0" x2="1382.0" y2="-447.0" stroke="#dd0000" stroke-width="3.5999999999999996"/><line x1="1358.0" y1="-447.0" x2="1382.0" y2="-423.0" stroke="#dd0000" stroke-width="3.5999999999999996"/>
+<line x1="1450.0" y1="-425.0" x2="1430.0" y2="-425.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1438.0" y1="-413.0" x2="1462.0" y2="-437.0" stroke="#dd0000" stroke-width="3.5999999999999996"/><line x1="1438.0" y1="-437.0" x2="1462.0" y2="-413.0" stroke="#dd0000" stroke-width="3.5999999999999996"/>
+<polyline points="1390.0,-405.0 1430.0,-425.0 1430.0,-425.0 1390.0,-445.0 1390.0,-445.0 1390.0,-405.0 1390.0,-405.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1394.0,-435.0 1400.0,-435.0 1394.0,-435.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1394.0,-415.0 1400.0,-415.0 1394.0,-415.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1397.0,-418.0 1397.0,-412.0 1397.0,-418.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1410.0,-415.0 1410.0,-405.0 1410.0,-415.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1410.0,-445.0 1410.0,-435.0 1410.0,-445.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1390.0" y="-444.1" font-size="10" fill="#000000" text-anchor="start">U3</text>
+<rect x="1210.0" y="-810.0" width="60.0" height="80.0" rx="0.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<line x1="1230.0" y1="-820.0" x2="1230.0" y2="-810.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-785.0" x2="1210.0" y2="-785.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-755.0" x2="1210.0" y2="-755.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1280.0" y1="-760.0" x2="1270.0" y2="-760.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1250.0" y1="-820.0" x2="1250.0" y2="-810.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1280.0" y1="-780.0" x2="1270.0" y2="-780.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1200.0" y1="-770.0" x2="1210.0" y2="-770.0" stroke="#000000" stroke-width="3.0"/>
+<line x1="1240.0" y1="-720.0" x2="1240.0" y2="-730.0" stroke="#000000" stroke-width="3.0"/>
+<text x="1233.0" y="-806.2" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto" transform="rotate(-90 1233.0 -806.2)">VCC</text>
+<text x="1212.0" y="-780.2" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">DISCH</text>
+<text x="1212.0" y="-750.2" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">THRES</text>
+<text x="1268.0" y="-755.2" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">CONT</text>
+<text x="1253.0" y="-806.2" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto" transform="rotate(-90 1253.0 -806.2)">RST</text>
+<text x="1268.0" y="-775.2" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">OUT</text>
+<text x="1212.0" y="-765.2" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">TRIG</text>
+<text x="1243.0" y="-730.2" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto" transform="rotate(-90 1243.0 -730.2)">GND</text>
+<text x="1210.0" y="-823.0" font-size="10" fill="#000000" text-anchor="start">U4</text>
+<text x="1210.0" y="-709.9" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">100kHz</text>
+<line x1="1015.0" y1="-1010.0" x2="1015.0" y2="-1015.0" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1005.0,-1025.0 1025.0,-1025.0 1005.0,-1025.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<polyline points="1015.0,-1025.0 1015.0,-1015.0 1015.0,-1025.0" fill="none" stroke="#000000" stroke-width="3.0"/>
+<text x="1015.0" y="-1015.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 1015.0 -1015.0)">Pin1</text>
+<text x="1000.0" y="-1025.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">VCC_IN</text>
+<text x="953.0" y="-100.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Reviewed</text>
+<text x="953.0" y="-120.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Drawed</text>
+<text x="1203.0" y="-60.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">VER</text>
+<text x="1393.0" y="-160.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Create Date</text>
+<text x="1393.0" y="-140.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Part Number</text>
+<text x="1393.0" y="-60.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">PAGE</text>
+<text x="1523.0" y="-60.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">OF</text>
+<rect x="943.0" y="-190.0" width="702.0" height="180.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1243.0,-10.0 1243.0,-70.0 1243.0,-10.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1033.0,-50.0 1033.0,-190.0 1033.0,-50.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1383.0,-190.0 1383.0,-130.0 1383.0,-190.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1483.0,-130.0 1483.0,-190.0 1483.0,-130.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1163.0,-130.0 1163.0,-10.0 1163.0,-130.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1163.0,-110.0 943.0,-110.0 1163.0,-110.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-170.0 1383.0,-170.0 1645.0,-170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-50.0 943.0,-50.0 1645.0,-50.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-130.0 943.0,-130.0 1645.0,-130.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-70.0 943.0,-70.0 1645.0,-70.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1163.0,-90.0 943.0,-90.0 1163.0,-90.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<polyline points="1645.0,-150.0 943.0,-150.0 1645.0,-150.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="953.0" y="-170.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Schematic</text>
+<text x="1393.0" y="-180.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Update Date</text>
+<text x="1283.0" y="-60.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">SIZE</text>
+<polyline points="1323.0,-70.0 1323.0,-10.0 1323.0,-70.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="953.0" y="-140.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">Page</text>
+<rect x="0.0" y="-1170.0" width="1655.0" height="1170.0" rx="0.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<rect x="10.0" y="-1160.0" width="1635.0" height="1150.0" rx="0.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<text x="147.9" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">1</text>
+<text x="147.9" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">1</text>
+<text x="423.8" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">2</text>
+<text x="423.8" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">2</text>
+<text x="699.6" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">3</text>
+<text x="699.6" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">3</text>
+<text x="975.4" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">4</text>
+<text x="975.4" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">4</text>
+<text x="1251.2" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">5</text>
+<text x="1251.2" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">5</text>
+<text x="1527.1" y="-1165.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">6</text>
+<text x="1527.1" y="-5.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">6</text>
+<text x="5.0" y="-1013.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">A</text>
+<text x="1650.0" y="-1013.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">A</text>
+<text x="5.0" y="-721.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">B</text>
+<text x="1650.0" y="-721.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">B</text>
+<text x="5.0" y="-428.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">C</text>
+<text x="1650.0" y="-428.8" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">C</text>
+<text x="5.0" y="-136.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">D</text>
+<text x="1650.0" y="-136.2" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="central">D</text>
+<polyline points="285.8,-1170.0 285.8,-1160.0 285.8,-1170.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="285.8,-10.0 285.8,-0.0 285.8,-10.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="561.7,-1170.0 561.7,-1160.0 561.7,-1170.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="561.7,-10.0 561.7,-0.0 561.7,-10.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="837.5,-1170.0 837.5,-1160.0 837.5,-1170.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="837.5,-10.0 837.5,-0.0 837.5,-10.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1113.3,-1170.0 1113.3,-1160.0 1113.3,-1170.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1113.3,-10.0 1113.3,-0.0 1113.3,-10.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1389.2,-1170.0 1389.2,-1160.0 1389.2,-1170.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1389.2,-10.0 1389.2,-0.0 1389.2,-10.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="0.0,-867.5 10.0,-867.5 0.0,-867.5" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1645.0,-867.5 1655.0,-867.5 1645.0,-867.5" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="0.0,-575.0 10.0,-575.0 0.0,-575.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1645.0,-575.0 1655.0,-575.0 1645.0,-575.0" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="0.0,-282.5 10.0,-282.5 0.0,-282.5" fill="none" stroke="#008001" stroke-width="1.0"/>
+<polyline points="1645.0,-282.5 1655.0,-282.5 1645.0,-282.5" fill="none" stroke="#008001" stroke-width="1.0"/>
+<text x="1490.0" y="-160.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">2022-01-19</text>
+<text x="1563.0" y="-60.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">1</text>
+<text x="1213.0" y="-140.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">P1</text>
+<text x="1453.0" y="-60.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">1</text>
+<text x="1423.0" y="-100.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">示例工程_快速入门</text>
+<text x="1213.0" y="-170.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">SCH_波形与产生变换电路</text>
+<text x="1490.0" y="-180.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">2023-07-22</text>
+<text x="1483.0" y="-30.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">嘉立创EDA</text>
+<text x="1043.0" y="-120.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">嘉立创EDA</text>
+<text x="1283.0" y="-30.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">A3</text>
+<text x="1490.0" y="-140.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">JLCPCB-001</text>
+<text x="1043.0" y="-100.0" font-size="15" fill="#000000" text-anchor="start" dominant-baseline="central">嘉立创EDA</text>
+<text x="1203.0" y="-30.0" font-size="15" fill="#000000" text-anchor="middle" dominant-baseline="central">V0.1</text>
+<text x="1047.0" y="-1102.0" font-size="10" fill="#8822aa" text-anchor="middle">VCC_IN</text>
+<text x="1107.0" y="-1102.0" font-size="10" fill="#8822aa" text-anchor="middle">VCC</text>
+<text x="1024.5" y="-1022.0" font-size="10" fill="#8822aa" text-anchor="middle">VCC_IN</text>
+<text x="1082.0" y="-1012.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1212.0" y="-1097.0" font-size="10" fill="#8822aa" text-anchor="middle">VCC_IN</text>
+<text x="1554.5" y="-1032.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1552.0" y="-1087.0" font-size="10" fill="#8822aa" text-anchor="middle">VO2</text>
+<text x="1352.0" y="-822.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1122.0" y="-857.0" font-size="10" fill="#8822aa" text-anchor="middle">VCC</text>
+<text x="1322.0" y="-792.0" font-size="10" fill="#8822aa" text-anchor="middle">VO1</text>
+<text x="1062.0" y="-489.5" font-size="10" fill="#8822aa" text-anchor="middle">VO1</text>
+<text x="1062.0" y="-312.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1147.0" y="-312.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1442.0" y="-364.5" font-size="10" fill="#8822aa" text-anchor="middle">VO2</text>
+<text x="1442.0" y="-314.5" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1209.5" y="-432.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1322.0" y="-332.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1317.0" y="-432.0" font-size="10" fill="#8822aa" text-anchor="middle">VCC</text>
+<text x="1047.0" y="-1082.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1252.0" y="-694.5" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1397.0" y="-1037.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1399.5" y="-1082.0" font-size="10" fill="#8822aa" text-anchor="middle">VO1</text>
+<text x="1212.0" y="-1017.0" font-size="10" fill="#8822aa" text-anchor="middle">GND</text>
+<text x="1060.0" y="-950.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">电源输入</text>
+<text x="1410.0" y="-950.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">输出接口</text>
+<text x="1190.0" y="-580.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">方波产生电路</text>
+<text x="1190.0" y="-210.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">正弦波转换电路</text>
+<text x="270.0" y="-1060.0" font-size="50" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">原理图设计流程</text>
+<text x="50.0" y="-1020.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">1-器件放置
+   A：顶部菜单-放置-器件（快捷键：Shift+F）
+   B：底部元件库-器件（快捷键：S）
+   C：左侧基础库-个人库或系统库
+2-连接导线
+   A：顶部菜单-放置-导线，将器件的引脚相互连接起来
+   B：顶部图像导航选择导线图标：     （快捷键W）</text>
+<text x="55.0" y="-175.0" font-size="25" fill="#555555" text-anchor="start" dominant-baseline="auto">如果有任何疑问可以联系我们，在编辑器开始页扫码添加技术支持微信</text>
+<text x="50.0" y="-630.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">4-画布说明
+   A：鼠标滚轮控制画布缩放
+   B：右键菜单选择适应窗口，使画布全局显示
+   C：点击空白部分，在右侧属性中可修改图纸样式
+5-常用操作
+   A：点击选中器件空格旋转，X键或Y键进行翻转
+   B：导入图片或文档选择顶部菜单栏中的：文件-导入按钮
+   C：选择导线后按H键高亮网络，再次按下H键取消高亮网络
+   D：快捷键可自由配置，选择顶部菜单栏中的：设置-快捷键
+   E：封装的修改从顶部菜单栏中的：工具-封装管理器按钮进入</text>
+<text x="50.0" y="-810.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">3-电气连接
+   A：使用导线连接器件引脚
+   B：使用电气标识符VCC或GND连接引脚，电气名称可修改
+   C：使用网络标签连接，放置时按Tab键或双击修改名称
+   D：使用单向或双向网络端口连接导线
+   E：使用短接符连接两个不同网络</text>
+<text x="50.0" y="-240.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">7-原理图转PCB
+  点击顶部菜单栏中的：设计-更新/转换原理图到PCB按钮</text>
+<text x="50.0" y="-330.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">6-设计管理器
+   A：原理图设计规则修改点击顶部菜单栏中的：设计-规则按钮
+   B：检查原理图设计规则点击顶部菜单栏中的：设计-检查DRC</text>
+</svg>

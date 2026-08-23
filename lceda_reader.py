@@ -162,11 +162,14 @@ class SchemaBackend(ABC):
                     cid = str(a[1])
                     inline = a[7] if len(a) > 7 and isinstance(a[7], dict) \
                         else {}
+                    # 官方布局(PCB文档格式 §10.1)：[id,分组(2),层(3),
+                    # X(4),Y(5),旋转(6),自定义属性(7),锁定(8)]
                     comps[cid] = {
                         "cid": cid,
                         "uid": str(inline.get("Unique ID") or ""),
                         "designator": "", "device": "", "footprint": "",
-                        "layer": a[2] if len(a) > 2 else 0,
+                        "group": str(a[2]) if len(a) > 2 else "",
+                        "layer": a[3] if len(a) > 3 else 0,
                         "x": a[4] if len(a) > 4 else 0,
                         "y": a[5] if len(a) > 5 else 0,
                         "rot": a[6] if len(a) > 6 else 0,
@@ -1051,11 +1054,14 @@ class Epro2DB(SchemaBackend):
                 t = h.get("type")
                 if t == "COMPONENT":
                     attrs = b.get("attrs")
-                    out.append(["COMPONENT", h.get("id"),
-                                b.get("layerId") or 0, 0,
+                    # 官方 PCB COMPONENT 布局(PCB文档格式 §10.1)：
+                    # [id,分组(2),层(3),X(4),Y(5),旋转(6),属性(7),锁定(8)]
+                    out.append(["COMPONENT", h.get("id"), 0,
+                                b.get("layerId") or 0,
                                 b.get("x") or 0, b.get("y") or 0,
                                 b.get("angle") or 0,
-                                attrs if isinstance(attrs, dict) else {}, 0])
+                                attrs if isinstance(attrs, dict) else {},
+                                0])
                 elif t == "ATTR":
                     k, v = b.get("key"), b.get("value")
                     if k and v is not None:
@@ -3603,7 +3609,8 @@ _RENDER_CFG_DEFAULTS = {
                "nc": "#dd0000", "dnp": "#cc00cc",
                "fallback": "#c0a000"},
     "sizes": {"default_font": 10.0, "line_width": 3.0},
-    "show": {"net_labels": True, "texts": True, "pin_numbers": False,
+    "show": {"net_labels": True, "texts": True,
+             "pin_names": True, "pin_numbers": False,
              "dnp": True, "nc": True, "fallback_box": True},
     "limits": {"max_labels": 500},
 }
@@ -3619,7 +3626,7 @@ def _render_cfg(args):
         for k, v in (src or {}).items():
             if isinstance(v, dict) and isinstance(dst.get(k), dict):
                 merge(dst[k], v)
-            elif k in dst or True:
+            else:
                 dst[k] = v
 
     paths = []
@@ -3645,39 +3652,48 @@ def _render_cfg(args):
 
 
 def _font_of(fs_map, sid, cfg):
-    """FONTSTYLE 引用 -> {size,color,bold,italic}；缺省回退配置值。"""
+    """FONTSTYLE 引用 -> {size,color,bold,italic,halign,valign}。
+    官方布局(原理图文档格式.pdf §2.1.1)：
+    [id,颜色(2),背景色(3),字体名(4),大小(5),斜体(6),加粗(7),下划线(8),
+     删除线(9),垂直对齐(10):0顶/1中/2底,水平对齐(11):0左/1中/2右]"""
     st = fs_map.get(sid) or {}
     return {
         "size": st.get("size") or cfg["sizes"]["default_font"],
         "color": st.get("color") or "#000000",
         "bold": bool(st.get("bold")),
         "italic": bool(st.get("italic")),
+        "halign": st.get("halign"),
+        "valign": st.get("valign"),
     }
 
 
 def _parse_fs(a):
-    """FONTSTYLE 记录 -> dict。真实布局：
-    [type,id,color,family,?,size,bold?,italic?,...]，空值多（继承默认）。"""
+    """FONTSTYLE 记录 -> dict（字段语义见 _font_of，实测空值多=继承默认）。"""
+
     def num(v):
         try:
             return float(v)
         except (TypeError, ValueError):
             return None
-    size = num(a[5]) if len(a) > 5 else None
-    if size is None:
-        size = num(a[4]) if len(a) > 4 else None
+
     return {"color": a[2] if len(a) > 2 and a[2] else None,
-            "family": a[3] if len(a) > 3 else None,
-            "size": size,
-            "bold": a[6] if len(a) > 6 else None,
-            "italic": a[7] if len(a) > 7 else None}
+            "size": num(a[5]) if len(a) > 5 else None,
+            "italic": a[6] if len(a) > 6 else None,
+            "bold": a[7] if len(a) > 7 else None,
+            "valign": num(a[10]) if len(a) > 10 else None,
+            "halign": num(a[11]) if len(a) > 11 else None}
 
 
 def cmd_render(db, args):
-    """原理图页 -> SVG。V2 坐标直出（Y 向下与 SVG 一致）。
-    字体/文字位置取自工程存储：FONTSTYLE 样式表 + 实例 ATTR 的显示坐标
-    （用户在 EDA 里摆放的位置），不做发明式排版；显示项可经
-    render_config.json / --config / 开关裁剪，避免审查输出被注释类信息淹没。"""
+    """原理图页 -> SVG。
+    坐标系（实证 2026-08-23）：文件为 **Y 向上**——EDA 中标题栏在图纸右下、
+    直出 SVG（Y 向下）会整页上下镜像跑到右上；故渲染统一 Y 取反、
+    rotate 角度取负。引脚桩方向 (cos rot, sin rot)*len 指向体内
+    （DAC8562 符号全引脚实测，见 probes/dbg_pin_dir.py）。
+    字体/文字位置取自工程存储：FONTSTYLE 样式表 + 实例 ATTR 显示坐标
+    （官方规则 §2.3：未显示过的属性 X/Y 为 null），不做发明式排版。
+    实例属性布局（§2.3）：[id,parent,key,value,showKey(5),showValue(6),
+    X(7),Y(8),rot(9),styleId(10),locked(11)]。"""
     cfg = _render_cfg(args)
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
@@ -3689,16 +3705,15 @@ def cmd_render(db, args):
         sys.exit(1)
     recs = db.sheet_records(page) or []
 
-    # ── 页级样式表 ──
     page_fs = {}
     for a in recs:
         if isinstance(a, list) and a and a[0] == "FONTSTYLE" and len(a) > 1:
             page_fs[a[1]] = _parse_fs(a)
 
-    # ── 符号缓存：(原始记录, symbol_pins, 符号内 FS/LS 样式表) ──
     sym_cache = {}
 
     def get_sym(sym_uuid):
+        """(原始记录, symbol_pins, 符号内 FS/LS 样式表)。"""
         if sym_uuid not in sym_cache:
             prims = db.symbol_records(sym_uuid) if sym_uuid else None
             sp = db.symbol_pins(sym_uuid) if sym_uuid else None
@@ -3714,30 +3729,53 @@ def cmd_render(db, args):
                         w = float(w) if w is not None else None
                     except (TypeError, ValueError):
                         w = None
-                    sls[a[1]] = {"color": a[2] or "#000000", "width": w}
+                    sls[a[1]] = {"color": a[2] or "#000000",
+                                 "dash": a[3], "fill": a[4], "width": w}
             sym_cache[sym_uuid] = (prims, sp, sfs, sls)
         return sym_cache[sym_uuid]
 
+    bbox_all = [None, None, None, None]
+
     def grow(x, y):
+        # bbox 与发射坐标同空间（SVG 的 Y 已翻转）
+        y = -y
         b = bbox_all
         b[0] = x if b[0] is None else min(b[0], x)
         b[1] = y if b[1] is None else min(b[1], y)
         b[2] = x if b[2] is None else max(b[2], x)
         b[3] = y if b[3] is None else max(b[3], y)
 
-    bbox_all = [None, None, None, None]
     elems = []
     lw = cfg["sizes"]["line_width"]
+    DASH = {1.0: "6 3", 2.0: "1 3", 3.0: "6 3 1 3"}
 
-    def txt(x, y, s, f, anchor="start", rot=None):
-        tr = f' transform="rotate({rot:.0f} {x:.0f} {y:.0f})"' \
+    def ls_attrs(st):
+        color = st.get("color", "#000000")
+        dash = DASH.get(st.get("dash"))
+        da = f' stroke-dasharray="{dash}"' if dash else ""
+        fill = st.get("fill")
+        fill_attr = fill if (isinstance(fill, str) and fill != "") \
+            else "none"
+        return color, da, fill_attr
+
+    def txt(x, y, s, f, anchor=None, rot=None, fill=None):
+        ha = f.get("halign")
+        if anchor is None:
+            anchor = {0.0: "start", 1.0: "middle",
+                      2.0: "end"}.get(ha, "middle")
+        va = {0.0: "text-before-edge", 1.0: "central",
+              2.0: "auto"}.get(f.get("valign"), "")
+        vb = f' dominant-baseline="{va}"' if va else ""
+        tr = f' transform="rotate({-rot:.0f} {x:.1f} {-y:.1f})"' \
             if rot else ""
         fw = ' font-weight="bold"' if f.get("bold") else ""
-        return (f'<text x="{x:.1f}" y="{y:.1f}" font-size="{f["size"]:.0f}"'
-                f'{fw} fill="{f["color"]}" text-anchor="{anchor}"{tr}>'
-                f'{_svg_esc(s)}</text>')
+        fs_ = ' font-style="italic"' if f.get("italic") else ""
+        return (f'<text x="{x:.1f}" y="{-y:.1f}" '
+                f'font-size="{f["size"]:.0f}"{fw}{fs_} '
+                f'fill="{fill or f["color"]}" text-anchor="{anchor}"'
+                f'{vb}{tr}>{_svg_esc(s)}</text>')
 
-    # ── 导线 + 网络名 + 结点统计 + 页文本(TEXT 带样式) ──
+    # ── 导线 / 网络名 / 结点 / 页文本 ──
     net_of, wires = {}, []
     texts = []
     for a in recs:
@@ -3762,9 +3800,9 @@ def cmd_render(db, args):
         for seg in _norm_segs(segs):
             x1, y1, x2, y2 = seg
             elems.append(
-                f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" '
-                f'y2="{y2:.1f}" stroke="{cfg["colors"]["wire"]}" '
-                f'stroke-width="{lw}"/>')
+                f'<line x1="{x1:.1f}" y1="{-y1:.1f}" '
+                f'x2="{x2:.1f}" y2="{-y2:.1f}" '
+                f'stroke="{cfg["colors"]["wire"]}" stroke-width="{lw}"/>')
             grow(x1, y1)
             grow(x2, y2)
             for p in ((x1, y1), (x2, y2)):
@@ -3773,18 +3811,29 @@ def cmd_render(db, args):
             if first_mid is None:
                 first_mid = ((x1 + x2) / 2, (y1 + y2) / 2)
         if nm and first_mid:
-            labels.append((first_mid[0] + lw * 4, first_mid[1] - lw * 3, nm))
+            labels.append((first_mid[0] + lw * 4, first_mid[1] + lw * 4, nm))
 
-    # ── 实例属性显示信息（EDA 里摆好的位置/样式）：ATTR len>=12 ──
-    # [type,id,parent,key,value,x?,vis?,x,y,rot,styleId,hideFlag]
+    # ── 实例属性显示信息（X/Y 非 null 才有显示位置）──
     attr_disp = {}
     for a in recs:
-        if (isinstance(a, list) and a and a[0] == "ATTR" and len(a) >= 12
+        if (isinstance(a, list) and a and a[0] == "ATTR" and len(a) >= 11
                 and a[2] is not None):
+            try:
+                xr = None if a[7] is None else float(a[7])
+                yr = None if a[8] is None else float(a[8])
+            except (TypeError, ValueError):
+                continue
+            if xr is None or yr is None:
+                continue
+            rotv = None
+            try:
+                rotv = float(a[9]) if a[9] is not None else None
+            except (TypeError, ValueError):
+                rotv = None
             attr_disp[(str(a[2]), str(a[3]))] = {
-                "x": a[7], "y": a[8], "rot": a[9],
-                "sid": a[10], "hide": bool(a[11]) if a[11] is not None
-                else False}
+                "x": xr, "y": yr, "rot": rotv, "sid": a[10],
+                "show_key": a[5] in (1, True),
+                "show_val": a[6] in (1, True)}
 
     # ── 元件 ──
     dmap = db.device_map()
@@ -3802,7 +3851,11 @@ def cmd_render(db, args):
         cur = None
         have_part_sec = False
         origin = [0.0, 0.0]
-        pin_label_attrs = []   # 符号内 NAME/NUMBER 显示属性
+        pin_label_attrs = []
+        # 符号模板内"已显示"的属性（X/Y 非 null）＝显示位置来源；
+        # 实例同 Key 属性提供值覆盖（官方 §3.3：同名属性覆盖）。
+        # 标题栏即此机制：模板存键与位置，实例只存值(X/Y=null)。
+        sym_attr_disp = {}
         for a in (prims or []):
             if not isinstance(a, list) or not a:
                 continue
@@ -3813,16 +3866,38 @@ def cmd_render(db, args):
             elif k == "PART":
                 cur = a[1]
                 have_part_sec = True
-            elif k in ("POLY", "RECT", "CIRCLE", "ARC", "PIN"):
+            elif k in ("POLY", "RECT", "CIRCLE", "ARC", "PIN", "TEXT"):
                 if not have_part_sec or part is None or cur == part:
                     draw_prims.append((k, a))
-            elif (k == "ATTR" and len(a) >= 12 and cfg["show"]["pin_numbers"]
-                  and a[3] in ("NAME", "NUMBER")):
+            elif k == "ATTR" and len(a) >= 12 and \
+                    a[3] not in ("NAME", "NUMBER"):
+                if have_part_sec and part is not None and cur != part:
+                    continue
+                if a[7] is not None and a[8] is not None:
+                    try:
+                        sym_attr_disp[str(a[3])] = {
+                            "x": float(a[7]), "y": float(a[8]),
+                            "rot": float(a[9] or 0), "sid": a[10],
+                            "show_key": a[5] in (1, True),
+                            "show_val": a[6] in (1, True),
+                            "tmpl": "" if a[4] is None else str(a[4])}
+                    except (TypeError, ValueError):
+                        pass
+            elif k == "ATTR" and len(a) >= 12 and \
+                    a[3] in ("NAME", "NUMBER"):
                 if not have_part_sec or part is None or cur == part:
                     pin_label_attrs.append(a)
 
         def T(x, y):
-            return _xf(x - origin[0], y - origin[1], cx, cy, rot360, mir)
+            # 官方变换序（§3.3.2）：旋转 -> 镜像 -> 平移；
+            # Y 翻转在 txt()/发射处统一做，此处保持文件坐标
+            r = math.radians(rot360 or 0)
+            cc, ss = math.cos(r), math.sin(r)
+            rx_ = x * cc - y * ss
+            ry_ = x * ss + y * cc
+            if mir:
+                rx_ = -rx_
+            return cx + rx_, cy + ry_
 
         drew_graph = False
         comp_bbox = [None, None, None, None]
@@ -3842,40 +3917,57 @@ def cmd_render(db, args):
                           for i in range(0, len(pts) - 1, 2)]
                     st = sls.get(a[-2], {}) if len(a) >= 5 else {}
                     closed = bool(a[3]) if len(a) > 3 else False
-                    pstr = " ".join(f"{px:.1f},{py:.1f}" for px, py in xy)
+                    color, da, fillc = ls_attrs(st)
+                    pstr = " ".join(
+                        f"{px:.1f},{-py:.1f}" for px, py in xy)
                     tag = "polygon" if closed else "polyline"
                     if tag == "polyline":
-                        pstr += f" {xy[0][0]:.1f},{xy[0][1]:.1f}"
+                        pstr += f" {xy[0][0]:.1f},{-xy[0][1]:.1f}"
                     elems.append(
-                        f'<{tag} points="{pstr}" fill="none" '
-                        f'stroke="{st.get("color", "#000000")}" '
-                        f'stroke-width="{st.get("width") or lw}"/>')
+                        f'<{tag} points="{pstr}" fill="{fillc}" '
+                        f'stroke="{color}" '
+                        f'stroke-width="{st.get("width") or lw}"{da}/>')
                     for px, py in xy:
                         cgrow(px, py)
                     drew_graph = True
                 elif k == "RECT" and len(a) >= 6:
-                    ax1, ay1 = T(min(a[2], a[4]), min(a[3], a[5]))
-                    ax2, ay2 = T(max(a[2], a[4]), max(a[3], a[5]))
+                    rx1, ry1 = T(a[2], a[3])
+                    rx2, ry2 = T(a[4], a[5])
                     st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                    color, da, fillc = ls_attrs(st)
+                    rrot = 0.0
+                    if len(a) > 8 and a[8]:
+                        try:
+                            rrot = float(a[8])
+                        except (TypeError, ValueError):
+                            rrot = 0.0
+                    rndx = 0.0
+                    if len(a) > 6 and a[6]:
+                        try:
+                            rndx = float(a[6])
+                        except (TypeError, ValueError):
+                            rndx = 0.0
+                    tr = (f' transform="rotate({-rrot:.0f} '
+                          f'{rx1:.1f} {-ry1:.1f})"') if rrot % 360 else ""
                     elems.append(
-                        f'<rect x="{min(ax1,ax2):.1f}" '
-                        f'y="{min(ay1,ay2):.1f}" '
-                        f'width="{abs(ax2-ax1):.1f}" '
-                        f'height="{abs(ay2-ay1):.1f}" fill="none" '
-                        f'stroke="{st.get("color", "#000000")}" '
-                        f'stroke-width="{st.get("width") or lw}"/>')
-                    cgrow(ax1, ay1)
-                    cgrow(ax2, ay2)
+                        f'<rect x="{min(rx1,rx2):.1f}" '
+                        f'y="{-max(ry1,ry2):.1f}" '
+                        f'width="{abs(rx2-rx1):.1f}" '
+                        f'height="{abs(ry2-ry1):.1f}" rx="{rndx:.1f}" '
+                        f'fill="{fillc}" stroke="{color}" '
+                        f'stroke-width="{st.get("width") or lw}"{da}{tr}/>')
+                    cgrow(rx1, ry1)
+                    cgrow(rx2, ry2)
                     drew_graph = True
                 elif k == "CIRCLE" and len(a) >= 5:
                     ccx, ccy = T(a[2], a[3])
                     r = float(a[4])
                     st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                    color, da, fillc = ls_attrs(st)
                     elems.append(
-                        f'<circle cx="{ccx:.1f}" cy="{ccy:.1f}" r="{r:.1f}"'
-                        f' fill="none" stroke="'
-                        f'{st.get("color", "#000000")}" '
-                        f'stroke-width="{st.get("width") or lw}"/>')
+                        f'<circle cx="{ccx:.1f}" cy="{-ccy:.1f}" '
+                        f'r="{r:.1f}" fill="{fillc}" stroke="{color}" '
+                        f'stroke-width="{st.get("width") or lw}"{da}/>')
                     cgrow(ccx - r, ccy - r)
                     cgrow(ccx + r, ccy + r)
                     drew_graph = True
@@ -3883,19 +3975,40 @@ def cmd_render(db, args):
                     xy = _arc_pts(a[2], a[3], a[4], a[5], a[6], a[7])
                     if xy:
                         txy = [T(px, py) for px, py in xy]
-                        pstr = " ".join(f"{px:.1f},{py:.1f}"
-                                        for px, py in txy)
+                        pstr = " ".join(
+                            f"{px:.1f},{-py:.1f}" for px, py in txy)
                         st = sls.get(a[-2], {}) if len(a) >= 5 else {}
+                        color, da, _fc = ls_attrs(st)
                         elems.append(
                             f'<polyline points="{pstr}" fill="none" '
-                            f'stroke="{st.get("color", "#000000")}" '
-                            f'stroke-width="{st.get("width") or lw}"/>')
+                            f'stroke="{color}" '
+                            f'stroke-width="{st.get("width") or lw}"{da}/>')
                         for px, py in txy:
                             cgrow(px, py)
                         drew_graph = True
+                elif k == "TEXT" and len(a) >= 7 and str(a[5]).strip():
+                    tx_, ty_ = T(a[2], a[3])
+                    f = _font_of(sfs, a[6], cfg)
+                    trot = 0.0
+                    try:
+                        trot = float(a[4] or 0)
+                    except (TypeError, ValueError):
+                        trot = 0.0
+                    elems.append(txt(tx_, ty_, str(a[5]), f,
+                                     rot=trot if trot % 360 else None))
+                    cgrow(tx_, ty_)
+                    drew_graph = True
                 elif k == "PIN" and sp and len(a) >= 8:
-                    plen = float(a[6]) if a[6] else 20.0
-                    prot = float(a[7] or 0)
+                    plen = 20.0
+                    try:
+                        plen = float(a[6]) if a[6] else 20.0
+                    except (TypeError, ValueError):
+                        plen = 20.0
+                    prot = 0.0
+                    try:
+                        prot = float(a[7] or 0)
+                    except (TypeError, ValueError):
+                        prot = 0.0
                     for pp in sp["pins"]:
                         if pp["id"] != a[1]:
                             continue
@@ -3905,37 +4018,44 @@ def cmd_render(db, args):
                                    pp["y"] + math.sin(math.radians(prot))
                                    * plen)
                         elems.append(
-                            f'<line x1="{ex:.1f}" y1="{ey:.1f}" '
-                            f'x2="{bx:.1f}" y2="{by:.1f}" '
+                            f'<line x1="{ex:.1f}" y1="{-ey:.1f}" '
+                            f'x2="{bx:.1f}" y2="{-by:.1f}" '
                             f'stroke="#000000" stroke-width="{lw}"/>')
                         cgrow(ex, ey)
                         cgrow(bx, by)
                         if cfg["show"]["nc"] and \
                                 (c["cid"] + (pp.get("id") or "")) \
                                 in sh["no_connect"]:
-                            s_ = lw * 8
+                            s_ = lw * 4
                             nc = cfg["colors"]["nc"]
                             elems.append(
-                                f'<line x1="{ex-s_:.0f}" y1="{ey-s_:.0f}" '
-                                f'x2="{ex+s_:.0f}" y2="{ey+s_:.0f}" '
-                                f'stroke="{nc}" stroke-width="{lw*1.5}"/>'
-                                f'<line x1="{ex-s_:.0f}" y1="{ey+s_:.0f}" '
-                                f'x2="{ex+s_:.0f}" y2="{ey-s_:.0f}" '
-                                f'stroke="{nc}" stroke-width="{lw*1.5}"/>')
+                                f'<line x1="{ex-s_:.1f}" y1="{-(ey-s_):.1f}'
+                                f'" x2="{ex+s_:.1f}" y2="{-(ey+s_):.1f}" '
+                                f'stroke="{nc}" stroke-width="{lw*1.2}"/>'
+                                f'<line x1="{ex-s_:.1f}" y1="{-(ey+s_):.1f}'
+                                f'" x2="{ex+s_:.1f}" y2="{-(ey-s_):.1f}" '
+                                f'stroke="{nc}" stroke-width="{lw*1.2}"/>')
                         break
             except Exception:
                 continue
 
-        # 符号内 NAME/NUMBER 文本（EDA 摆好的位置+符号样式表）
+        # 符号内 NAME/NUMBER 文本（官方规则：未显示过则 X/Y=null）
+        want_lbl = ("NAME" if cfg["show"]["pin_names"] else "") + \
+                   ("NUMBER" if cfg["show"]["pin_numbers"] else "")
         for a in pin_label_attrs:
             try:
+                if a[3] not in want_lbl:
+                    continue
                 if a[7] is None or a[8] is None or not str(a[4]):
                     continue
                 lx_, ly_ = T(float(a[7]), float(a[8]))
-                prot = float(a[9] or 0)
+                prot = 0.0
+                try:
+                    prot = float(a[9] or 0)
+                except (TypeError, ValueError):
+                    prot = 0.0
                 f = _font_of(sfs, a[10], cfg)
                 elems.append(txt(lx_, ly_, str(a[4]), f,
-                                 anchor="middle",
                                  rot=prot if prot % 360 else None))
                 cgrow(lx_, ly_)
             except Exception:
@@ -3948,8 +4068,7 @@ def cmd_render(db, args):
                 for pp in sp["pins"]:
                     if parts and pp.get("part") != part:
                         continue
-                    px_, py_ = T(pp["x"], pp["y"])
-                    pin_pts.append((px_, py_))
+                    pin_pts.append(T(pp["x"], pp["y"]))
             if pin_pts:
                 xs = [p[0] for p in pin_pts]
                 ys = [p[1] for p in pin_pts]
@@ -3959,56 +4078,93 @@ def cmd_render(db, args):
             if cfg["show"]["fallback_box"]:
                 fb = cfg["colors"]["fallback"]
                 elems.append(
-                    f'<rect x="{comp_bbox[0]:.0f}" y="{comp_bbox[1]:.0f}" '
+                    f'<rect x="{comp_bbox[0]:.0f}" '
+                    f'y="{-comp_bbox[3]:.0f}" '
                     f'width="{comp_bbox[2]-comp_bbox[0]:.0f}" '
                     f'height="{comp_bbox[3]-comp_bbox[1]:.0f}" '
                     f'fill="#fffbe6" stroke="{fb}" stroke-width="{lw}" '
                     f'stroke-dasharray="24,16"/>')
 
-        # 位号/值：优先用工程存储的显示坐标与样式（用户在 EDA 里摆的）
+        # 实例属性绘制 = 符号模板显示位 ∪ 实例显示位，值按同名覆盖：
+        # 位置优先级：实例 attr_disp > 模板 sym_attr_disp；
+        # 文本 = showKey/showValue 决定画键/值（值取实例优先，模板兜底）
         des = c.get("designator")
         dev_desc = dmap.get(c.get("device_uuid") or "", ("", "", ""))[2]
         inst_val = c["attrs"].get("Value")
         val = inst_val or parse_value(dev_desc).get("value") or ""
+        pend_des = bool(des)
+        pend_val = bool(val)
 
-        def draw_attr_stored(key, text):
-            info = attr_disp.get((c["cid"], key))
-            if not info or info["hide"] or info["x"] is None \
-                    or text is None:
+        def draw_one(key, text_v, pos, sid, sk, sv, rot):
+            if text_v is None or str(text_v) == "":
                 return False
-            f = _font_of(page_fs, info["sid"], cfg)
-            f["color"] = page_fs.get(info["sid"], {}).get("color") \
-                or "#0000cc"
-            elems.append(txt(float(info["x"]), float(info["y"]), str(text),
-                             f, anchor="middle",
-                             rot=float(info["rot"] or 0)
-                             if (info["rot"] or 0) % 360 else None))
-            grow(float(info["x"]), float(info["y"]))
+            parts_txt = []
+            if sk:
+                parts_txt.append(str(key))
+            if sv:
+                parts_txt.append(str(text_v))
+            if not parts_txt:
+                return False
+            f = _font_of(page_fs, sid, cfg)
+            f["color"] = page_fs.get(sid, {}).get("color") or "#000000"
+            label = (str(key) + "=" + parts_txt[1]) \
+                if (sk and sv and len(parts_txt) > 1) else parts_txt[0]
+            elems.append(txt(pos["x"], pos["y"], label, f,
+                             rot=rot if rot % 360 else None))
+            grow(pos["x"], pos["y"])
             return True
 
-        placed_des = draw_attr_stored("Designator", des)
-        placed_val = draw_attr_stored("Value", val) if val else True
-        if comp_bbox[0] is not None and not (placed_des and placed_val):
+        merged_keys = set(sym_attr_disp.keys()) | set(c["attrs"].keys())
+        merged_keys.add("Designator")
+        for key in sorted(merged_keys):
+            inst_info = attr_disp.get((c["cid"], str(key)))
+            tmpl = sym_attr_disp.get(str(key))
+            text_v = c["attrs"].get(key)
+            if key == "Designator":
+                text_v = des
+            elif key == "Value" and text_v is None:
+                text_v = val
+            if key == "Symbol" or key == "Device":
+                # uuid 绑定属性不作为文本画（模板里通常也未显示）
+                continue
+            if inst_info is not None:
+                ok = draw_one(key, text_v, inst_info,
+                              inst_info["sid"], inst_info["show_key"],
+                              inst_info["show_val"],
+                              inst_info["rot"] or 0)
+            elif tmpl is not None:
+                v = text_v if text_v not in (None, "") else tmpl["tmpl"]
+                ok = draw_one(key, v, tmpl, tmpl["sid"],
+                              tmpl["show_key"], tmpl["show_val"],
+                              tmpl["rot"])
+            else:
+                continue
+            if ok:
+                if key == "Designator":
+                    pend_des = False
+                if key == "Value":
+                    pend_val = False
+        if comp_bbox[0] is not None and (pend_des or pend_val):
             mx = (comp_bbox[0] + comp_bbox[2]) / 2
             df = {"size": cfg["sizes"]["default_font"], "color": "#0000cc",
-                  "bold": True, "italic": False}
-            if des and not placed_des:
-                elems.append(txt(mx, comp_bbox[1] - lw * 2, des, df,
-                                 anchor="middle"))
+                  "bold": True, "italic": False, "halign": 1.0,
+                  "valign": 2.0}
+            if pend_des:
+                elems.append(txt(mx, comp_bbox[1] - lw * 2, des, df))
                 grow(comp_bbox[0], comp_bbox[1] - lw * 6)
                 grow(comp_bbox[2], comp_bbox[1])
-            if val and not placed_val:
+            if pend_val:
                 vf = {"size": cfg["sizes"]["default_font"],
-                      "color": "#006600", "bold": False, "italic": False}
-                elems.append(txt(mx, comp_bbox[3] + lw * 8, val, vf,
-                                 anchor="middle"))
+                      "color": "#006600", "bold": False, "italic": False,
+                      "halign": 1.0, "valign": 0.0}
+                elems.append(txt(mx, comp_bbox[3] + lw * 8, val, vf))
                 grow(comp_bbox[0], comp_bbox[3] + lw * 10)
                 grow(comp_bbox[2], comp_bbox[3])
         if cfg["show"]["dnp"] and c.get("dnp") \
                 and comp_bbox[0] is not None:
             dc = cfg["colors"]["dnp"]
             elems.append(
-                f'<rect x="{comp_bbox[0]:.0f}" y="{comp_bbox[1]:.0f}" '
+                f'<rect x="{comp_bbox[0]:.0f}" y="{-comp_bbox[3]:.0f}" '
                 f'width="{comp_bbox[2]-comp_bbox[0]:.0f}" '
                 f'height="{comp_bbox[3]-comp_bbox[1]:.0f}" fill="none" '
                 f'stroke="{dc}" stroke-width="{lw*2}" '
@@ -4021,13 +4177,14 @@ def cmd_render(db, args):
             if x is not None:
                 grow(x, y)
 
-    # ── 结点圆点 / 网络名 / 页文本 ──
+    # ── 结点 / 网络名 / 页文本 ──
     jr = lw * 2.5
     for (px, py), n in seg_count.items():
         if n >= 3:
             elems.insert(0,
-                         f'<circle cx="{px:.0f}" cy="{py:.0f}" r="{jr:.0f}"'
-                         f' fill="{cfg["colors"]["junction"]}"/>')
+                         f'<circle cx="{px:.0f}" cy="{-py:.0f}" '
+                         f'r="{jr:.0f}" '
+                         f'fill="{cfg["colors"]["junction"]}"/>')
     if cfg["show"]["net_labels"]:
         lf = {"size": cfg["sizes"]["default_font"],
               "color": cfg["colors"]["label"], "bold": False,
@@ -4036,7 +4193,8 @@ def cmd_render(db, args):
             elems.append(txt(lx, ly, nm, lf))
     if cfg["show"]["texts"]:
         for tx, ty, trot, s, f in texts:
-            elems.append(txt(tx, ty, s, f, rot=trot if trot % 360 else None))
+            elems.append(txt(tx, ty, s, f,
+                             rot=trot if trot % 360 else None))
             grow(tx, ty)
 
     # ── 组装 SVG ──
@@ -4047,7 +4205,6 @@ def cmd_render(db, args):
     vx0, vy0 = bbox_all[0] - m, bbox_all[1] - m
     vw = (bbox_all[2] - bbox_all[0]) + 2 * m
     vh = (bbox_all[3] - bbox_all[1]) + 2 * m
-    title = f"{db.project_name()} :: {sh['title']}"
     svg = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" '
