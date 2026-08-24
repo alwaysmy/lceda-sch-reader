@@ -3604,11 +3604,17 @@ def _arc_pts(x1, y1, x2, y2, x3, y3, n=24):
 
 
 _RENDER_CFG_DEFAULTS = {
-    "colors": {"wire": "#006600", "junction": "#006600",
+    # 颜色/尺寸均为实测：用户提供的 EDA 参考截图像素测量
+    # （probes/measure_sizes2.py，2026-08-23）：
+    #   结点直径≈6px、线宽≈1.5px、DAC高100单位≈145px => 1px≈0.69单位
+    #   => 线宽≈1单位、结点半径≈2单位；结点色 #cc0000(实测RGB 204,0,0)、
+    #   NC 叉 #33cc33(51,204,51)、导线 #349d32(52,157,50)
+    "colors": {"wire": "#349d32", "junction": "#cc0000",
                "label": "#8822aa", "text": "#555555",
-               "nc": "#dd0000", "dnp": "#cc00cc",
+               "nc": "#33cc33", "dnp": "#cc00cc",
                "fallback": "#c0a000"},
-    "sizes": {"default_font": 10.0, "line_width": 3.0},
+    "sizes": {"default_font": 10.0, "line_width": 1.0,
+              "junction_r": 2.0, "nc_arm": 3.5},
     "show": {"net_labels": True, "texts": True,
              "pin_names": True, "pin_numbers": False,
              "dnp": True, "nc": True, "fallback_box": True},
@@ -3677,6 +3683,7 @@ def _parse_fs(a):
             return None
 
     return {"color": a[2] if len(a) > 2 and a[2] else None,
+            "family": a[4] if len(a) > 4 else None,
             "size": num(a[5]) if len(a) > 5 else None,
             "italic": a[6] if len(a) > 6 else None,
             "bold": a[7] if len(a) > 7 else None,
@@ -3766,37 +3773,56 @@ def cmd_render(db, args):
         va = {0.0: "text-before-edge", 1.0: "central",
               2.0: "auto"}.get(f.get("valign"), "")
         vb = f' dominant-baseline="{va}"' if va else ""
+        if rot:
+            rot = rot % 360
+            if rot == 180:
+                # EDA 行为（实测参考图）：180° 文本自动翻正保持可读，
+                # 90/270 保留竖排
+                rot = 0
         tr = f' transform="rotate({-rot:.0f} {x:.1f} {-y:.1f})"' \
             if rot else ""
         fw = ' font-weight="bold"' if f.get("bold") else ""
         fs_ = ' font-style="italic"' if f.get("italic") else ""
+        fam = (f' font-family="{_svg_esc(f["family"])}"'
+               if f.get("family") else "")
+        if "双路DAC" in str(s):
+            print("[probe]", s, (x, y), fill or f["color"],
+                  file=sys.stderr)
+            traceback.print_stack(file=sys.stderr)
         return (f'<text x="{x:.1f}" y="{-y:.1f}" '
-                f'font-size="{f["size"]:.0f}"{fw}{fs_} '
+                f'font-size="{f["size"]:.0f}"{fw}{fs_}{fam} '
                 f'fill="{fill or f["color"]}" text-anchor="{anchor}"'
                 f'{vb}{tr}>{_svg_esc(s)}</text>')
 
-    # ── 导线 / 网络名 / 结点 / 页文本 ──
+    # ── 导线 / 结点 / 页文本 / 网络名（存储显示位）──
     net_of, wires = {}, []
     texts = []
+    net_disp = []   # NET ATTR 自带显示位（官方同属性机制：X/Y=null=未显示）
     for a in recs:
         if not isinstance(a, list) or len(a) < 2:
             continue
         k = a[0]
-        if k == "ATTR" and len(a) >= 5 and \
+        if k == "ATTR" and len(a) >= 11 and \
                 a[3] in ("NET", "Global Net Name"):
-            net_of[a[2]] = a[4]
+            if a[4] and a[7] is not None and a[8] is not None:
+                rotv = 0.0
+                try:
+                    rotv = float(a[9] or 0)
+                except (TypeError, ValueError):
+                    rotv = 0.0
+                net_disp.append((float(a[7]), float(a[8]), rotv,
+                                 str(a[4]), a[10]))
         elif k == "WIRE" and len(a) >= 3:
             wires.append((a[1], a[2]))
+            if len(a) >= 5:
+                pass
         elif k == "TEXT" and len(a) >= 7 and str(a[5]).strip():
             f = _font_of(page_fs, a[6], cfg)
             f["color"] = page_fs.get(a[6], {}).get("color") \
                 or cfg["colors"]["text"]
             texts.append((a[2], a[3], a[4], str(a[5]), f))
     seg_count = {}
-    labels = []
     for wid, segs in wires:
-        nm = net_of.get(wid)
-        first_mid = None
         for seg in _norm_segs(segs):
             x1, y1, x2, y2 = seg
             elems.append(
@@ -3808,10 +3834,6 @@ def cmd_render(db, args):
             for p in ((x1, y1), (x2, y2)):
                 pt = (round(p[0], 1), round(p[1], 1))
                 seg_count[pt] = seg_count.get(pt, 0) + 1
-            if first_mid is None:
-                first_mid = ((x1 + x2) / 2, (y1 + y2) / 2)
-        if nm and first_mid:
-            labels.append((first_mid[0] + lw * 4, first_mid[1] + lw * 4, nm))
 
     # ── 实例属性显示信息（X/Y 非 null 才有显示位置）──
     attr_disp = {}
@@ -4026,7 +4048,7 @@ def cmd_render(db, args):
                         if cfg["show"]["nc"] and \
                                 (c["cid"] + (pp.get("id") or "")) \
                                 in sh["no_connect"]:
-                            s_ = lw * 4
+                            s_ = cfg["sizes"].get("nc_arm", lw * 3.5)
                             nc = cfg["colors"]["nc"]
                             elems.append(
                                 f'<line x1="{ex-s_:.1f}" y1="{-(ey-s_):.1f}'
@@ -4095,7 +4117,7 @@ def cmd_render(db, args):
         pend_des = bool(des)
         pend_val = bool(val)
 
-        def draw_one(key, text_v, pos, sid, sk, sv, rot):
+        def draw_one(key, text_v, pos, sid, sk, sv, rot, local=False):
             if text_v is None or str(text_v) == "":
                 return False
             parts_txt = []
@@ -4109,9 +4131,14 @@ def cmd_render(db, args):
             f["color"] = page_fs.get(sid, {}).get("color") or "#000000"
             label = (str(key) + "=" + parts_txt[1]) \
                 if (sk and sv and len(parts_txt) > 1) else parts_txt[0]
-            elems.append(txt(pos["x"], pos["y"], label, f,
+            px_, py_ = (pos["x"], pos["y"])
+            if local:
+                # 模板显示位是符号局部坐标，必须过实例变换
+                px_, py_ = T(pos["x"], pos["y"])
+                rot = (rot or 0) + rot360
+            elems.append(txt(px_, py_, label, f,
                              rot=rot if rot % 360 else None))
-            grow(pos["x"], pos["y"])
+            grow(px_, py_)
             return True
 
         merged_keys = set(sym_attr_disp.keys()) | set(c["attrs"].keys())
@@ -4131,12 +4158,12 @@ def cmd_render(db, args):
                 ok = draw_one(key, text_v, inst_info,
                               inst_info["sid"], inst_info["show_key"],
                               inst_info["show_val"],
-                              inst_info["rot"] or 0)
+                              inst_info["rot"] or 0, local=False)
             elif tmpl is not None:
                 v = text_v if text_v not in (None, "") else tmpl["tmpl"]
                 ok = draw_one(key, v, tmpl, tmpl["sid"],
                               tmpl["show_key"], tmpl["show_val"],
-                              tmpl["rot"])
+                              tmpl["rot"], local=True)
             else:
                 continue
             if ok:
@@ -4177,8 +4204,8 @@ def cmd_render(db, args):
             if x is not None:
                 grow(x, y)
 
-    # ── 结点 / 网络名 / 页文本 ──
-    jr = lw * 2.5
+    # ── 结点 / 网络名（按存储位置）/ 页文本 ──
+    jr = cfg["sizes"].get("junction_r", lw * 2)
     for (px, py), n in seg_count.items():
         if n >= 3:
             elems.insert(0,
@@ -4186,11 +4213,11 @@ def cmd_render(db, args):
                          f'r="{jr:.0f}" '
                          f'fill="{cfg["colors"]["junction"]}"/>')
     if cfg["show"]["net_labels"]:
-        lf = {"size": cfg["sizes"]["default_font"],
-              "color": cfg["colors"]["label"], "bold": False,
-              "italic": False}
-        for lx, ly, nm in labels[:cfg["limits"]["max_labels"]]:
-            elems.append(txt(lx, ly, nm, lf))
+        for nx, ny, nrot, nm, sid in net_disp[:cfg["limits"]["max_labels"]]:
+            f = _font_of(page_fs, sid, cfg)
+            elems.append(txt(nx, ny, nm, f,
+                             rot=nrot if nrot % 360 else None))
+            grow(nx, ny)
     if cfg["show"]["texts"]:
         for tx, ty, trot, s, f in texts:
             elems.append(txt(tx, ty, s, f,
@@ -4228,7 +4255,7 @@ def cmd_render(db, args):
         f.write(svg)
     out(f"[render] 页「{disp}」: 元件 {len(sh['components'])} "
         f"(无图形退化 {n_nograph}), 导线 {len(wires)}, "
-        f"网络标签 {len(labels)}")
+        f"网络标签 {len(net_disp)}")
     out(f"[render] 输出: {o} ({len(svg)//1024} KB)")
 
 
