@@ -60,5 +60,8 @@
 
 ## 其他未支持（记录，暂不做）
 
+- PANEL/拼版（立创EDA 面板设计功能，structure.panels / project.json
+  panels 键）：**不属于原理图审查范围，暂不处理**；openlceda 或 PCB
+  级审查时可能用上（2026-08-24 用户标记）。
 - Sheet Symbol(20) 图纸重用、VARIANT/INSTANCE/元件分组：v3 规范概念，
   v2 数组格式文件无对应数据。

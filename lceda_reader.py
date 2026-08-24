@@ -3487,6 +3487,15 @@ def cmd_pcbsch(db, args):
 
     report = []
     renamed_total = only_pcb_total = matched_total = 0
+    # 板归属（有存储关联时标注；旧 .eprj2 boards 表空 → 启发式取主板）
+    pcb_board = {}
+    try:
+        h = db.hierarchy()
+        for b in h.get("boards", []):
+            for p in b.get("pcbs", []):
+                pcb_board[p["uuid"]] = b["title"]
+    except Exception:
+        pass
     for inv in pcbs:
         puids = {}
         rows = []
@@ -3515,6 +3524,7 @@ def cmd_pcbsch(db, args):
         renamed_total += r
         only_pcb_total += op
         report.append({"pcb": inv["title"],
+                       "board": pcb_board.get(inv["uuid"]),
                        "comps": len(inv["comps"]),
                        "nets": len(inv["nets"]),
                        "pads": len(inv["pads"]),
@@ -3532,7 +3542,8 @@ def cmd_pcbsch(db, args):
     main_idx = max(range(len(report)),
                    key=lambda i: report[i]["matched"]) if report else None
     for idx, rep in enumerate(report):
-        out(f"\n== PCB「{rep['pcb']}」: 元件 {rep['comps']} 网络 "
+        bt = f"（板: {rep['board']}）" if rep.get("board") else ""
+        out(f"\n== PCB「{rep['pcb']}」{bt}: 元件 {rep['comps']} 网络 "
             f"{rep['nets']} 焊盘 {rep['pads']}")
         out(f"   一致 {rep['matched']} | 改名 {rep['renamed']} | "
             f"仅PCB {rep['only_pcb']} | 仅SCH {len(rep['only_sch'])}")
