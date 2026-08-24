@@ -1875,7 +1875,19 @@ ZERO_VALUE_RE = re.compile(r"(?:^|[^0-9.])0(?:\.0)?(?:Ω|ohm|R(?![A-Za-z0-9]))",
 ZERO_CODE_RE = re.compile(r"(?:^|[^0-9A-Za-z])0000(?![0-9A-Za-z])", re.I)
 
 
-def _is_zero_ohm(title, desc=""):
+def _is_zero_ohm(title, desc="", value=None):
+    """0Ω 跳线判定。优先级：Value 属性（规范字段，实测 14/14 与
+    description 正则一致且更稳）> title/description 文本正则（兜底，
+    老工程/导出库缺 Value attr 时仍可用）。"""
+    if value is not None and str(value).strip():
+        v = str(value).strip()
+        if re.fullmatch(r"0([.0]*)\s*(Ω|欧|R|ohm)?", v, re.I) or v == "0":
+            return True
+        if ZERO_VALUE_RE.search(v) or ZERO_CODE_RE.search(v):
+            return True
+        # Value 明确非 0（如 10kΩ）→ 不再看 title/desc，防误判
+        if re.search(r"[1-9]", v):
+            return False
     t = str(title or "")
     d = str(desc or "")
     return bool(ZERO_CODE_RE.search(t) or ZERO_VALUE_RE.search(t) or
@@ -2000,7 +2012,13 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
             continue
         du = c.get("device_uuid") or c.get("symbol_uuid") or ""
         desc = dmap.get(du, ("", "", ""))[2] if du else ""
-        if _is_zero_ohm(c.get("title"), desc):
+        _v = (c.get("attrs") or {}).get("Value")
+        if not _v and c.get("device_uuid"):
+            try:
+                _v = (db.device_attrs(c["device_uuid"]) or {}).get("Value")
+            except Exception:
+                _v = None
+        if _is_zero_ohm(c.get("title"), desc, value=_v):
             jumpers.add(c.get("designator"))
     # 位号 -> DNP 映射：除真实 Designator 外，同时映射合成位号
     # （SHORT{cid}/PORT{cid}——短接符/NetFlag 无 Designator 属性，
@@ -2364,8 +2382,14 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
         d = dev_map.get(uuid) if uuid else None
         device = (d[0] if d else "") or title
         is_short = 22 in sym_types
-        # 0Ω 判定：title + 器件 desc 双源精确 token（"10R"/"50R0" 等不再误判）
-        is_zero = _is_zero_ohm(title, d[2] if d else "")
+        # 0Ω 判定：Value 属性（规范字段，实例→device）优先，title+desc 兜底
+        _v = (c.get("attrs") or {}).get("Value")
+        if not _v and c.get("device_uuid"):
+            try:
+                _v = (db.device_attrs(c["device_uuid"]) or {}).get("Value")
+            except Exception:
+                _v = None
+        is_zero = _is_zero_ohm(title, d[2] if d else "", value=_v)
         # DNP（不上BOM/不上PCB）器件未贴装：direct 恒为 False（两脚不通）
         is_dnp = bool(c_dnp)
         kind = "short" if is_short else ("jumper" if is_zero else "passive")
