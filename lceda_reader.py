@@ -3493,6 +3493,10 @@ def cmd_bom(db, args):
 _POLAR_ANODE = {"A", "ANODE", "+", "PA"}
 _POLAR_CATH = {"K", "C", "CATHODE", "-", "−", "NK"}
 
+# 规范位号 = 字母前缀+数字（R1/LED2/USBC1…）；纯数字/缺数字/含非常规
+# 字符视为不规范（实测样例：涡流 DA输出页位号就叫 "2"）
+_DESIG_STD = re.compile(r"^[A-Za-z]+\d+$")
+
 
 def _polar_of(name):
     """引脚名 -> 极性归一（阳极/阴极/None）。
@@ -3567,6 +3571,7 @@ def cmd_polar(db, args):
                 "matched_by": "prefix" if hit_prefix else "pin-names",
                 "pins": pins_out,
                 "polarity_resolved": not unresolved,
+                "designator_std": bool(_DESIG_STD.match(des)),
                 "datasheet": url})
 
     rows.sort(key=lambda r: (natkey(r["designator"]), r["page"]))
@@ -3574,11 +3579,14 @@ def cmd_polar(db, args):
         outj({"count": len(rows), "items": rows})
         return
     n_ok = sum(1 for r in rows if r["polarity_resolved"])
+    n_bad = sum(1 for r in rows if not r["designator_std"])
     out(f"极性器件: {len(rows)} 个（引脚极性可归一 {n_ok}，"
-        f"需查手册 {len(rows) - n_ok}）")
+        f"需查手册 {len(rows) - n_ok}）"
+        + (f"；⚠不规范位号 {n_bad} 个" if n_bad else ""))
     for r in rows:
         out(f"\n{r['designator']}  {r['device'][:32]}  [{r['page']}]"
-            + ("" if r["polarity_resolved"] else "  ⚠需查手册"))
+            + ("" if r["polarity_resolved"] else "  ⚠需查手册")
+            + ("" if r["designator_std"] else "  ⚠位号不规范(应为字母+数字)"))
         for p in r["pins"]:
             pol = p["polarity"] or "?"
             nc = " [X]" if p["no_connect"] else ""

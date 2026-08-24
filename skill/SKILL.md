@@ -160,7 +160,9 @@ description: Use when the user asks to read, query, search, extract, or verify c
   - 二极管（整流/续流）：按拓扑核对导通方向（A→K 为正向）；
   - "需查手册"项必须打开 datasheet URL 核对引脚映射后再下结论，
     **不得猜测数字引脚的极性**；
-  - 位号不规范的器件（如位号就叫 "2"）会在清单中暴露，顺带提示设计者。
+  - 位号不规范的器件（非"字母+数字"格式，如纯数字 "2"、问号 "？"）
+    会标 ⚠位号不规范——顺带提示设计者修正（不规范位号影响 SCH↔PCB
+    核对与人工检索）。
 - 同号位器件跨板重复：汇报必须带"哪个板哪个页"（见上文汇报规范）。
 - **工程名 vs 文件名**：.epro2/新版 .eprj2 含用户命名工程名（tree 首行
   双显示"工程: X（文件: Y）"，json hierarchy 含 project_title）；旧版
