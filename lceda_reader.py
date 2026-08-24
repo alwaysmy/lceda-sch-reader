@@ -3798,10 +3798,6 @@ def cmd_render(db, args):
         fs_ = ' font-style="italic"' if f.get("italic") else ""
         fam = (f' font-family="{_svg_esc(f["family"])}"'
                if f.get("family") else "")
-        if "双路DAC" in str(s):
-            print("[probe]", s, (x, y), fill or f["color"],
-                  file=sys.stderr)
-            traceback.print_stack(file=sys.stderr)
         return (f'<text x="{x:.1f}" y="{-y:.1f}" '
                 f'font-size="{f["size"]:.0f}"{fw}{fs_}{fam} '
                 f'fill="{fill or f["color"]}" text-anchor="{anchor}"'
