@@ -1,0 +1,59 @@
+{
+ "_note": "渲染配置：实测项标注[实测](probes/measure_*.py 对 EDA 截图像素测量)；自创审查增强项标注[自创]。修改后直接生效（工具目录自动加载）。web 渲染可直接 fetch 本文件。",
+ "colors": {
+  "_note": "主题色[实测] measure_theme.py 对 实际的.png 统计主色",
+  "wire": "#008800",
+  "junction": "#cc0000",
+  "nc": "#33cc33",
+  "designator_fallback": "#000080",
+  "value_fallback": "#000080",
+  "text": "#000000",
+  "label": "#000000",
+  "dnp": "#cc00cc",
+  "fallback": "#c0a000",
+  "fallback_fill": "#fffbe6"
+ },
+ "sizes": {
+  "_note": "[实测] measure_sizes2.py：线宽1/结点r2/NC臂3.5 单位；默认字号10",
+  "default_font": 10.0,
+  "line_width": 1.0,
+  "junction_r": 2.0,
+  "nc_arm": 3.5,
+  "nc_width_factor": 1.2,
+  "dnp_width_factor": 2.0,
+  "designator_gap": 3.0,
+  "value_gap": 10.0
+ },
+ "dash": {
+  "_note": "[官方语义+自创比例] LINESTYLE a[3]: 1短划 2点线 3点划",
+  "1": "6 3",
+  "2": "1 3",
+  "3": "6 3 1 3"
+ },
+ "junction_min_wires": 3,
+ "fonts": {
+  "_note": "FONTSTYLE family=null 时的默认（EDA 真实默认字体名未知）",
+  "default_family": "Consolas, monospace"
+ },
+ "dnp": {
+  "_note": "[自创审查增强] EDA 无此标记",
+  "dasharray": "40,24",
+  "label": "[DNP]"
+ },
+ "fallback_box": {
+  "_note": "[自创] 无图形器件占位框",
+  "dasharray": "24,16"
+ },
+ "show": {
+  "net_labels": true,
+  "texts": true,
+  "pin_names": true,
+  "pin_numbers": false,
+  "dnp": true,
+  "nc": true,
+  "fallback_box": true
+ },
+ "limits": {
+  "max_labels": 500
+ }
+}

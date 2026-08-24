@@ -3604,17 +3604,28 @@ def _arc_pts(x1, y1, x2, y2, x3, y3, n=24):
 
 
 _RENDER_CFG_DEFAULTS = {
-    # 颜色/尺寸均为实测：用户提供的 EDA 参考截图像素测量
-    # （probes/measure_sizes2.py，2026-08-23）：
-    #   结点直径≈6px、线宽≈1.5px、DAC高100单位≈145px => 1px≈0.69单位
-    #   => 线宽≈1单位、结点半径≈2单位；结点色 #cc0000(实测RGB 204,0,0)、
-    #   NC 叉 #33cc33(51,204,51)、导线 #349d32(52,157,50)
-    "colors": {"wire": "#349d32", "junction": "#cc0000",
-               "label": "#8822aa", "text": "#555555",
-               "nc": "#33cc33", "dnp": "#cc00cc",
-               "fallback": "#c0a000"},
+    # 全部参数的外置真源是工具目录 render_config.json（web 渲染可直接
+    # fetch）；此处仅是 json 缺失时的兜底。依据标注见 json _note。
+    # [实测] measure_theme.py：位号/值蓝=#000080、导线=#008800、
+    # 结点=#cc0000、NC=#33cc33、符号红=#a00000（LINESTYLE 存储色）
+    # [实测] measure_sizes2.py：线宽1/结点r2/NC臂3.5/默认字号10（单位）
+    # [自创] dnp/fallback_box 标记为审查增强，EDA 无此显示
+    "colors": {"wire": "#008800", "junction": "#cc0000",
+               "nc": "#33cc33",
+               "designator_fallback": "#000080",
+               "value_fallback": "#000080",
+               "text": "#000000", "label": "#000000",
+               "dnp": "#cc00cc", "fallback": "#c0a000",
+               "fallback_fill": "#fffbe6"},
     "sizes": {"default_font": 10.0, "line_width": 1.0,
-              "junction_r": 2.0, "nc_arm": 3.5},
+              "junction_r": 2.0, "nc_arm": 3.5,
+              "nc_width_factor": 1.2, "dnp_width_factor": 2.0,
+              "designator_gap": 3.0, "value_gap": 10.0},
+    "dash": {"1": "6 3", "2": "1 3", "3": "6 3 1 3"},
+    "junction_min_wires": 3,
+    "fonts": {"default_family": "Consolas, monospace"},
+    "dnp": {"dasharray": "40,24", "label": "[DNP]"},
+    "fallback_box": {"dasharray": "24,16"},
     "show": {"net_labels": True, "texts": True,
              "pin_names": True, "pin_numbers": False,
              "dnp": True, "nc": True, "fallback_box": True},
@@ -3630,6 +3641,8 @@ def _render_cfg(args):
 
     def merge(dst, src):
         for k, v in (src or {}).items():
+            if str(k).startswith("_"):
+                continue   # _note 等注释键不入配置
             if isinstance(v, dict) and isinstance(dst.get(k), dict):
                 merge(dst[k], v)
             else:
@@ -3754,7 +3767,7 @@ def cmd_render(db, args):
 
     elems = []
     lw = cfg["sizes"]["line_width"]
-    DASH = {1.0: "6 3", 2.0: "1 3", 3.0: "6 3 1 3"}
+    DASH = {float(k): v for k, v in cfg.get("dash", {}).items()}
 
     def ls_attrs(st):
         color = st.get("color", "#000000")
@@ -3878,6 +3891,7 @@ def cmd_render(db, args):
         # 实例同 Key 属性提供值覆盖（官方 §3.3：同名属性覆盖）。
         # 标题栏即此机制：模板存键与位置，实例只存值(X/Y=null)。
         sym_attr_disp = {}
+        sym_attr_vals = {}   # 模板全部 ATTR key->value（公式兜底）
         for a in (prims or []):
             if not isinstance(a, list) or not a:
                 continue
@@ -3891,10 +3905,13 @@ def cmd_render(db, args):
             elif k in ("POLY", "RECT", "CIRCLE", "ARC", "PIN", "TEXT"):
                 if not have_part_sec or part is None or cur == part:
                     draw_prims.append((k, a))
-            elif k == "ATTR" and len(a) >= 12 and \
+            elif k == "ATTR" and len(a) >= 11 and \
                     a[3] not in ("NAME", "NUMBER"):
                 if have_part_sec and part is not None and cur != part:
                     continue
+                if a[3] not in sym_attr_vals:
+                    sym_attr_vals[str(a[3])] = \
+                        "" if a[4] is None else str(a[4])
                 if a[7] is not None and a[8] is not None:
                     try:
                         sym_attr_disp[str(a[3])] = {
@@ -4050,13 +4067,14 @@ def cmd_render(db, args):
                                 in sh["no_connect"]:
                             s_ = cfg["sizes"].get("nc_arm", lw * 3.5)
                             nc = cfg["colors"]["nc"]
+                            nw_ = cfg["sizes"].get("nc_width_factor", 1.2)
                             elems.append(
                                 f'<line x1="{ex-s_:.1f}" y1="{-(ey-s_):.1f}'
                                 f'" x2="{ex+s_:.1f}" y2="{-(ey+s_):.1f}" '
-                                f'stroke="{nc}" stroke-width="{lw*1.2}"/>'
+                                f'stroke="{nc}" stroke-width="{lw*nw_}"/>'
                                 f'<line x1="{ex-s_:.1f}" y1="{-(ey+s_):.1f}'
                                 f'" x2="{ex+s_:.1f}" y2="{-(ey-s_):.1f}" '
-                                f'stroke="{nc}" stroke-width="{lw*1.2}"/>')
+                                f'stroke="{nc}" stroke-width="{lw*nw_}"/>')
                         break
             except Exception:
                 continue
@@ -4104,8 +4122,10 @@ def cmd_render(db, args):
                     f'y="{-comp_bbox[3]:.0f}" '
                     f'width="{comp_bbox[2]-comp_bbox[0]:.0f}" '
                     f'height="{comp_bbox[3]-comp_bbox[1]:.0f}" '
-                    f'fill="#fffbe6" stroke="{fb}" stroke-width="{lw}" '
-                    f'stroke-dasharray="24,16"/>')
+                    f'fill="{cfg["colors"]["fallback_fill"]}" '
+                    f'stroke="{fb}" stroke-width="{lw}" '
+                    f'stroke-dasharray='
+                    f'"{cfg.get("fallback_box", {}).get("dasharray", "24,16")}"/>')
 
         # 实例属性绘制 = 符号模板显示位 ∪ 实例显示位，值按同名覆盖：
         # 位置优先级：实例 attr_disp > 模板 sym_attr_disp；
@@ -4117,7 +4137,39 @@ def cmd_render(db, args):
         pend_des = bool(des)
         pend_val = bool(val)
 
+        dev_attrs = {}
+        if c.get("device_uuid"):
+            try:
+                dev_attrs = db.device_attrs(c["device_uuid"]) or {}
+            except Exception:
+                dev_attrs = {}
+
+        def resolve(text_v):
+            """属性公式（官方 Name='={Value}' 实证 32 例）：
+            ={Key} 整体引用 / {Key} 内联引用；解析链 实例attrs->
+            device attrs->符号模板值；解析失败保留字面。"""
+            if not isinstance(text_v, str) or "{" not in text_v:
+                return text_v
+
+            def lookup(k):
+                v = c["attrs"].get(k)
+                if v is None or str(v) == "":
+                    v = dev_attrs.get(k)
+                if v is None or str(v) == "":
+                    v = sym_attr_vals.get(k)
+                return None if v is None else str(v)
+
+            m = re.fullmatch(r"=\{([^{}]+)\}", text_v)
+            if m:
+                v = lookup(m.group(1))
+                return v if v is not None else text_v
+            return re.sub(r"\{([^{}]+)\}",
+                          lambda mm: lookup(mm.group(1))
+                          if lookup(mm.group(1)) is not None
+                          else mm.group(0), text_v)
+
         def draw_one(key, text_v, pos, sid, sk, sv, rot, local=False):
+            text_v = resolve(text_v)
             if text_v is None or str(text_v) == "":
                 return False
             parts_txt = []
@@ -4173,7 +4225,8 @@ def cmd_render(db, args):
                     pend_val = False
         if comp_bbox[0] is not None and (pend_des or pend_val):
             mx = (comp_bbox[0] + comp_bbox[2]) / 2
-            df = {"size": cfg["sizes"]["default_font"], "color": "#0000cc",
+            df = {"size": cfg["sizes"]["default_font"],
+                  "color": cfg["colors"]["designator_fallback"],
                   "bold": True, "italic": False, "halign": 1.0,
                   "valign": 2.0}
             if pend_des:
@@ -4182,7 +4235,8 @@ def cmd_render(db, args):
                 grow(comp_bbox[2], comp_bbox[1])
             if pend_val:
                 vf = {"size": cfg["sizes"]["default_font"],
-                      "color": "#006600", "bold": False, "italic": False,
+                      "color": cfg["colors"]["value_fallback"],
+                      "bold": False, "italic": False,
                       "halign": 1.0, "valign": 0.0}
                 elems.append(txt(mx, comp_bbox[3] + lw * 8, val, vf))
                 grow(comp_bbox[0], comp_bbox[3] + lw * 10)
@@ -4194,9 +4248,12 @@ def cmd_render(db, args):
                 f'<rect x="{comp_bbox[0]:.0f}" y="{-comp_bbox[3]:.0f}" '
                 f'width="{comp_bbox[2]-comp_bbox[0]:.0f}" '
                 f'height="{comp_bbox[3]-comp_bbox[1]:.0f}" fill="none" '
-                f'stroke="{dc}" stroke-width="{lw*2}" '
-                f'stroke-dasharray="40,24"/>')
-            elems.append(txt(comp_bbox[0], comp_bbox[3] + lw * 20, "[DNP]",
+                f'stroke="{dc}" '
+                f'stroke-width="{lw*cfg["sizes"].get("dnp_width_factor", 2)}" '
+                f'stroke-dasharray="'
+                f'{cfg.get("dnp", {}).get("dasharray", "40,24")}"/>')
+            elems.append(txt(comp_bbox[0], comp_bbox[3] + lw * 20,
+                             cfg.get("dnp", {}).get("label", "[DNP]"),
                              {"size": cfg["sizes"]["default_font"],
                               "color": dc, "bold": True, "italic": False}))
         for x, y in ((comp_bbox[0], comp_bbox[1]),
@@ -4206,8 +4263,9 @@ def cmd_render(db, args):
 
     # ── 结点 / 网络名（按存储位置）/ 页文本 ──
     jr = cfg["sizes"].get("junction_r", lw * 2)
+    jmin = cfg.get("junction_min_wires", 3)
     for (px, py), n in seg_count.items():
-        if n >= 3:
+        if n >= jmin:
             elems.insert(0,
                          f'<circle cx="{px:.0f}" cy="{-py:.0f}" '
                          f'r="{jr:.0f}" '
@@ -4236,7 +4294,7 @@ def cmd_render(db, args):
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         f'<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="{vx0:.0f} {vy0:.0f} {vw:.0f} {vh:.0f}" '
-        f'font-family="Consolas, monospace">\n'
+        f'font-family="{cfg.get("fonts", {}).get("default_family", "Consolas, monospace")}">\n'
         f'<rect x="{vx0:.0f}" y="{vy0:.0f}" width="{vw:.0f}" '
         f'height="{vh:.0f}" fill="#ffffff"/>\n'
         + "\n".join(elems) + "\n</svg>\n")

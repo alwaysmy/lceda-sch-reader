@@ -20,103 +20,103 @@
 <circle cx="1110" cy="-795" r="2" fill="#cc0000"/>
 <circle cx="1230" cy="-850" r="2" fill="#cc0000"/>
 <circle cx="1250" cy="-850" r="2" fill="#cc0000"/>
-<line x1="1030.0" y1="-1090.0" x2="1040.0" y2="-1090.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1040.0" y1="-1090.0" x2="1050.0" y2="-1090.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1100.0" y1="-1090.0" x2="1090.0" y2="-1090.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1010.0" y1="-1010.0" x2="1015.0" y2="-1010.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1015.0" y1="-1010.0" x2="1020.0" y2="-1010.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1060.0" y1="-1010.0" x2="1070.0" y2="-1010.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1130.0" y1="-1000.0" x2="1010.0" y2="-1000.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1130.0" y1="-1000.0" x2="1130.0" y2="-1010.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-1010.0" x2="1130.0" y2="-1010.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-1080.0" x2="1200.0" y2="-1090.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1205.0" y1="-1080.0" x2="1200.0" y2="-1080.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1545.0" y1="-1020.0" x2="1540.0" y2="-1020.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1540.0" y1="-1020.0" x2="1540.0" y2="-1030.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1540.0" y1="-1070.0" x2="1540.0" y2="-1080.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1545.0" y1="-1070.0" x2="1540.0" y2="-1070.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1340.0" y1="-810.0" x2="1340.0" y2="-810.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1300.0" y1="-760.0" x2="1300.0" y2="-720.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1300.0" y1="-760.0" x2="1280.0" y2="-760.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-850.0" x2="1110.0" y2="-840.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1250.0" y1="-850.0" x2="1340.0" y2="-850.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1250.0" y1="-820.0" x2="1250.0" y2="-850.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1230.0" y1="-850.0" x2="1110.0" y2="-850.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1230.0" y1="-850.0" x2="1250.0" y2="-850.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1230.0" y1="-850.0" x2="1230.0" y2="-820.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-785.0" x2="1200.0" y2="-820.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-820.0" x2="1200.0" y2="-820.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-800.0" x2="1110.0" y2="-795.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-795.0" x2="1125.0" y2="-795.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1125.0" y1="-820.0" x2="1145.0" y2="-820.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1125.0" y1="-820.0" x2="1125.0" y2="-795.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-795.0" x2="1110.0" y2="-790.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1280.0" y1="-780.0" x2="1340.0" y2="-780.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1340.0" y1="-780.0" x2="1340.0" y2="-720.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1340.0" y1="-780.0" x2="1365.0" y2="-780.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1050.0" y1="-430.0" x2="1050.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1050.0" y1="-485.0" x2="1050.0" y2="-470.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1045.0" y1="-485.0" x2="1050.0" y2="-485.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1050.0" y1="-290.0" x2="1050.0" y2="-310.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1050.0" y1="-370.0" x2="1050.0" y2="-350.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1050.0" y1="-370.0" x2="1050.0" y2="-380.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1050.0" y1="-370.0" x2="1080.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1135.0" y1="-310.0" x2="1135.0" y2="-290.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1155.0" y1="-290.0" x2="1155.0" y2="-330.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1155.0" y1="-290.0" x2="1160.0" y2="-290.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1155.0" y1="-330.0" x2="1155.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1155.0" y1="-330.0" x2="1150.0" y2="-330.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1155.0" y1="-370.0" x2="1170.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1155.0" y1="-370.0" x2="1135.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1135.0" y1="-370.0" x2="1120.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1135.0" y1="-370.0" x2="1135.0" y2="-350.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1260.0" y1="-420.0" x2="1250.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1250.0" y1="-420.0" x2="1240.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1250.0" y1="-350.0" x2="1250.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1270.0" y1="-350.0" x2="1250.0" y2="-350.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1430.0" y1="-345.0" x2="1430.0" y2="-360.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1430.0" y1="-360.0" x2="1440.0" y2="-360.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1430.0" y1="-360.0" x2="1415.0" y2="-360.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1430.0" y1="-305.0" x2="1430.0" y2="-300.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-420.0" x2="1195.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1225.0" y1="-290.0" x2="1225.0" y2="-305.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1225.0" y1="-290.0" x2="1365.0" y2="-290.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1365.0" y1="-290.0" x2="1365.0" y2="-360.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1365.0" y1="-360.0" x2="1350.0" y2="-360.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1375.0" y1="-360.0" x2="1365.0" y2="-360.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-290.0" x2="1225.0" y2="-290.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1310.0" y1="-320.0" x2="1310.0" y2="-320.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1225.0" y1="-370.0" x2="1270.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1225.0" y1="-370.0" x2="1210.0" y2="-370.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1225.0" y1="-370.0" x2="1225.0" y2="-345.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1300.0" y1="-420.0" x2="1310.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1310.0" y1="-400.0" x2="1310.0" y2="-420.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-770.0" x2="1145.0" y2="-770.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-780.0" x2="1145.0" y2="-770.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-770.0" x2="1145.0" y2="-755.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-755.0" x2="1145.0" y2="-755.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-755.0" x2="1145.0" y2="-700.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-690.0" x2="1145.0" y2="-700.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-700.0" x2="1110.0" y2="-700.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1030.0" y1="-1070.0" x2="1040.0" y2="-1070.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1030.0" y1="-1070.0" x2="1030.0" y2="-1080.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1240.0" y1="-645.0" x2="1240.0" y2="-720.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-645.0" x2="1240.0" y2="-645.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1145.0" y1="-645.0" x2="1145.0" y2="-650.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1300.0" y1="-645.0" x2="1300.0" y2="-680.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1300.0" y1="-645.0" x2="1240.0" y2="-645.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1340.0" y1="-645.0" x2="1300.0" y2="-645.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1340.0" y1="-645.0" x2="1340.0" y2="-680.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-745.0" x2="1110.0" y2="-750.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1110.0" y1="-745.0" x2="1110.0" y2="-740.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1125.0" y1="-745.0" x2="1110.0" y2="-745.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1125.0" y1="-770.0" x2="1125.0" y2="-745.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1385.0" y1="-1030.0" x2="1385.0" y2="-1020.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1385.0" y1="-1020.0" x2="1390.0" y2="-1020.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1390.0" y1="-1070.0" x2="1385.0" y2="-1070.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1385.0" y1="-1070.0" x2="1385.0" y2="-1080.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-1010.0" x2="1200.0" y2="-1000.0" stroke="#349d32" stroke-width="1.0"/>
-<line x1="1200.0" y1="-1000.0" x2="1205.0" y2="-1000.0" stroke="#349d32" stroke-width="1.0"/>
+<line x1="1030.0" y1="-1090.0" x2="1040.0" y2="-1090.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1040.0" y1="-1090.0" x2="1050.0" y2="-1090.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1100.0" y1="-1090.0" x2="1090.0" y2="-1090.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1010.0" y1="-1010.0" x2="1015.0" y2="-1010.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1015.0" y1="-1010.0" x2="1020.0" y2="-1010.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1060.0" y1="-1010.0" x2="1070.0" y2="-1010.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1130.0" y1="-1000.0" x2="1010.0" y2="-1000.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1130.0" y1="-1000.0" x2="1130.0" y2="-1010.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-1010.0" x2="1130.0" y2="-1010.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-1080.0" x2="1200.0" y2="-1090.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1205.0" y1="-1080.0" x2="1200.0" y2="-1080.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1545.0" y1="-1020.0" x2="1540.0" y2="-1020.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1540.0" y1="-1020.0" x2="1540.0" y2="-1030.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1540.0" y1="-1070.0" x2="1540.0" y2="-1080.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1545.0" y1="-1070.0" x2="1540.0" y2="-1070.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1340.0" y1="-810.0" x2="1340.0" y2="-810.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1300.0" y1="-760.0" x2="1300.0" y2="-720.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1300.0" y1="-760.0" x2="1280.0" y2="-760.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-850.0" x2="1110.0" y2="-840.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1250.0" y1="-850.0" x2="1340.0" y2="-850.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1250.0" y1="-820.0" x2="1250.0" y2="-850.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1230.0" y1="-850.0" x2="1110.0" y2="-850.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1230.0" y1="-850.0" x2="1250.0" y2="-850.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1230.0" y1="-850.0" x2="1230.0" y2="-820.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-785.0" x2="1200.0" y2="-820.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-820.0" x2="1200.0" y2="-820.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-800.0" x2="1110.0" y2="-795.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-795.0" x2="1125.0" y2="-795.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1125.0" y1="-820.0" x2="1145.0" y2="-820.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1125.0" y1="-820.0" x2="1125.0" y2="-795.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-795.0" x2="1110.0" y2="-790.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1280.0" y1="-780.0" x2="1340.0" y2="-780.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1340.0" y1="-780.0" x2="1340.0" y2="-720.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1340.0" y1="-780.0" x2="1365.0" y2="-780.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1050.0" y1="-430.0" x2="1050.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1050.0" y1="-485.0" x2="1050.0" y2="-470.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1045.0" y1="-485.0" x2="1050.0" y2="-485.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1050.0" y1="-290.0" x2="1050.0" y2="-310.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1050.0" y1="-370.0" x2="1050.0" y2="-350.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1050.0" y1="-370.0" x2="1050.0" y2="-380.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1050.0" y1="-370.0" x2="1080.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1135.0" y1="-310.0" x2="1135.0" y2="-290.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1155.0" y1="-290.0" x2="1155.0" y2="-330.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1155.0" y1="-290.0" x2="1160.0" y2="-290.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1155.0" y1="-330.0" x2="1155.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1155.0" y1="-330.0" x2="1150.0" y2="-330.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1155.0" y1="-370.0" x2="1170.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1155.0" y1="-370.0" x2="1135.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1135.0" y1="-370.0" x2="1120.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1135.0" y1="-370.0" x2="1135.0" y2="-350.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1260.0" y1="-420.0" x2="1250.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1250.0" y1="-420.0" x2="1240.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1250.0" y1="-350.0" x2="1250.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1270.0" y1="-350.0" x2="1250.0" y2="-350.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1430.0" y1="-345.0" x2="1430.0" y2="-360.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1430.0" y1="-360.0" x2="1440.0" y2="-360.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1430.0" y1="-360.0" x2="1415.0" y2="-360.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1430.0" y1="-305.0" x2="1430.0" y2="-300.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-420.0" x2="1195.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1225.0" y1="-290.0" x2="1225.0" y2="-305.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1225.0" y1="-290.0" x2="1365.0" y2="-290.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1365.0" y1="-290.0" x2="1365.0" y2="-360.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1365.0" y1="-360.0" x2="1350.0" y2="-360.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1375.0" y1="-360.0" x2="1365.0" y2="-360.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-290.0" x2="1225.0" y2="-290.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1310.0" y1="-320.0" x2="1310.0" y2="-320.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1225.0" y1="-370.0" x2="1270.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1225.0" y1="-370.0" x2="1210.0" y2="-370.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1225.0" y1="-370.0" x2="1225.0" y2="-345.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1300.0" y1="-420.0" x2="1310.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1310.0" y1="-400.0" x2="1310.0" y2="-420.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-770.0" x2="1145.0" y2="-770.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-780.0" x2="1145.0" y2="-770.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-770.0" x2="1145.0" y2="-755.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-755.0" x2="1145.0" y2="-755.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-755.0" x2="1145.0" y2="-700.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-690.0" x2="1145.0" y2="-700.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-700.0" x2="1110.0" y2="-700.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1030.0" y1="-1070.0" x2="1040.0" y2="-1070.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1030.0" y1="-1070.0" x2="1030.0" y2="-1080.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1240.0" y1="-645.0" x2="1240.0" y2="-720.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-645.0" x2="1240.0" y2="-645.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1145.0" y1="-645.0" x2="1145.0" y2="-650.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1300.0" y1="-645.0" x2="1300.0" y2="-680.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1300.0" y1="-645.0" x2="1240.0" y2="-645.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1340.0" y1="-645.0" x2="1300.0" y2="-645.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1340.0" y1="-645.0" x2="1340.0" y2="-680.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-745.0" x2="1110.0" y2="-750.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1110.0" y1="-745.0" x2="1110.0" y2="-740.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1125.0" y1="-745.0" x2="1110.0" y2="-745.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1125.0" y1="-770.0" x2="1125.0" y2="-745.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1385.0" y1="-1030.0" x2="1385.0" y2="-1020.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1385.0" y1="-1020.0" x2="1390.0" y2="-1020.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1390.0" y1="-1070.0" x2="1385.0" y2="-1070.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1385.0" y1="-1070.0" x2="1385.0" y2="-1080.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-1010.0" x2="1200.0" y2="-1000.0" stroke="#008800" stroke-width="1.0"/>
+<line x1="1200.0" y1="-1000.0" x2="1205.0" y2="-1000.0" stroke="#008800" stroke-width="1.0"/>
 <rect x="1000.0" y="-1096.0" width="4.0" height="12.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <line x1="1030.0" y1="-1080.0" x2="1010.0" y2="-1080.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="1030.0" y1="-1070.0" x2="1010.0" y2="-1070.0" stroke="#000000" stroke-width="1.0"/>
@@ -600,20 +600,20 @@
 <text x="1350.0" y="-865.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VCC</text>
 <text x="1320.0" y="-435.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VCC</text>
 <text x="1000.0" y="-1025.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="auto">VCC_IN</text>
-<text x="1060.0" y="-950.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">电源输入</text>
-<text x="1410.0" y="-950.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">输出接口</text>
-<text x="1190.0" y="-580.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">方波产生电路</text>
-<text x="1190.0" y="-210.0" font-size="20" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">正弦波转换电路</text>
-<text x="270.0" y="-1060.0" font-size="50" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">原理图设计流程</text>
-<text x="50.0" y="-1020.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">1-器件放置
+<text x="1060.0" y="-950.0" font-size="20" font-weight="bold" fill="#000000" text-anchor="start" dominant-baseline="auto">电源输入</text>
+<text x="1410.0" y="-950.0" font-size="20" font-weight="bold" fill="#000000" text-anchor="start" dominant-baseline="auto">输出接口</text>
+<text x="1190.0" y="-580.0" font-size="20" font-weight="bold" fill="#000000" text-anchor="start" dominant-baseline="auto">方波产生电路</text>
+<text x="1190.0" y="-210.0" font-size="20" font-weight="bold" fill="#000000" text-anchor="start" dominant-baseline="auto">正弦波转换电路</text>
+<text x="270.0" y="-1060.0" font-size="50" font-weight="bold" fill="#000000" text-anchor="start" dominant-baseline="auto">原理图设计流程</text>
+<text x="50.0" y="-1020.0" font-size="30" fill="#000000" text-anchor="start" dominant-baseline="auto">1-器件放置
    A：顶部菜单-放置-器件（快捷键：Shift+F）
    B：底部元件库-器件（快捷键：S）
    C：左侧基础库-个人库或系统库
 2-连接导线
    A：顶部菜单-放置-导线，将器件的引脚相互连接起来
    B：顶部图像导航选择导线图标：     （快捷键W）</text>
-<text x="55.0" y="-175.0" font-size="25" fill="#555555" text-anchor="start" dominant-baseline="auto">如果有任何疑问可以联系我们，在编辑器开始页扫码添加技术支持微信</text>
-<text x="50.0" y="-630.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">4-画布说明
+<text x="55.0" y="-175.0" font-size="25" fill="#000000" text-anchor="start" dominant-baseline="auto">如果有任何疑问可以联系我们，在编辑器开始页扫码添加技术支持微信</text>
+<text x="50.0" y="-630.0" font-size="30" fill="#000000" text-anchor="start" dominant-baseline="auto">4-画布说明
    A：鼠标滚轮控制画布缩放
    B：右键菜单选择适应窗口，使画布全局显示
    C：点击空白部分，在右侧属性中可修改图纸样式
@@ -623,15 +623,15 @@
    C：选择导线后按H键高亮网络，再次按下H键取消高亮网络
    D：快捷键可自由配置，选择顶部菜单栏中的：设置-快捷键
    E：封装的修改从顶部菜单栏中的：工具-封装管理器按钮进入</text>
-<text x="50.0" y="-810.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">3-电气连接
+<text x="50.0" y="-810.0" font-size="30" fill="#000000" text-anchor="start" dominant-baseline="auto">3-电气连接
    A：使用导线连接器件引脚
    B：使用电气标识符VCC或GND连接引脚，电气名称可修改
    C：使用网络标签连接，放置时按Tab键或双击修改名称
    D：使用单向或双向网络端口连接导线
    E：使用短接符连接两个不同网络</text>
-<text x="50.0" y="-240.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">7-原理图转PCB
+<text x="50.0" y="-240.0" font-size="30" fill="#000000" text-anchor="start" dominant-baseline="auto">7-原理图转PCB
   点击顶部菜单栏中的：设计-更新/转换原理图到PCB按钮</text>
-<text x="50.0" y="-330.0" font-size="30" fill="#555555" text-anchor="start" dominant-baseline="auto">6-设计管理器
+<text x="50.0" y="-330.0" font-size="30" fill="#000000" text-anchor="start" dominant-baseline="auto">6-设计管理器
    A：原理图设计规则修改点击顶部菜单栏中的：设计-规则按钮
    B：检查原理图设计规则点击顶部菜单栏中的：设计-检查DRC</text>
 </svg>

@@ -76,6 +76,6 @@
 <text x="1280.0" y="-30.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">A3</text>
 <text x="1043.0" y="-100.0" font-size="20" fill="#000000" text-anchor="middle" dominant-baseline="central">A.W.2666</text>
 <text x="1203.0" y="-30.0" font-size="8" fill="#000000" text-anchor="start" dominant-baseline="auto">Rev.A.0</text>
-<text x="827.5" y="-1178.0" font-size="10" fill="#006600" text-anchor="middle" dominant-baseline="text-before-edge">3</text>
-<text x="740.0" y="-1045.0" font-size="80" font-weight="bold" fill="#555555" text-anchor="start" dominant-baseline="auto">目录</text>
+<text x="827.5" y="-1178.0" font-size="10" fill="#000080" text-anchor="middle" dominant-baseline="text-before-edge">3</text>
+<text x="740.0" y="-1045.0" font-size="80" font-weight="bold" fill="#000000" text-anchor="start" dominant-baseline="auto">目录</text>
 </svg>
