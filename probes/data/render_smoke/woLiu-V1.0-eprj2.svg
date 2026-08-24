@@ -595,7 +595,7 @@
 <polyline points="710.0,-1315.0 720.0,-1315.0 710.0,-1315.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <polyline points="715.0,-1315.0 715.0,-1310.0 715.0,-1315.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="715.0" y="-1310.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 715.0 -1310.0)">Pin1</text>
-<text x="715.0" y="-1315.0" font-size="10" fill="#000000" text-anchor="middle">+3.3V</text>
+<text x="715.0" y="-1315.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="auto">+3.3V</text>
 <text x="715.0" y="-1323.0" font-size="10" fill="#000080" text-anchor="middle" dominant-baseline="text-before-edge">5</text>
 <line x1="705.0" y1="-1180.0" x2="705.0" y2="-1170.0" stroke="#000000" stroke-width="1.0"/>
 <polyline points="695.0,-1170.0 715.0,-1170.0 695.0,-1170.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -649,7 +649,7 @@
 <polyline points="560.0,-1310.0 570.0,-1310.0 560.0,-1310.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <polyline points="565.0,-1310.0 565.0,-1305.0 565.0,-1310.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="565.0" y="-1305.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 565.0 -1305.0)">Pin1</text>
-<text x="565.0" y="-1310.0" font-size="10" fill="#000000" text-anchor="middle">+3.3V</text>
+<text x="565.0" y="-1310.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="auto">+3.3V</text>
 <text x="565.0" y="-1318.0" font-size="10" fill="#000080" text-anchor="middle" dominant-baseline="text-before-edge">5</text>
 <line x1="825.0" y1="-1200.0" x2="815.0" y2="-1200.0" stroke="#000000" stroke-width="1.0"/>
 <polyline points="815.0,-1210.0 815.0,-1190.0 815.0,-1210.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -693,7 +693,7 @@
 <polyline points="720.0,-1505.0 710.0,-1505.0 720.0,-1505.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <polyline points="715.0,-1505.0 715.0,-1500.0 715.0,-1505.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="715.0" y="-1500.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 715.0 -1500.0)">Pin1</text>
-<text x="715.0" y="-1505.0" font-size="10" fill="#000000" text-anchor="middle">+3.3V</text>
+<text x="715.0" y="-1505.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="auto">+3.3V</text>
 <text x="715.0" y="-1513.0" font-size="10" fill="#000080" text-anchor="middle" dominant-baseline="text-before-edge">5</text>
 <polyline points="762.0,-1468.0 778.0,-1468.0 762.0,-1468.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <line x1="770.0" y1="-1450.0" x2="770.0" y2="-1460.0" stroke="#000000" stroke-width="1.0"/>
@@ -725,7 +725,7 @@
 <line x1="560.0" y1="-1475.0" x2="550.0" y2="-1475.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="550.0,-1475.0 540.0,-1470.0 520.0,-1470.0 520.0,-1480.0 540.0,-1480.0 550.0,-1475.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="550.0" y="-1475.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
-<text x="515.0" y="-1475.0" font-size="10" fill="#000000" text-anchor="middle">EXT_REF</text>
+<text x="515.0" y="-1475.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">EXT_REF</text>
 <line x1="565.0" y1="-1430.0" x2="575.0" y2="-1430.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="605.0" y1="-1430.0" x2="595.0" y2="-1430.0" stroke="#000000" stroke-width="1.0"/>
 <rect x="575.0" y="-1434.0" width="20.0" height="8.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -1363,15 +1363,15 @@
 <line x1="1860.0" y1="-405.0" x2="1870.0" y2="-405.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="1870.0,-410.0 1890.0,-410.0 1900.0,-405.0 1890.0,-400.0 1870.0,-400.0 1870.0,-410.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="1870.0" y="-405.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">OUT</text>
-<text x="1905.0" y="-405.0" font-size="10" fill="#000000" text-anchor="middle">SIGNAL_OUT</text>
+<text x="1905.0" y="-405.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">SIGNAL_OUT</text>
 <line x1="1870.0" y1="-645.0" x2="1860.0" y2="-645.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="1860.0,-640.0 1840.0,-640.0 1830.0,-645.0 1840.0,-650.0 1860.0,-650.0 1860.0,-640.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="1860.0" y="-645.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">OUT</text>
-<text x="1825.0" y="-645.0" font-size="10" fill="#000000" text-anchor="middle">MUXOUT</text>
+<text x="1825.0" y="-645.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">MUXOUT</text>
 <line x1="1870.0" y1="-660.0" x2="1860.0" y2="-660.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="1860.0,-660.0 1850.0,-665.0 1830.0,-665.0 1830.0,-655.0 1850.0,-655.0 1860.0,-660.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="1860.0" y="-660.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
-<text x="1825.0" y="-660.0" font-size="10" fill="#000000" text-anchor="middle">ADCIN</text>
+<text x="1825.0" y="-660.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">ADCIN</text>
 <line x1="1845.0" y1="-690.0" x2="1845.0" y2="-680.0" stroke="#000000" stroke-width="1.0"/>
 <polyline points="1855.0,-680.0 1835.0,-680.0 1855.0,-680.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <polyline points="1846.0,-671.0 1844.0,-671.0 1846.0,-671.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -1414,7 +1414,7 @@
 <line x1="1195.0" y1="-725.0" x2="1185.0" y2="-725.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="1185.0,-725.0 1175.0,-720.0 1155.0,-720.0 1155.0,-730.0 1175.0,-730.0 1185.0,-725.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="1185.0" y="-725.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
-<text x="1150.0" y="-725.0" font-size="10" fill="#000000" text-anchor="middle">MUXOUT</text>
+<text x="1150.0" y="-725.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">MUXOUT</text>
 <line x1="1140.0" y1="-755.0" x2="1140.0" y2="-745.0" stroke="#000000" stroke-width="1.0"/>
 <polyline points="1150.0,-745.0 1130.0,-745.0 1150.0,-745.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <polyline points="1141.0,-736.0 1139.0,-736.0 1141.0,-736.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -1521,7 +1521,7 @@
 <line x1="1195.0" y1="-705.0" x2="1185.0" y2="-705.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="1185.0,-705.0 1175.0,-700.0 1155.0,-700.0 1155.0,-710.0 1175.0,-710.0 1185.0,-705.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="1185.0" y="-705.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">IN</text>
-<text x="1150.0" y="-705.0" font-size="10" fill="#000000" text-anchor="middle">V_REF</text>
+<text x="1150.0" y="-705.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="central">V_REF</text>
 <line x1="1250.0" y1="-705.0" x2="1240.0" y2="-705.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="1210.0" y1="-705.0" x2="1220.0" y2="-705.0" stroke="#000000" stroke-width="1.0"/>
 <rect x="1220.0" y="-709.0" width="20.0" height="8.0" rx="0.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -1646,7 +1646,7 @@
 <line x1="1705.0" y1="-725.0" x2="1715.0" y2="-725.0" stroke="#000000" stroke-width="1.0"/>
 <polygon points="1715.0,-730.0 1735.0,-730.0 1745.0,-725.0 1735.0,-720.0 1715.0,-720.0 1715.0,-730.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="1715.0" y="-725.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">OUT</text>
-<text x="1750.0" y="-725.0" font-size="10" fill="#000000" text-anchor="middle">ADCIN</text>
+<text x="1750.0" y="-725.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central">ADCIN</text>
 <line x1="1645.0" y1="-750.0" x2="1645.0" y2="-760.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="1635.0" y1="-750.0" x2="1635.0" y2="-760.0" stroke="#000000" stroke-width="1.0"/>
 <circle cx="1640.0" cy="-770.0" r="10.0" fill="none" stroke="#000000" stroke-width="1.0"/>
@@ -1787,7 +1787,7 @@
 <polyline points="520.0,-515.0 510.0,-515.0 520.0,-515.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <polyline points="515.0,-515.0 515.0,-510.0 515.0,-515.0" fill="none" stroke="#000000" stroke-width="1.0"/>
 <text x="515.0" y="-510.0" font-size="10" fill="#000000" text-anchor="start" dominant-baseline="central" transform="rotate(-90 515.0 -510.0)">Pin1</text>
-<text x="515.0" y="-515.0" font-size="10" fill="#000000" text-anchor="middle">+3.3V</text>
+<text x="515.0" y="-515.0" font-size="10" fill="#000000" text-anchor="middle" dominant-baseline="auto">+3.3V</text>
 <text x="515.0" y="-523.0" font-size="10" fill="#000080" text-anchor="middle" dominant-baseline="text-before-edge">5</text>
 <line x1="610.0" y1="-410.0" x2="620.0" y2="-410.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="650.0" y1="-410.0" x2="640.0" y2="-410.0" stroke="#000000" stroke-width="1.0"/>
@@ -1944,6 +1944,7 @@
 <line x1="250.0" y1="-1375.0" x2="250.0" y2="-1385.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="246.5" y1="-1371.5" x2="253.5" y2="-1378.5" stroke="#33cc33" stroke-width="1.2"/><line x1="246.5" y1="-1378.5" x2="253.5" y2="-1371.5" stroke="#33cc33" stroke-width="1.2"/>
 <polyline points="130.0,-1485.0 285.0,-1485.0 290.0,-1485.0 295.0,-1485.0 345.0,-1435.0 295.0,-1385.0 130.0,-1385.0 130.0,-1485.0 130.0,-1485.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="190.0" y="-1425.0" font-size="20" fill="#000000" text-anchor="middle">双路DAC</text>
 <text x="320.0" y="-1445.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VOUTA</text>
 <text x="320.0" y="-1415.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VOUTB</text>
 <text x="200.0" y="-1395.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">GND</text>
@@ -1980,6 +1981,7 @@
 <line x1="970.0" y1="-650.0" x2="970.0" y2="-660.0" stroke="#000000" stroke-width="1.0"/>
 <line x1="966.5" y1="-646.5" x2="973.5" y2="-653.5" stroke="#33cc33" stroke-width="1.2"/><line x1="966.5" y1="-653.5" x2="973.5" y2="-646.5" stroke="#33cc33" stroke-width="1.2"/>
 <polyline points="850.0,-760.0 1005.0,-760.0 1010.0,-760.0 1015.0,-760.0 1065.0,-710.0 1015.0,-660.0 850.0,-660.0 850.0,-760.0 850.0,-760.0" fill="none" stroke="#000000" stroke-width="1.0"/>
+<text x="910.0" y="-700.0" font-size="20" fill="#000000" text-anchor="middle">双路DAC</text>
 <text x="1040.0" y="-720.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VOUTA</text>
 <text x="1040.0" y="-690.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="auto">VOUTB</text>
 <text x="920.0" y="-670.0" font-size="10" fill="#000000" text-anchor="end" dominant-baseline="text-before-edge">GND</text>

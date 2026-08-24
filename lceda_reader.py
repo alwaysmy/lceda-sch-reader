@@ -4175,8 +4175,11 @@ def cmd_render(db, args):
                 parts_txt.append(str(text_v))
             if not parts_txt:
                 return False
-            f = _font_of(page_fs, sid, cfg)
-            f["color"] = page_fs.get(sid, {}).get("color") or "#000000"
+            # 样式 ID 每文档独立：模板属性(local)用符号 sfs 表，
+            # 实例属性用页 page_fs 表——混用会取到错误字号/颜色
+            fs_tab = sfs if local else page_fs
+            f = _font_of(fs_tab, sid, cfg)
+            f["color"] = fs_tab.get(sid, {}).get("color") or "#000000"
             label = (str(key) + "=" + parts_txt[1]) \
                 if (sk and sv and len(parts_txt) > 1) else parts_txt[0]
             px_, py_ = (pos["x"], pos["y"])
