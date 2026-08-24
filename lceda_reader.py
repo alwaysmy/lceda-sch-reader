@@ -405,13 +405,28 @@ class LcedaDB(SchemaBackend):
         return text
 
     def sheet_records(self, doc_key, doc_type=1):
-        """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，title 回退）。"""
+        """取一页解析后的记录数组。doc_key 同 sheet_text（uuid 优先，title 回退）。
+        契约：doc_type=1 只服务 docType=1 页——PCB(docType=3) 等文档
+        返回 None（防误当 SCH 解析；PCB 走 pcb_inventory/doc_type=3）。"""
         key = (doc_type, doc_key, "recs")
         if key in self._text_cache:
             return self._text_cache[key]
-        text = self.sheet_text(doc_key, doc_type)
-        if text is None:
+        row = self.cur.execute(
+            "SELECT docType, dataStr FROM documents WHERE uuid=?",
+            (doc_key,)).fetchone()
+        if row is None:
+            row = self.cur.execute(
+                "SELECT docType, dataStr FROM documents "
+                "WHERE docType=? AND display_title=?",
+                (doc_type, doc_key)).fetchone()
+        if row is None:
+            self._text_cache[key] = None
             return None
+        if doc_type == 1 and row[0] != 1:
+            # 类型不匹配（如 PCB uuid 误入）：明确 None
+            self._text_cache[key] = None
+            return None
+        text = self.decompress(row[1])
         arrs = []
         for ln in text.splitlines():
             try:
@@ -1042,6 +1057,12 @@ class Epro2DB(SchemaBackend):
         if ck in self._rec_cache:
             return self._rec_cache[ck]
         if doc_key not in self._docs:
+            return None
+        # 契约：doc_type=1 只服务原理图页——PCB/INSTANCE 等文档走
+        # 各自路径（doc_type=3 / symbol_records），防误当 SCH 解析
+        if doc_type == 1 and self._docs[doc_key].get("docType") \
+                not in ("SCH_PAGE", None):
+            self._rec_cache[ck] = None
             return None
         if doc_type == 3:
             out = []
