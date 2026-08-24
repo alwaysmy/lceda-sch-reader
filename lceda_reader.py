@@ -3524,12 +3524,17 @@ def cmd_polar(db, args):
         pass
 
     rows = []
+    schem_disp = db.schem_map()   # {sch_uuid: (display, name)}
     for u, t, s, dt in db.sheets():
         if dt != 1:
             continue
         sh = parse_sheet(db, u)
         if sh is None:
             continue
+        # 页所属图（SKILL 汇报规范：必须说明所在图与页——重名副本页
+        # 如 schematic1/schematic1_2 靠它区分，历史残留件才不会张冠李戴）
+        sd = schem_disp.get(s, (s, s))
+        sch_name = sd[0] or sd[1] or s
         pinc = _collect_pinmap_data(db, sh, u)
         if not pinc:
             continue
@@ -3566,7 +3571,7 @@ def cmd_polar(db, args):
             unresolved = any(pol is None for pol, _ in pin_pol)
             url = ds_url.get(mpn) or ds_url.get(dtitle) or ""
             rows.append({
-                "designator": des, "page": t,
+                "designator": des, "page": t, "schematic": sch_name,
                 "device": mpn, "title": c.get("title") or "",
                 "matched_by": "prefix" if hit_prefix else "pin-names",
                 "pins": pins_out,
@@ -3584,7 +3589,8 @@ def cmd_polar(db, args):
         f"需查手册 {len(rows) - n_ok}）"
         + (f"；⚠不规范位号 {n_bad} 个" if n_bad else ""))
     for r in rows:
-        out(f"\n{r['designator']}  {r['device'][:32]}  [{r['page']}]"
+        out(f"\n{r['designator']}  {r['device'][:32]}  "
+            f"[{r['schematic']}::{r['page']}]"
             + ("" if r["polarity_resolved"] else "  ⚠需查手册")
             + ("" if r["designator_std"] else "  ⚠位号不规范(应为字母+数字)"))
         for p in r["pins"]:
