@@ -3490,6 +3490,104 @@ def cmd_bom(db, args):
         outj(rows)
 
 
+_POLAR_ANODE = {"A", "ANODE", "+", "PA"}
+_POLAR_CATH = {"K", "C", "CATHODE", "-", "−", "NK"}
+
+
+def _polar_of(name):
+    """引脚名 -> 极性归一（阳极/阴极/None）。
+    归一表来源：符号库实测（LED=A/K 与 A/C、极性电容=+/−、
+    TVS 阵列=功能名不可归一）；数字名（BAV70 1/2/3）文件内无极性。"""
+    n = str(name or "").strip().upper()
+    if n in _POLAR_ANODE:
+        return "阳极"
+    if n in _POLAR_CATH:
+        return "阴极"
+    return None
+
+
+def cmd_polar(db, args):
+    """极性器件清单（D/LED/TVS 位号 + 引脚名含极性对的器件）：
+    每器件输出各引脚的极性归一（阳极/阴极）与所在网络；引脚名
+    不可归一（数字/功能名）的标"需查手册"并附 Datasheet URL。"""
+    dmap = db.device_map()
+    ds_url = {}
+    try:
+        for r in db.datasheet_rows():
+            if r.get("url"):
+                ds_url[r.get("device") or ""] = r["url"]
+    except Exception:
+        pass
+
+    rows = []
+    for u, t, s, dt in db.sheets():
+        if dt != 1:
+            continue
+        sh = parse_sheet(db, u)
+        if sh is None:
+            continue
+        pinc = _collect_pinmap_data(db, sh, u)
+        if not pinc:
+            continue
+        cp, ws, pw, ep = pinc
+        try:
+            dom = resolve_nets_by_domain(db, sh, cp, ws, pw, ep)
+        except Exception:
+            dom = {}
+        for c in sh["components"]:
+            des = _synth_designator(db, c)
+            if not des:
+                continue
+            plist = cp.get((des, c["cid"]))
+            if not plist:
+                continue
+            pre = re.match(r"^[A-Z]+", des.upper())
+            prefix = pre.group(0) if pre else ""
+            pin_pol = [(_polar_of(p.get("pin")), p) for p in plist]
+            hit_prefix = prefix in ("D", "LED", "TVS")
+            hit_pins = any(pol for pol, _ in pin_pol)
+            if not (hit_prefix or hit_pins):
+                continue
+            du = c.get("device_uuid") or ""
+            dtitle, ddisp, ddesc = dmap.get(du, ("", "", ""))
+            mpn = ddisp or dtitle or c.get("title") or ""
+            pins_out = []
+            for pol, p in pin_pol:
+                net = dom.get((des, p["key"]))
+                pins_out.append({
+                    "pin": p.get("pin"), "number": p.get("number"),
+                    "polarity": pol,
+                    "net": net if net else "",
+                    "no_connect": bool(p.get("no_connect"))})
+            unresolved = any(pol is None for pol, _ in pin_pol)
+            url = ds_url.get(mpn) or ds_url.get(dtitle) or ""
+            rows.append({
+                "designator": des, "page": t,
+                "device": mpn, "title": c.get("title") or "",
+                "matched_by": "prefix" if hit_prefix else "pin-names",
+                "pins": pins_out,
+                "polarity_resolved": not unresolved,
+                "datasheet": url})
+
+    rows.sort(key=lambda r: (natkey(r["designator"]), r["page"]))
+    if getattr(args, "json", False):
+        outj({"count": len(rows), "items": rows})
+        return
+    n_ok = sum(1 for r in rows if r["polarity_resolved"])
+    out(f"极性器件: {len(rows)} 个（引脚极性可归一 {n_ok}，"
+        f"需查手册 {len(rows) - n_ok}）")
+    for r in rows:
+        out(f"\n{r['designator']}  {r['device'][:32]}  [{r['page']}]"
+            + ("" if r["polarity_resolved"] else "  ⚠需查手册"))
+        for p in r["pins"]:
+            pol = p["polarity"] or "?"
+            nc = " [X]" if p["no_connect"] else ""
+            out(f"   {pol}  {p['pin']}(#{p['number']}) = {p['net'] or '(空)'}"
+                f"{nc}")
+        if not r["polarity_resolved"] and r["datasheet"]:
+            out(f"   datasheet: {r['datasheet']}")
+
+
 def cmd_pcbsch(db, args):
     """PCB↔SCH 器件核对：以 COMPONENT 内联 Unique ID(ggeN) 为全局键。
     输出：位号一致 / PCB 改名(反标清单) / 仅SCH(未布局) / 仅PCB(SCH无)。"""
@@ -4533,6 +4631,9 @@ def main():
                    ).set_defaults(fn=cmd_datasheets)
 
     sub.add_parser("pcbsch", help="PCB↔SCH 器件核对(Unique ID 映射: 反标/漏布局)").set_defaults(fn=cmd_pcbsch)
+
+    p = sub.add_parser("polar", help="极性器件清单(D/LED/TVS: 阳极/阴极网络归一, 未归一附 datasheet)")
+    p.set_defaults(fn=cmd_polar)
 
     p = sub.add_parser("render", help="原理图页渲染为 SVG(字体/文字位置取自工程存储)")
     p.add_argument("sheet")

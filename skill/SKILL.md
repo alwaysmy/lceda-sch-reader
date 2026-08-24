@@ -36,6 +36,7 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 页内文本注释（设计意图/备注） | `lceda_reader.py texts "页名"` |
    | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
    | PCB↔SCH 器件核对（反标改名/漏布局；仅旧版 .eprj2） | `lceda_reader.py pcbsch` |
+   | 极性器件清单（D/LED/TVS 阳极/阴极网络，未归一附 datasheet） | `lceda_reader.py polar` |
    | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
    | 精确引脚网络表（推荐，含同网络关联引脚） | `lceda_reader.py pinmap "页名" [--designator U1]` |
@@ -148,6 +149,18 @@ description: Use when the user asks to read, query, search, extract, or verify c
 - **位号前缀不可作为功能依据**：工具不假设位号前缀（R/C/U/L 等），一切以器件型号/
   描述为准（如 0Ω 跳线按型号含 0000 识别，电阻也可能标为 U 或别的位号）。**不要根据
   位号前缀判断器件类型**，用 `components` 的 device 字段。
+- **极性器件核对（审查必做项）**：跑 `polar` 命令输出 D/LED/TVS 及引脚名含
+  极性对的器件清单——每器件各引脚的极性归一（阳极/阴极）与所在网络；
+  引脚名不可归一（数字名如 BAV70 的 1/2/3、TVS 阵列功能名）的标"⚠需查手册"
+  并附 Datasheet URL。**agents 核对要点**：
+  - LED：阳极应接限流电阻/驱动高边，阴极接 GND/低边驱动——核对 A/K 网络
+    是否符合该拓扑；
+  - TVS/稳压管：阴极(K/C)接被保护电源轨、阳极(A)接 GND——若反接说明
+    保护失效；
+  - 二极管（整流/续流）：按拓扑核对导通方向（A→K 为正向）；
+  - "需查手册"项必须打开 datasheet URL 核对引脚映射后再下结论，
+    **不得猜测数字引脚的极性**；
+  - 位号不规范的器件（如位号就叫 "2"）会在清单中暴露，顺带提示设计者。
 - 同号位器件跨板重复：汇报必须带"哪个板哪个页"（见上文汇报规范）。
 - **工程名 vs 文件名**：.epro2/新版 .eprj2 含用户命名工程名（tree 首行
   双显示"工程: X（文件: Y）"，json hierarchy 含 project_title）；旧版
