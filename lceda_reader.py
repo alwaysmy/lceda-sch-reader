@@ -132,6 +132,16 @@ class SchemaBackend(ABC):
         """[(uuid, title)] 工程 PCB 文档列表；不支持的后端返回 []。"""
         return []
 
+    def doc_metas(self):
+        """文档元数据清单（含时间）：[{uuid,docType,title,schematic,
+        created,updated,ticket,note}]。时间字段按格式能力如实提供——
+        V2 SQLite=created_at/updated_at/ticket 全有；.epro=仅 ZIP 导出
+        时间（note 标注）；.epro2=无墙钟时间（ticket/段数为编辑代理）。
+        审查用途：编辑时间+ticket 是"当前版本 vs 历史残留副本页"的
+        强判别信号（实测重名 DA输出：当前 ticket=81/updated 04-23，
+        残留 ticket=7/updated 04-22）。"""
+        return []
+
     def pcb_inventory(self):
         """解析全部 PCB 文档（V2 数组模型）。
         返回 [{"uuid","title","comps","nets","pads"}]：
@@ -370,6 +380,19 @@ class LcedaDB(SchemaBackend):
     def pcb_docs(self):
         return [(u, t) for u, t in self.cur.execute(
             "SELECT uuid, display_title FROM documents WHERE docType=3")]
+
+    def doc_metas(self):
+        sm = self.schem_map()
+        rows = []
+        for u, t, dt, s, ca, ua, tk in self.cur.execute(
+                "SELECT uuid, display_title, docType, schematic_uuid, "
+                "created_at, updated_at, ticket FROM documents"):
+            sd = sm.get(s, (s, s))
+            rows.append({"uuid": u, "docType": dt, "title": t or "",
+                         "schematic": sd[0] or sd[1] or "",
+                         "created": ca or "", "updated": ua or "",
+                         "ticket": tk, "note": ""})
+        return rows
 
     @staticmethod
     def decompress(ds):
@@ -701,6 +724,34 @@ class EproDB(SchemaBackend):
     def pcb_docs(self):
         """project.json pcbs: {uuid: 文件名(.brd)}；文件名即用户可见标题。"""
         return [(u, t or u) for u, t in self.obj.get("pcbs", {}).items()]
+
+    def doc_metas(self):
+        rows = []
+        for u, t, s, dt in self.sheets():
+            key = self._page_index.get(u)
+            ts = ""
+            if key:
+                fname = f"SHEET/{key[0]}/{key[1]}.esch"
+                if fname in self._names:
+                    zi = self.zip.getinfo(fname)
+                    ts = (f"{zi.date_time[0]:04d}-{zi.date_time[1]:02d}-"
+                          f"{zi.date_time[2]:02d} "
+                          f"{zi.date_time[3]:02d}:{zi.date_time[4]:02d}")
+            rows.append({"uuid": u, "docType": dt, "title": t,
+                         "schematic": s, "created": ts, "updated": ts,
+                         "ticket": "", "note": "ZIP导出时间"})
+        for u, t in self.pcb_docs():
+            fname = f"PCB/{u}.epcb"
+            ts = ""
+            if fname in self._names:
+                zi = self.zip.getinfo(fname)
+                ts = (f"{zi.date_time[0]:04d}-{zi.date_time[1]:02d}-"
+                      f"{zi.date_time[2]:02d} "
+                      f"{zi.date_time[3]:02d}:{zi.date_time[4]:02d}")
+            rows.append({"uuid": u, "docType": 3, "title": t,
+                         "schematic": "", "created": ts, "updated": ts,
+                         "ticket": "", "note": "ZIP导出时间"})
+        return rows
 
     def symbol_records(self, symbol_uuid):
         if not symbol_uuid:
@@ -1179,6 +1230,31 @@ class Epro2DB(SchemaBackend):
     def pcb_docs(self):
         return [(u, (self._meta.get(u) or {}).get("title") or u)
                 for u, d in self._docs.items() if d.get("docType") == "PCB"]
+
+    def doc_metas(self):
+        """epru 无墙钟时间：ticket(最大 DOCHEAD)+段数作编辑代理。"""
+        sm = self.schem_map()
+        board_title = {u: t for u, t, _ in self._boards}
+        rows = []
+        for u, d in self._docs.items():
+            dt = d.get("docType")
+            if dt not in ("SCH_PAGE", "SCH", "PCB", "BOARD"):
+                continue
+            m = self._meta.get(u) or {}
+            segs = d.get("segs", [])
+            mt = max((t for _, _, t in segs), default=0)
+            sch = ""
+            if dt == "SCH_PAGE":
+                su = m.get("schematic") or ""
+                sd = sm.get(su, (su, su))
+                sch = sd[0] or sd[1] or su
+            elif dt == "PCB":
+                sch = board_title.get(m.get("board") or "", "")
+            rows.append({"uuid": u, "docType": dt,
+                         "title": m.get("title") or u,
+                         "schematic": sch, "created": "", "updated": "",
+                         "ticket": mt, "note": f"段数{len(segs)}(编辑代理)"})
+        return rows
 
     def device_map(self):
         """DEVICE 文档 META.attributes 为权威属性集；SYMBOL 文档兜底。"""
@@ -4484,6 +4560,30 @@ def cmd_render(db, args):
     out(f"[render] 输出: {o} ({len(svg)//1024} KB)")
 
 
+def cmd_docs(db, args):
+    """文档清单（含时间/编辑代理）：创建、最后编辑、ticket/段数。
+    审查用途：识别历史残留副本页（updated 更旧 + ticket 显著更小）、
+    最近改动页（版本对比入口）。"""
+    rows = db.doc_metas()
+    rows.sort(key=lambda r: (r.get("updated") or "", r.get("ticket") or 0),
+              reverse=True)
+    if getattr(args, "json", False):
+        outj(rows)
+        return
+    out(f"{'类型':4s} {'图/板':14s} {'标题':22s} {'创建':17s} "
+        f"{'最后编辑':17s} {'ticket':7s} 备注")
+    for r in rows:
+        dt = r.get("docType")
+        t = {1: "页", 3: "PCB", "SCH_PAGE": "页", "SCH": "图",
+             "PCB": "PCB", "BOARD": "板"}.get(dt, str(dt))
+        out(f"{t:4s} {str(r.get('schematic') or '')[:14]:14s} "
+            f"{str(r.get('title') or '')[:22]:22s} "
+            f"{str(r.get('created') or '-')[:17]:17s} "
+            f"{str(r.get('updated') or '-')[:17]:17s} "
+            f"{str(r.get('ticket') or '-'):7s} "
+            f"{str(r.get('note') or '')}")
+
+
 def cmd_datasheets(db, args):
     """提取 Datasheet URL 清单（经后端方法，LcedaDB/EproDB 均支持）。"""
     rows = db.datasheet_rows()
@@ -4648,6 +4748,8 @@ def main():
 
     p = sub.add_parser("polar", help="极性器件清单(D/LED/TVS: 阳极/阴极网络归一, 未归一附 datasheet)")
     p.set_defaults(fn=cmd_polar)
+
+    sub.add_parser("docs", help="文档清单(创建/最后编辑时间、ticket/段数——残留副本页判别)").set_defaults(fn=cmd_docs)
 
     p = sub.add_parser("render", help="原理图页渲染为 SVG(字体/文字位置取自工程存储)")
     p.add_argument("sheet")
