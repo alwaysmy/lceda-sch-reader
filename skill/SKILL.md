@@ -37,6 +37,7 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
    | PCB↔SCH 器件核对（反标改名/漏布局；仅旧版 .eprj2） | `lceda_reader.py pcbsch` |
    | 极性器件清单（D/LED/TVS 阳极/阴极网络，未归一附 datasheet） | `lceda_reader.py polar` |
+   | 文档清单（创建/最后编辑时间、编辑人、ticket——残留副本页判别） | `lceda_reader.py docs` |
    | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
    | 精确引脚网络表（推荐，含同网络关联引脚） | `lceda_reader.py pinmap "页名" [--designator U1]` |
@@ -167,6 +168,14 @@ description: Use when the user asks to read, query, search, extract, or verify c
     会标 ⚠位号不规范——顺带提示设计者修正（不规范位号影响 SCH↔PCB
     核对与人工检索）。
 - 同号位器件跨板重复：汇报必须带"哪个板哪个页"（见上文汇报规范）。
+- **docs 文档清单与旧格式局限**：`docs` 列出每文档的创建/最后编辑时间、
+  编辑人、ticket——**判别"当前版本 vs 历史残留副本页"的强信号**
+  （残留页 updated 更旧 + ticket 显著更小，实测 145 vs 5）。格式差异
+  （官方规范定义）：V2 SQLite 全有；V3 DOCHEAD 定义 updateTime/client
+  （编辑人昵称在 body user.nickname）——.epro2/新 .eprj2 均可给出；
+  **.epro（V2 ZIP 导出）官方格式未定义任何时间/用户字段，仅有 ZIP
+  导出时刻**（docs 中 note 标注）——审查旧 .epro 时无法给出编辑历史，
+  属格式局限而非工具缺失。
 - **工程名 vs 文件名**：.epro2/新版 .eprj2 含用户命名工程名（tree 首行
   双显示"工程: X（文件: Y）"，json hierarchy 含 project_title）；旧版
   .eprj2 与 .epro 无内部工程名（projects.name 为立创默认名），以文件名为准。
