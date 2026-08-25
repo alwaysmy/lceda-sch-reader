@@ -383,15 +383,40 @@ class LcedaDB(SchemaBackend):
 
     def doc_metas(self):
         sm = self.schem_map()
+        # creator_uuid -> 昵称（users 表；跨工程对比用 uuid 本身）
+        users = {}
+        try:
+            for uu, un, nn in self.cur.execute(
+                    "SELECT uuid, username, nickname FROM users"):
+                users[uu] = (un or "", nn or "")
+        except Exception:
+            pass
+        # 旧格式 documents.creator_uuid 实测全 NULL——兜底用工程级
+        # modifier_uuid（实测与 .epro2 DOCHEAD 编辑人 uuid 一致）
+        proj_mod = ""
+        try:
+            r = self.cur.execute(
+                "SELECT modifier_uuid FROM projects").fetchone()
+            proj_mod = (r[0] if r else "") or ""
+        except Exception:
+            pass
         rows = []
-        for u, t, dt, s, ca, ua, tk in self.cur.execute(
+        for u, t, dt, s, ca, ua, tk, cu in self.cur.execute(
                 "SELECT uuid, display_title, docType, schematic_uuid, "
-                "created_at, updated_at, ticket FROM documents"):
+                "created_at, updated_at, ticket, creator_uuid "
+                "FROM documents"):
             sd = sm.get(s, (s, s))
+            note = ""
+            if not cu and proj_mod:
+                cu = proj_mod
+                note = "编辑人=工程级modifier"
+            un, nn = users.get(cu or "", ("", ""))
             rows.append({"uuid": u, "docType": dt, "title": t or "",
                          "schematic": sd[0] or sd[1] or "",
                          "created": ca or "", "updated": ua or "",
-                         "ticket": tk, "note": ""})
+                         "ticket": tk, "user": nn or un,
+                         "username": un, "user_uuid": cu or "",
+                         "note": note})
         return rows
 
     @staticmethod
@@ -1019,11 +1044,15 @@ class Epro2DB(SchemaBackend):
                                          "segs": []}
                 d["segs"].append((i, None, h.get("ticket", 0)))
                 # DOCHEAD body 含编辑元数据（实证 439 例）：
-                # updateTime(epoch ms)/version/editVersion/user.nickname
+                # updateTime(epoch ms)/version/editVersion/user
+                # {uuid,nickname,username}——uuid 是跨工程稳定身份
+                # （昵称可改），对比旧工程编辑人须用 uuid
                 dh = self._dh.setdefault(u, [])
+                uh = b.get("user") or {}
                 dh.append({"updateTime": b.get("updateTime"),
-                           "user": (b.get("user") or {}).get("nickname")
-                           or "",
+                           "user": uh.get("nickname") or "",
+                           "username": uh.get("username") or "",
+                           "user_uuid": uh.get("uuid") or "",
                            "version": b.get("version") or "",
                            "editVersion": b.get("editVersion") or ""})
                 cur = (u, i, h.get("ticket", 0))
@@ -1269,10 +1298,12 @@ class Epro2DB(SchemaBackend):
                      if x.get("updateTime")]
             created = fmt(min(times)) if times else ""
             updated = fmt(max(times)) if times else ""
-            last_user = ""
+            last_user = last_uuid = last_username = ""
             if times:
-                last_user = max(dhs, key=lambda x: x.get("updateTime")
-                                or 0).get("user") or ""
+                last = max(dhs, key=lambda x: x.get("updateTime") or 0)
+                last_user = last.get("user") or ""
+                last_uuid = last.get("user_uuid") or ""
+                last_username = last.get("username") or ""
             sch = ""
             if dt == "SCH_PAGE":
                 su = m.get("schematic") or ""
@@ -1284,7 +1315,8 @@ class Epro2DB(SchemaBackend):
                          "title": m.get("title") or u,
                          "schematic": sch, "created": created,
                          "updated": updated, "ticket": mt,
-                         "user": last_user,
+                         "user": last_user, "username": last_username,
+                         "user_uuid": last_uuid,
                          "note": f"段数{len(segs)}"})
         return rows
 
@@ -4608,11 +4640,14 @@ def cmd_docs(db, args):
         dt = r.get("docType")
         t = {1: "页", 3: "PCB", "SCH_PAGE": "页", "SCH": "图",
              "PCB": "PCB", "BOARD": "板"}.get(dt, str(dt))
+        usr = r.get("user") or "-"
+        if r.get("user_uuid"):
+            usr += f"[{r['user_uuid'][:8]}]"
         out(f"{t:4s} {str(r.get('schematic') or '')[:12]:12s} "
             f"{str(r.get('title') or '')[:20]:20s} "
             f"{str(r.get('created') or '-')[:15]:15s} "
             f"{str(r.get('updated') or '-')[:15]:15s} "
-            f"{str(r.get('user') or '-')[:10]:10s} "
+            f"{usr[:18]:18s} "
             f"{str(r.get('ticket') or '-'):6s} "
             f"{str(r.get('note') or '')}")
 
