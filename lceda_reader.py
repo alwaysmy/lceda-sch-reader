@@ -970,6 +970,7 @@ class Epro2DB(SchemaBackend):
         self._lines = None
         self._docs = {}          # uuid -> {"docType","segs":[(s,e,ticket)]}
         self._meta = {}          # uuid -> 最新 META body
+        self._dh = {}            # uuid -> [DOCHEAD 编辑元数据(时间/人/版本)]
         self._boards = []        # (uuid, title, sort)
         self._schs = {}          # uuid -> {"title","board"}
         self._pages = {}         # uuid -> {"title","schematic","zIndex"}
@@ -1017,6 +1018,14 @@ class Epro2DB(SchemaBackend):
                     d = self._docs[u] = {"docType": b.get("docType"),
                                          "segs": []}
                 d["segs"].append((i, None, h.get("ticket", 0)))
+                # DOCHEAD body 含编辑元数据（实证 439 例）：
+                # updateTime(epoch ms)/version/editVersion/user.nickname
+                dh = self._dh.setdefault(u, [])
+                dh.append({"updateTime": b.get("updateTime"),
+                           "user": (b.get("user") or {}).get("nickname")
+                           or "",
+                           "version": b.get("version") or "",
+                           "editVersion": b.get("editVersion") or ""})
                 cur = (u, i, h.get("ticket", 0))
             elif t == "META" and b is not None and cur:
                 old = self._meta.get(cur[0])
@@ -1232,9 +1241,21 @@ class Epro2DB(SchemaBackend):
                 for u, d in self._docs.items() if d.get("docType") == "PCB"]
 
     def doc_metas(self):
-        """epru 无墙钟时间：ticket(最大 DOCHEAD)+段数作编辑代理。"""
+        """DOCHEAD.updateTime/user 实证存在（439 例）——创建=最早段
+        时间，最后编辑=最晚段时间+编辑人。"""
+        import datetime as _dt
         sm = self.schem_map()
         board_title = {u: t for u, t, _ in self._boards}
+
+        def fmt(ms):
+            if not ms:
+                return ""
+            try:
+                return _dt.datetime.fromtimestamp(
+                    ms / 1000).strftime("%Y-%m-%d %H:%M")
+            except (ValueError, OSError, OverflowError):
+                return ""
+
         rows = []
         for u, d in self._docs.items():
             dt = d.get("docType")
@@ -1243,6 +1264,15 @@ class Epro2DB(SchemaBackend):
             m = self._meta.get(u) or {}
             segs = d.get("segs", [])
             mt = max((t for _, _, t in segs), default=0)
+            dhs = self._dh.get(u, [])
+            times = [x.get("updateTime") for x in dhs
+                     if x.get("updateTime")]
+            created = fmt(min(times)) if times else ""
+            updated = fmt(max(times)) if times else ""
+            last_user = ""
+            if times:
+                last_user = max(dhs, key=lambda x: x.get("updateTime")
+                                or 0).get("user") or ""
             sch = ""
             if dt == "SCH_PAGE":
                 su = m.get("schematic") or ""
@@ -1252,8 +1282,10 @@ class Epro2DB(SchemaBackend):
                 sch = board_title.get(m.get("board") or "", "")
             rows.append({"uuid": u, "docType": dt,
                          "title": m.get("title") or u,
-                         "schematic": sch, "created": "", "updated": "",
-                         "ticket": mt, "note": f"段数{len(segs)}(编辑代理)"})
+                         "schematic": sch, "created": created,
+                         "updated": updated, "ticket": mt,
+                         "user": last_user,
+                         "note": f"段数{len(segs)}"})
         return rows
 
     def device_map(self):
@@ -4570,17 +4602,18 @@ def cmd_docs(db, args):
     if getattr(args, "json", False):
         outj(rows)
         return
-    out(f"{'类型':4s} {'图/板':14s} {'标题':22s} {'创建':17s} "
-        f"{'最后编辑':17s} {'ticket':7s} 备注")
+    out(f"{'类型':4s} {'图/板':12s} {'标题':20s} {'创建':15s} "
+        f"{'最后编辑':15s} {'编辑人':10s} {'ticket':6s} 备注")
     for r in rows:
         dt = r.get("docType")
         t = {1: "页", 3: "PCB", "SCH_PAGE": "页", "SCH": "图",
              "PCB": "PCB", "BOARD": "板"}.get(dt, str(dt))
-        out(f"{t:4s} {str(r.get('schematic') or '')[:14]:14s} "
-            f"{str(r.get('title') or '')[:22]:22s} "
-            f"{str(r.get('created') or '-')[:17]:17s} "
-            f"{str(r.get('updated') or '-')[:17]:17s} "
-            f"{str(r.get('ticket') or '-'):7s} "
+        out(f"{t:4s} {str(r.get('schematic') or '')[:12]:12s} "
+            f"{str(r.get('title') or '')[:20]:20s} "
+            f"{str(r.get('created') or '-')[:15]:15s} "
+            f"{str(r.get('updated') or '-')[:15]:15s} "
+            f"{str(r.get('user') or '-')[:10]:10s} "
+            f"{str(r.get('ticket') or '-'):6s} "
             f"{str(r.get('note') or '')}")
 
 
