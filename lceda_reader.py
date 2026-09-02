@@ -1195,6 +1195,7 @@ class Epro2DB(SchemaBackend):
             self._rec_cache[ck] = out
             return out
         comps, attrs, wires, texts = [], [], {}, []
+        bus_entries = []    # BUS.busEntry -> ["BUSENTRY", eid, bus_id, order, x, y, rot]
         # 页 CANVAS 原点（V3 符号/页坐标需先减原点再翻转 Y）
         ox = oy = 0.0
         for ln in self._iter_doc_lines(doc_key):
@@ -1239,6 +1240,20 @@ class Epro2DB(SchemaBackend):
             elif t == "WIRE":
                 wid = h.get("id")
                 wires.setdefault(wid, [])
+            elif t == "BUS":
+                # V3 总线：busEntry 嵌在 BUS 记录体内（非独立 BUSENTRY 行）。
+                # bus_id 同时是总线图形 LINE 的 lineGroup（生成同 id 的
+                # WIRE 记录，NET 属性即总线组名，如 D[0:7]）。
+                bid = h.get("id")
+                for eid, e in (b.get("busEntry") or {}).items():
+                    if not isinstance(e, dict):
+                        continue
+                    bus_entries.append(
+                        ["BUSENTRY", eid, bid,
+                         e.get("order") or 0,
+                         (e.get("pointX") or 0) - ox,
+                         -((e.get("pointY") or 0) - oy),
+                         e.get("rotation") or 0])
             elif t == "LINE":
                 g = b.get("lineGroup")
                 if g:
@@ -1260,6 +1275,7 @@ class Epro2DB(SchemaBackend):
                          [s for s in segs
                           if all(v is not None for v in s)]])
         recs.extend(texts)
+        recs.extend(bus_entries)
         self._rec_cache[ck] = recs
         return recs
 
@@ -1785,6 +1801,50 @@ def _is_dnp(c):
     return False
 
 
+_BUS_SEG_RE = re.compile(r"([A-Za-z_]\w*)\[(\d+):(\d+)\]")
+
+
+def expand_bus_net(bus_name, order):
+    """按 BUSENTRY.order 展开总线组名为具体网络名。
+
+    规范语义（TODO.md 预期 + 实测单段 D[0:7] order k → D_k）：
+    多段名 `A[2:3]B[7:6]` 的 order 0/1/2/3 → A2B7/A2B6/A3B7/A3B6——
+    即最后一段变化最快，各段取值按书写顺序（含降序）。无法展开返回 None。
+    """
+    if not bus_name:
+        return None
+    matches = list(_BUS_SEG_RE.finditer(bus_name))
+    if not matches:
+        return None
+    sizes, values = [], []
+    for m_seg in matches:
+        lo, hi = int(m_seg.group(2)), int(m_seg.group(3))
+        vals = list(range(lo, hi + 1)) if lo <= hi \
+            else list(range(lo, hi - 1, -1))
+        values.append(vals)
+        sizes.append(len(vals))
+    total = 1
+    for s in sizes:
+        total *= s
+    if not (0 <= order < total):
+        return None
+    idxs = []
+    n = order
+    for s in reversed(sizes):
+        idxs.append(n % s)
+        n //= s
+    idxs.reverse()
+    result = []
+    last = 0
+    for m_seg, vals, ix in zip(matches, values, idxs):
+        # 覆盖整个 "[m:n]" 段（含前置 '['），保留前缀名
+        result.append(bus_name[last:m_seg.start(2) - 1])
+        result.append(str(vals[ix]))
+        last = m_seg.end()
+    result.append(bus_name[last:])
+    return "".join(result)
+
+
 def parse_sheet(db, doc_key):
     """把一张原理图页解析为结构化 dict。doc_key 为 document uuid（或兼容的
     复合标题），sheet_records 内部会优先按 uuid 精确查。"""
@@ -1796,6 +1856,7 @@ def parse_sheet(db, doc_key):
     comps = {}      # cid -> component dict
     net_of = {}     # wire/comp id -> net name
     wires = []      # (net, segs)
+    bus_entries = []
     for a in recs:
         if not isinstance(a, list) or len(a) < 2:
             continue
@@ -1820,6 +1881,11 @@ def parse_sheet(db, doc_key):
                 net_of[cid] = val
         elif kind == "WIRE" and len(a) >= 3:
             wires.append((a[1], a[2]))
+        elif kind == "BUSENTRY" and len(a) >= 7:
+            # ["BUSENTRY", eid, bus_wire_id, order, x, y, rot]——
+            # 分支导线与总线组的成员标记（见 expand_bus_net）
+            bus_entries.append({"eid": a[1], "bus": a[2], "order": a[3],
+                                "pt": (a[4], a[5]), "rot": a[6]})
         elif kind == "TEXT" and len(a) >= 6:
             # ["TEXT", id, x, y, rot, "文本", style, flags]——设计注释
             txt = str(a[5]).strip()
@@ -1843,6 +1909,38 @@ def parse_sheet(db, doc_key):
         # 保留有 Symbol/Device 的实例（含 short 短接符/netport 等无 title 的）
         if c["title"] or c["designator"] or c["symbol_uuid"] or c["device_uuid"]:
             sheet["components"].append(c)
+    # 总线组（BUS/BUSENTRY，2026-09-03 实测格式见 docs/CDP运行时操作探测）：
+    # 入口点命中分支导线端点时——分支无网络名则按 order 展开组名命名；
+    # 有名分支只记录组归属，不改名（总线是编组不是电气连接，D0/D1 不互连）
+    if bus_entries:
+        sheet["buses"] = {}
+        wire_pts = {}
+        for wid, segs in wires:
+            pts = set()
+            for x1, y1, x2, y2 in _norm_segs(segs):
+                pts.add((x1, y1))
+                pts.add((x2, y2))
+            wire_pts[wid] = pts
+        for e in bus_entries:
+            bus_id = e["bus"]
+            bnet = net_of.get(bus_id)
+            if not bnet:
+                continue
+            info = sheet["buses"].setdefault(
+                bus_id, {"net": bnet, "entries": []})
+            info["entries"].append({"order": e["order"], "eid": e["eid"],
+                                    "point": e["pt"]})
+            ept = (round(e["pt"][0], 1), round(e["pt"][1], 1))
+            for wid, segs in wires:
+                if net_of.get(wid):
+                    continue
+                pts = wire_pts.get(wid)
+                if pts and ept in pts:
+                    expanded = expand_bus_net(bnet, e["order"])
+                    if expanded:
+                        net_of[wid] = expanded
+        for info in sheet["buses"].values():
+            info["entries"].sort(key=lambda x: x["order"])
     # stub 网络：NET 挂在 WIRE 上；无名 wire 保留为 net=None stub
     for wid, segs in wires:
         net = net_of.get(wid) or None

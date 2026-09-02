@@ -38,25 +38,19 @@
   占位框）；图纸边框区域裁剪；多页批量渲染；PDF 出图；
   PIN a[3] 电气特性回退 symbol_pins.pin_type。
 
-## BUS / BUSENTRY 总线支持（未实施）
+## BUS / BUSENTRY 总线支持（✅ Epro2DB 完成 2026-09-03）
 
-- **状态**：暂不做。等用户提供一个用到总线的工程例子后再实施。
-- **背景**：规范（`reference/lceda-pro-file-format-v3_2025.10.21.md`）定义
-  BUS（总线，网络名如 `A[1:5]`）+ BUSENTRY（总线接入标识，`busGroupId`
-  顺序编号 + `order` 分支展开）。当前工程（涡流传感器 V1.0）未用总线，
-  工具对总线网络名展开与分支映射（BUSENTRY 顺序编号 → 具体网络，如
-  `A[2:3]B[7:6]` 0/1/2/3 顺序 → A2B7/A2B6/A3B7/A3B6）不支持：
-  - 总线网络名（`A[1:5]`）不会被解析为具体网络；
-  - BUSENTRY 接入的 WIRE 网络归属（总线分支 → 单线网络）缺失；
-  - 影响：含总线的工程网络解析会漏网络/断链。
-- **实施方案（预期）**：
-  1. `parse_sheet` 解析 BUS 记录（dots + NET 属性）与 BUSENTRY（pointX/Y、
-     rotation、busGroupId、order）；
-  2. 按规范语义展开总线网络：BUS 网络名含 `[m:n]` 段时，BUSENTRY 的
-     `busGroupId`/`order` 组合（多段总线是笛卡尔积）映射到具体网络名
-     （如 `A[2:3]B[7:6]` + busGroupId 0..3 → A2B7/A2B6/A3B7/A3B6）；
-  3. BUSENTRY 端点接入的 WIRE 端点赋该具体网络名，进入既有连通域解析。
-- **触发条件**：用户提供一个含总线的工程文件（.eprj2）作为验证样例。
+- **2026-09-03 完成**：验证样例不再依赖用户提供——用 CDP 驱动官方 API
+  自建总线工程（D[0:7] + 4 入口 + 分支 + 电阻），格式逆向后实现：
+  - Epro2DB：BUS 记录（busEntry 嵌在记录体内）→ 合成 BUSENTRY 数组；
+  - parse_sheet：入口点命中分支导线端点时，无名分支按 order 展开组名
+    推断命名（expand_bus_net），有名分支只记录组归属（总线是编组，
+    不做域合并）；
+  - sheet["buses"] 输出总线组信息；raw 命令可见 BUSENTRY 行。
+  格式细节与验证结论见 `docs/总线BUS-BUSENTRY格式与实现-2026-09-03.md`。
+- **待做**：多段组名（A[2:3]B[7:6] 顺序语义）真实样本复核；
+  netlist 人类可读行的组归属标注；LcedaDB/EproDB 原生 BUSENTRY 数组
+  （出现真实样本时接入，语义同 Epro2DB 路径）。
 
 ## 其他未支持（记录，暂不做）
 
