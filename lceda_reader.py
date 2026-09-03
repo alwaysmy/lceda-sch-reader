@@ -1537,6 +1537,9 @@ class Epro2DB(SchemaBackend):
                     "x": (b.get("x") or 0) - ox,
                     "y": -((b.get("y") or 0) - oy),
                     "rot": b.get("rotation") or 0,
+                    # V3 实测（2026-09-04）：x/y 是引脚**根部**，电端点
+                    # tip = 根部沿 rotation 方向缩 length（10K: ±20 → ±10）
+                    "len": b.get("length"),
                     "part": b.get("partId"), "name": None,
                     "number": None, "pin_type": None}
             elif t == "ATTR":
@@ -2235,6 +2238,20 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
                 union(pt, seg[0])
                 union(pt, seg[1])
                 pin_hit.setdefault((des, pin_key(p)), []).append(pt)
+                continue
+            # 候选 2（V3 符号引脚电端点 tip=root+dir*len）：root 未命中
+            # 时用 tip 再判一次（实测新格式符号 root≠tip，导线连 tip）
+            if p.get("x2") is not None:
+                pt2 = norm_pt((p["x2"], p["y2"]))
+                if pt2 in endp_all:
+                    pin_hit.setdefault((des, pin_key(p)), []).append(pt2)
+                    continue
+                seg2 = on_segment(*pt2)
+                if seg2:
+                    parent.setdefault(pt2, pt2)
+                    union(pt2, seg2[0])
+                    union(pt2, seg2[1])
+                    pin_hit.setdefault((des, pin_key(p)), []).append(pt2)
 
     # 3) 0Ω 跳线 + Short Symbol(短接符 symbolType=22) 两脚物理直连合并
     #    （0Ω 判定用 title+desc 精确 token，见 _is_zero_ohm）
@@ -2790,18 +2807,36 @@ def _collect_pinmap_data(db, sheet, page_name):
             if p["part"] != part:
                 continue
             rx, ry = p["x"], p["y"]
-            if c.get("mirror"):
-                rx = -rx
-            for _ in range(int(rot360 // 90)):
-                rx, ry = -ry, rx
-            ax, ay = c["x"] + rx, c["y"] + ry
-            plist.append({
+            # V3 符号引脚电端点候选：局部坐标 root + dir(rot)*len（V2 无
+            # len 字段，x/y 即电端点，不加候选——保持既有行为零变化）。
+            # dir: 文件系 Y 向下，rot=0 → (+len,0)，rot=180 → (-len,0)。
+            # 90/270 取 (cos,-sin) 惯例，待真实竖直引脚样本复核。
+            tip_loc = None
+            plen = p.get("len")
+            if plen:
+                import math as _math
+                rad = _math.radians(p.get("rot") or 0)
+                tip_loc = (p["x"] + round(_math.cos(rad) * plen, 4),
+                           p["y"] + round(-_math.sin(rad) * plen, 4))
+
+            def _xform(x, y):
+                if c.get("mirror"):
+                    x = -x
+                for _ in range(int(rot360 // 90)):
+                    x, y = -y, x
+                return c["x"] + x, c["y"] + y
+
+            ax, ay = _xform(rx, ry)
+            entry = {
                 "pin": p["name"], "number": p["number"],
                 "key": p["name"],
                 "x": ax, "y": ay,
                 "pin_type": p.get("pin_type"),
                 "sym_type": sp.get("symbol_type"),
-                "no_connect": (c["cid"] + (p.get("id") or "")) in sheet["no_connect"]})
+                "no_connect": (c["cid"] + (p.get("id") or "")) in sheet["no_connect"]}
+            if tip_loc is not None:
+                entry["x2"], entry["y2"] = _xform(*tip_loc)
+            plist.append(entry)
         # 同一器件内重名引脚必须用 name#number 区分（SHORT 的 Pin1/Pin1、
         # ESD 保护件的 IN/IN、NC/NC），否则下游按 (designator, pin-name)
         # 键会错误合并两个物理网络。
@@ -2882,6 +2917,15 @@ def cmd_pinmap(db, args):
                 hit_pt = pt
                 hit_wires |= wids
                 net = endp.get(pt) or None
+            # V3 符号 root 未命中时用电端点 tip 候选（x2/y2）再查
+            if not hit_pt and p.get("x2") is not None:
+                pt2 = (round(p["x2"], 1), round(p["y2"], 1))
+                wids2 = pt_wires.get(pt2)
+                if wids2:
+                    pt = pt2
+                    hit_pt = pt2
+                    hit_wires |= wids2
+                    net = endp.get(pt2) or None
             # 同物理连接点的其他器件引脚 + 同 WIRE 记录的其他端点引脚
             peers = []
             wire_peers = []
@@ -2890,7 +2934,11 @@ def cmd_pinmap(db, args):
                     if odes == des:
                         continue
                     for op in plist:
-                        if (round(op["x"], 1), round(op["y"], 1)) == hit_pt:
+                        cands = {(round(op["x"], 1), round(op["y"], 1))}
+                        if op.get("x2") is not None:
+                            cands.add((round(op["x2"], 1),
+                                       round(op["y2"], 1)))
+                        if hit_pt in cands:
                             peers.append(f"{odes}.{op.get('key') or op['pin']}")
             if hit_wires:
                 wire_pts = set()
@@ -2904,7 +2952,11 @@ def cmd_pinmap(db, args):
                     if odes == des:
                         continue
                     for op in plist:
-                        if (round(op["x"], 1), round(op["y"], 1)) in wire_pts:
+                        cands = {(round(op["x"], 1), round(op["y"], 1))}
+                        if op.get("x2") is not None:
+                            cands.add((round(op["x2"], 1),
+                                       round(op["y2"], 1)))
+                        if cands & wire_pts:
                             tag = f"{odes}.{op.get('key') or op['pin']}"
                             if tag not in peers:
                                 wire_peers.append(tag)

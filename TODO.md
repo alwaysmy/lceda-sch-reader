@@ -48,6 +48,8 @@
     不做域合并）；
   - sheet["buses"] 输出总线组信息；raw 命令可见 BUSENTRY 行。
   格式细节与验证结论见 `docs/总线BUS-BUSENTRY格式与实现-2026-09-03.md`。
+- **2026-09-04 关联修复**：V3 符号 PIN 坐标=根部+length 语义落地
+  （双候选匹配），CDP 自建布局样本 pinmap peers 双向显示正确。
 - **待做**：多段组名（A[2:3]B[7:6] 顺序语义）真实样本复核；
   netlist 人类可读行的组归属标注；LcedaDB/EproDB 原生 BUSENTRY 数组
   （出现真实样本时接入，语义同 Epro2DB 路径）。
