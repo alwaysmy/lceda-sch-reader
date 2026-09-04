@@ -1102,6 +1102,33 @@ class Epro2DB(SchemaBackend):
                     seq += 1
                     best[key] = (rank, seq, ln)
         merged = [v[2] for v in sorted(best.values(), key=lambda x: x[1])]
+        # 墓碑过滤（2026-09-04 实测 V3.2.175）：删除图元落盘为**空 body
+        # 记录**（`|||`）。最新记录 body 为空 = 该 (type,id) 已删除，
+        # 需连带剔除依赖记录——否则删除的导线/总线会带着旧 LINE 几何与
+        # NET 属性在解析中"复活"（实测幽灵线短路 VOUT-GND）。
+        dead = set()
+        for ln in merged:
+            head, _, body = ln.partition("||")
+            h = self._jl(head)
+            if h and not self._jl(body.rstrip("|")):
+                dead.add(str(h.get("id")))
+        if dead:
+            kept = []
+            for ln in merged:
+                head, _, body = ln.partition("||")
+                h = self._jl(head)
+                if not h:
+                    kept.append(ln)
+                    continue
+                if str(h.get("id")) in dead:
+                    continue
+                b = self._jl(body.rstrip("|")) or {}
+                if h.get("type") == "LINE" and b.get("lineGroup") in dead:
+                    continue
+                if h.get("type") == "ATTR" and b.get("parentId") in dead:
+                    continue
+                kept.append(ln)
+            merged = kept
         return iter(merged)
 
     # -- duck-typed API ----------------------------------------------------
@@ -2854,6 +2881,32 @@ def _collect_pinmap_data(db, sheet, page_name):
     port_nets = {cid: nm for cid, nm in net_of.items()
                  if nm and cid in port_cids}
     if port_nets:
+        # 端口命名向触点上的**未命名导线**传播（实测：API 建的电源符号
+        # 压在 stub 线端点上，stub 可能无 NET 属性——符号名即为网络名）。
+        # 传播需同时写入 net_of / sheet["nets"] / endp（resolve 从
+        # sheet["nets"] 取域内命名点）。
+        for (des, cid), plist in comp_pins.items():
+            nm = port_nets.get(cid)
+            if not nm:
+                continue
+            for p in plist:
+                if p.get("no_connect"):
+                    continue
+                pt = (round(p["x"], 1), round(p["y"], 1))
+                for wid2 in pt_wires.get(pt, ()):
+                    if net_of.get(wid2):
+                        continue
+                    net_of[wid2] = nm
+                    segs2 = next((s for ww, s in wires if ww == wid2), None)
+                    if not segs2:
+                        continue
+                    spts = sorted({np_((x1, y1)) for x1, y1, x2, y2
+                                   in _norm_segs(segs2)}
+                                  | {np_((x2, y2)) for x1, y1, x2, y2
+                                     in _norm_segs(segs2)})
+                    sheet["nets"].append({"net": nm, "points": sorted(spts)})
+                    for spt in spts:
+                        endp.setdefault(spt, nm)
         have = set()
         for n in sheet["nets"]:
             have.update((round(px, 1), round(py, 1)) for px, py in n["points"])
