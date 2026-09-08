@@ -273,16 +273,6 @@ class SchemaBackend(ABC):
         free = 未归属任何板的原理图/页/PCB；旧版 .eprj2 无板层数据时全部
         归 free（如实呈现，不虚构板）。"""
 
-    @abstractmethod
-    def hierarchy(self):
-        """工程内层级（立创EDA 工程面板语义）：
-        {"project": 工程名,
-         "boards": [{"uuid", "title",
-                     "schematics": [{"uuid", "title", "pages": [{uuid,title}]}],
-                     "pcbs": [{"uuid", "title"}]}],
-         "free": {"schematics": [...], "pages": [...], "pcbs": [...]}}
-        free = 未归属任何板的原理图/页/PCB（旧版 .eprj2 无板层时全部归 free）。"""
-
 def out(s=""):
     print(s)
 
