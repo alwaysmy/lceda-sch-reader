@@ -3279,7 +3279,7 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
     start = args.designator.upper()
     if start not in des_locs:
         out(f"未找到 {args.designator}")
-        return
+        sys.exit(2)
     visited_des = {start}
     visited_net = set()
     frontier = [start]
@@ -3389,7 +3389,7 @@ def _trace_multi(dbs, args):
             starts.append(di)
     if not starts:
         out(f"未找到 {args.designator}")
-        return
+        sys.exit(2)
 
     visited = {gkey(di, start) for di in starts}
     visited_net = set()
@@ -3548,7 +3548,7 @@ def cmd_find(db_or_dbs, args):
                                  **fr, "nets": nets})
     if not hits:
         out(f"未找到 {des}")
-        return
+        sys.exit(2)
     if args.json:
         outj(_multi_json(dbs, hits) if multi else hits)
         return
@@ -3586,7 +3586,7 @@ def cmd_netfind(db_or_dbs, args):
             rows_all = rows
     if not rows_all:
         out(f"未找到网络: {args.net}")
-        return
+        sys.exit(2)
     if args.json:
         outj(rows_all)
         return
@@ -3648,7 +3648,7 @@ def cmd_link_check(dbs, args):
                 })
     if not results:
         out("未找到网络名逐 pin 一致的连接器对")
-        return
+        sys.exit(2)
     if args.json:
         outj(_multi_json(dbs, results))
         return
