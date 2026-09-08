@@ -2833,17 +2833,19 @@ def _collect_pinmap_data(db, sheet, page_name):
             if p["part"] != part:
                 continue
             rx, ry = p["x"], p["y"]
-            # V3 符号引脚电端点候选：局部坐标 root + dir(rot)*len（V2 无
-            # len 字段，x/y 即电端点，不加候选——保持既有行为零变化）。
-            # dir: 文件系 Y 向下，rot=0 → (+len,0)，rot=180 → (-len,0)。
-            # 90/270 取 (cos,-sin) 惯例，待真实竖直引脚样本复核。
+            # V3 符号引脚第二候选：PIN 记录坐标为引脚外端点（电端点，
+            # 实证：体 bbox 边上 + 导线端点与 PIN 重合，如 U1.GND1；
+            # V2 无 len 字段，x/y 即电端点，不加候选——保持既有行为零变化）。
+            # tip_loc 实为体侧 joint 候选（root 未命中才试）：方向 (cos,+sin)
+            #（与渲染引脚桩一致；实测 77 个竖直引脚 47 上边，
+            # 用 -sin 仅 1 上边，见 probes/tmp/tip_sign.py）。
             tip_loc = None
             plen = p.get("len")
             if plen:
                 import math as _math
                 rad = _math.radians(p.get("rot") or 0)
                 tip_loc = (p["x"] + round(_math.cos(rad) * plen, 4),
-                           p["y"] + round(-_math.sin(rad) * plen, 4))
+                           p["y"] + round(_math.sin(rad) * plen, 4))
 
             def _xform(x, y):
                 if c.get("mirror"):
