@@ -421,6 +421,10 @@ class LcedaDB(SchemaBackend):
             try:
                 data = base64.b64decode(ds[6:])
             except Exception:
+                if "decompress-b64" not in _WARN_ONCE:
+                    _WARN_ONCE.add("decompress-b64")
+                    print("[lceda_reader] 警告: dataStr base64 解码失败，"
+                          "相关页内容可能缺失", file=sys.stderr)
                 return ""
             try:
                 return gzip.decompress(data).decode("utf-8")
@@ -2281,6 +2285,10 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
     try:
         dmap = db.device_map() if db is not None else {}
     except Exception:
+        if "devmap-fail" not in _WARN_ONCE:
+            _WARN_ONCE.add("devmap-fail")
+            print("[lceda_reader] 警告: device_map 读取失败，0Ω/短接符桥接"
+                  "判定降级（描述匹配缺失），网络可能断裂", file=sys.stderr)
         dmap = {}
     for c in sheet["components"]:
         if c.get("dnp"):
@@ -3865,7 +3873,10 @@ def cmd_polar(db, args):
             if r.get("url"):
                 ds_url[r.get("device") or ""] = r["url"]
     except Exception:
-        pass
+        if "polar-ds" not in _WARN_ONCE:
+            _WARN_ONCE.add("polar-ds")
+            print("[lceda_reader] 警告: Datasheet 清单读取失败，polar 输出缺 URL",
+                  file=sys.stderr)
 
     rows = []
     schem_disp = db.schem_map()   # {sch_uuid: (display, name)}
@@ -3886,6 +3897,11 @@ def cmd_polar(db, args):
         try:
             dom = resolve_nets_by_domain(db, sh, cp, ws, pw, ep)
         except Exception:
+            wk = ("polar-dom", t)
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                print(f"[lceda_reader] 警告: polar 在页 {t!r} 连通域解析失败，"
+                      f"该页极性器件网络列为空", file=sys.stderr)
             dom = {}
         for c in sh["components"]:
             des = _synth_designator(db, c)
@@ -3996,7 +4012,10 @@ def cmd_pcbsch(db, args):
             for p in b.get("pcbs", []):
                 pcb_board[p["uuid"]] = b["title"]
     except Exception:
-        pass
+        if "pcbsch-hier" not in _WARN_ONCE:
+            _WARN_ONCE.add("pcbsch-hier")
+            print("[lceda_reader] 警告: hierarchy 读取失败，pcbsch 板归属"
+                  "走启发式", file=sys.stderr)
     for inv in pcbs:
         puids = {}
         rows = []
