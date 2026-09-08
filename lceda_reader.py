@@ -472,11 +472,16 @@ class LcedaDB(SchemaBackend):
             return None
         text = self.decompress(row[1])
         arrs = []
+        bad = 0
         for ln in text.splitlines():
+            if not ln.strip():
+                continue
             try:
                 arrs.append(json.loads(ln))
             except Exception:
+                bad += 1
                 continue
+        _warn_bad_rows("页记录", doc_key, bad)
         self._text_cache[key] = arrs
         return arrs
 
@@ -555,13 +560,18 @@ class LcedaDB(SchemaBackend):
             return None
         text = self.decompress(row[0])
         arrs = []
+        bad = 0
         for ln in text.splitlines():
+            if not ln.strip():
+                continue
             try:
                 a = json.loads(ln)
             except Exception:
+                bad += 1
                 continue
             if isinstance(a, list):
                 arrs.append(a)
+        _warn_bad_rows("符号记录", symbol_uuid, bad)
         return arrs
 
     def symbol_pins(self, symbol_uuid):
@@ -579,10 +589,14 @@ class LcedaDB(SchemaBackend):
         bbox = None
         cur_part = None
         symbol_type = None
+        bad = 0
         for ln in text.splitlines():
+            if not ln.strip():
+                continue
             try:
                 a = json.loads(ln)
             except Exception:
+                bad += 1
                 continue
             if not isinstance(a, list) or len(a) < 2:
                 continue
@@ -612,6 +626,7 @@ class LcedaDB(SchemaBackend):
             p["name"] = names.get(pid) or numbers.get(pid) or "1"
             p["number"] = numbers.get(pid)
             p["pin_type"] = pin_types.get(pid)
+        _warn_bad_rows("符号引脚", symbol_uuid, bad)
         return {"pins": list(pins.values()), "bbox": bbox, "parts": sorted(
             {p["part"] for p in pins.values()}),
             "symbol_type": symbol_type}
@@ -728,15 +743,20 @@ class EproDB(SchemaBackend):
         if text is None:
             return None
         records = []
+        bad = 0
         for line in text.splitlines():
+            if not line.strip():
+                continue
             try:
                 a = json.loads(line)
             except Exception:
+                bad += 1
                 continue
             if isinstance(a, list) and len(a) > 2 and a[0] == "COMPONENT":
                 a = list(a)
                 a[2] = ""
             records.append(a)
+        _warn_bad_rows("页记录", doc_key, bad)
         self._records_cache[ck] = records
         return records
 
@@ -782,13 +802,18 @@ class EproDB(SchemaBackend):
             return None
         text = self.zip.read(fname).decode("utf-8", errors="replace")
         arrs = []
+        bad = 0
         for line in text.splitlines():
+            if not line.strip():
+                continue
             try:
                 a = json.loads(line)
             except Exception:
+                bad += 1
                 continue
             if isinstance(a, list):
                 arrs.append(a)
+        _warn_bad_rows("符号记录", symbol_uuid, bad)
         return arrs
 
     def device_map(self):
@@ -920,10 +945,14 @@ class EproDB(SchemaBackend):
         cur_part = None
         symbol_type = None
         origin_x = origin_y = 0.0
+        bad = 0
         for line in text.splitlines():
+            if not line.strip():
+                continue
             try:
                 a = json.loads(line)
             except Exception:
+                bad += 1
                 continue
             if not isinstance(a, list) or len(a) < 2:
                 continue
@@ -957,6 +986,7 @@ class EproDB(SchemaBackend):
         result = {"pins": list(pins.values()), "bbox": bbox,
                   "parts": sorted({p["part"] for p in pins.values()}),
                   "symbol_type": symbol_type}
+        _warn_bad_rows("符号引脚", symbol_uuid, bad)
         self._symbol_pin_cache[symbol_uuid] = result
         return result
 
@@ -1205,6 +1235,12 @@ class Epro2DB(SchemaBackend):
                     try:
                         nm = json.loads(h.get("id") or "null")[1]
                     except Exception:
+                        wk = ("v3-net", h.get("id"))
+                        if wk not in _WARN_ONCE:
+                            _WARN_ONCE.add(wk)
+                            print(f"[lceda_reader] 警告: V3 NET 记录 id 解析失败"
+                                  f"({h.get('id')})，该导线网络名丢失",
+                                  file=sys.stderr)
                         nm = None
                     if nm:
                         out.append(["NET", nm])
@@ -1212,6 +1248,12 @@ class Epro2DB(SchemaBackend):
                     try:
                         cid, pin, pad = (json.loads(h.get("id"))or [None]*4)[1:4]
                     except Exception:
+                        wk = ("v3-padnet", h.get("id"))
+                        if wk not in _WARN_ONCE:
+                            _WARN_ONCE.add(wk)
+                            print(f"[lceda_reader] 警告: V3 PAD_NET 记录 id 解析失败"
+                                  f"({h.get('id')})，引脚归属降级",
+                                  file=sys.stderr)
                         cid = pin = pad = None
                     out.append(["PAD_NET", cid, pin,
                                 b.get("padNet") or "", pad])
@@ -1693,13 +1735,16 @@ def _decrypt_new_eprj2(path):
     # Step 2: 解密全部 blob
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     all_text = []
+    n_empty = n_nokey = 0
     for buuid_full, bdata in conn.execute(
             "SELECT uuid, dataStr FROM history_data ORDER BY id"):
         if not bdata:
+            n_empty += 1
             continue
         buuid = buuid_full.split("-")[0]
         key_hex = key_map.get(buuid)
         if not key_hex:
+            n_nokey += 1
             continue
 
         blob = base64.b64decode(bdata)
@@ -1710,6 +1755,10 @@ def _decrypt_new_eprj2(path):
         compressed = aesgcm.decrypt(iv, blob, None)
         plaintext = gzip.decompress(compressed).decode("utf-8")
         all_text.append(plaintext)
+
+    if n_empty or n_nokey:
+        print(f"[lceda_reader] 警告: 解密跳过空 blob {n_empty} 个、无密钥 "
+              f"{n_nokey} 个，对应增量段丢失", file=sys.stderr)
 
     # structure 树（明文 JSON）
     st_row = conn.execute(
@@ -2462,10 +2511,20 @@ def _cbb_symbol_map(db):
                 if len(m) > n0:
                     print(f"[lceda_reader] 从 {Path(f).name} structure 读取 "
                           f"CBB 块符号映射 {len(m) - n0} 条", file=sys.stderr)
-            except Exception:
+            except Exception as e:
+                wk = ("cbb-scan", f)
+                if wk not in _WARN_ONCE:
+                    _WARN_ONCE.add(wk)
+                    print(f"[lceda_reader] 警告: CBB 映射扫描跳过 {Path(f).name}"
+                          f"({type(e).__name__})，该文件模板可能无法展开",
+                          file=sys.stderr)
                 continue
-    except Exception:
-        pass
+    except Exception as e:
+        if "cbb-scan-dir" not in _WARN_ONCE:
+            _WARN_ONCE.add("cbb-scan-dir")
+            print(f"[lceda_reader] 警告: CBB 同目录扫描失败"
+                  f"({type(e).__name__})，仅显式 --cbb-map 有效",
+                  file=sys.stderr)
     return m
 
 
@@ -2745,6 +2804,17 @@ def _synth_designator(db, c):
 
 
 _WARN_ONCE = set()   # 进程级一次性告警（非90°旋转等）
+
+
+def _warn_bad_rows(tag, ident, n):
+    """NDJSON/记录坏行计数告警（空行不计）。同一 (tag, ident) 只报一次。"""
+    if not n:
+        return
+    wk = (tag, ident)
+    if wk not in _WARN_ONCE:
+        _WARN_ONCE.add(wk)
+        print(f"[lceda_reader] 警告: {tag} {ident} 有 {n} 行记录解析失败已跳过，"
+              f"内容可能缺失", file=sys.stderr)
 
 
 def _match_part(title, parts):
