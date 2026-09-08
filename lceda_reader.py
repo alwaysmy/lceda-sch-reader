@@ -46,12 +46,14 @@ https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md）：
 """
 
 import argparse
+import atexit
 import base64
 import gzip
 import json
 import math
 import os
 import re
+import shutil
 import sqlite3
 import sys
 import zipfile
@@ -1725,9 +1727,10 @@ def _decrypt_new_eprj2(path):
 
     merged = "\n".join(all_text)
 
-    # Step 3: 打包为临时 .epro2
+    # Step 3: 打包为临时 .epro2（进程退出时清理，避免残留堆积）
     stem = Path(path).stem
     tmpdir = tempfile.mkdtemp(prefix="lceda_decrypt_")
+    atexit.register(shutil.rmtree, tmpdir, ignore_errors=True)
     outpath = os.path.join(tmpdir, stem + "_decrypted.epro2")
     with zipfile.ZipFile(outpath, "w", zipfile.ZIP_DEFLATED) as zf:
         pj2 = {"title": stem}
@@ -2939,11 +2942,11 @@ def cmd_pinmap(db, args):
     page = resolve_page(db, args.page, args.schematic)
     if page is None:
         out(f"未找到页: {args.page}" + (f" (schematic={args.schematic})" if args.schematic else ""))
-        return
+        sys.exit(2)
     sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.page}")
-        return
+        sys.exit(2)
     comp_pins, wires, pt_wires, endp = _collect_pinmap_data(
         db, sheet, page)
 
@@ -3099,11 +3102,11 @@ def cmd_texts(db, args):
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     texts = sheet.get("texts", [])
     rows = [{"id": t["id"], "x": t["x"], "y": t["y"],
              "rot": t["rot"], "text": t["text"]} for t in texts]
@@ -3123,15 +3126,15 @@ def cmd_nets(db, args):
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     pinc = _collect_pinmap_data(db, sheet, page)
     if pinc is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     comp_pins, wires, pt_wires, endp = pinc
     dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
     # 网络 -> 元件（designator 去重合并）
@@ -3164,15 +3167,15 @@ def cmd_pins(db, args):
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     pinc = _collect_pinmap_data(db, sheet, page)
     if pinc is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     comp_pins, wires, pt_wires, endp = pinc
     dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
     rows = []
@@ -4229,11 +4232,11 @@ def cmd_render(db, args):
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
         out(f"未找到页: {args.sheet}")
-        sys.exit(1)
+        sys.exit(2)
     sh = parse_sheet(db, page)
     if sh is None:
         out(f"未找到页: {args.sheet}")
-        sys.exit(1)
+        sys.exit(2)
     recs = db.sheet_records(page) or []
 
     page_fs = {}
@@ -4871,11 +4874,11 @@ def cmd_attrs(db, args):
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     sheet = parse_sheet(db, page)
     if sheet is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     seen = set()
     rows = []
     # 页标题块（e1）属性优先
@@ -4914,11 +4917,11 @@ def cmd_raw(db, args):
     page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
     if page is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     text = db.sheet_text(page)
     if text is None:
         out(f"未找到页: {args.sheet}")
-        return
+        sys.exit(2)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             f.write(text)
