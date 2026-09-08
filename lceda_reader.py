@@ -2696,10 +2696,12 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
     return rows
 
 
-def resolve_page(db, page_name, schematic=None):
+def resolve_page(db, page_name, schematic=None, strict=False):
     """按页名（+可选板名）解析页：解决同名页歧义。返回文档 uuid 或 None。
     EproDB 的页标题是 "板名::页名" 复合格式，这里做兼容匹配。
-    未指定 --schematic 且存在同名页时，取第一个匹配并向 stderr 告警。"""
+    未指定 --schematic 且存在同名页时，取第一个匹配并向 stderr 告警；
+    strict=True（--json 模式）时直接报错退出 2（JSON 消费者看不到 stderr
+    告警，不能静默取第一个），调用方须用 --schematic 明确指定。"""
     target = schematic
     matches = []
     for uuid, title, sch, dt in db.sheets():
@@ -2715,6 +2717,10 @@ def resolve_page(db, page_name, schematic=None):
             sn = db.schem_map()
             names = "/".join(sn.get(sch, ("?", "?"))[0] or "?"
                              for _, sch in matches)
+            if strict:
+                out(f"页名 {page_name!r} 在 {names} 中重名，--json 模式须用 "
+                    f"--schematic 指定板名")
+                sys.exit(2)
             warn_key = ("ambig_page", page_name, names)
             if warn_key not in _WARN_ONCE:
                 _WARN_ONCE.add(warn_key)
@@ -2939,7 +2945,7 @@ def cmd_pinmap(db, args):
     对网络名为空的引脚，输出 same_wire 关联（同一 WIRE 记录端点上的其他
     器件引脚），用于识别串阻/耦合/晶体管间接连接（如 LED->R->+5V）。
     --designator 只输出指定元件；--schematic 指定板名解决同名页。"""
-    page = resolve_page(db, args.page, args.schematic)
+    page = resolve_page(db, args.page, args.schematic, args.json)
     if page is None:
         out(f"未找到页: {args.page}" + (f" (schematic={args.schematic})" if args.schematic else ""))
         sys.exit(2)
@@ -3099,7 +3105,7 @@ def cmd_texts(db, args):
     """页内文本注释（TEXT 记录）：设计意图/调试备注/网络说明。
     审查原理图时必须阅读——注释常含关键设计意图（如"OE接VCC或者悬空使能"）。
     --json 输出 [{id,x,y,rot,text}]。"""
-    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None), args.json)
     if page is None:
         out(f"未找到页: {args.sheet}")
         sys.exit(2)
@@ -3123,7 +3129,7 @@ def cmd_texts(db, args):
 
 def cmd_nets(db, args):
     """页内网络连接：网络名 -> 归属元件（连通域精确方案，与 pinmap 同源）。"""
-    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None), args.json)
     if page is None:
         out(f"未找到页: {args.sheet}")
         sys.exit(2)
@@ -3164,7 +3170,7 @@ def cmd_nets(db, args):
 def cmd_pins(db, args):
     """引脚级网络表：designator.pin -> 网络（连通域精确方案，与 pinmap 同源）。
     输出设计符、引脚、网络、推断标记；网络为空时给出 wire 关联引脚。"""
-    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None), args.json)
     if page is None:
         out(f"未找到页: {args.sheet}")
         sys.exit(2)
@@ -3565,7 +3571,7 @@ def cmd_netfind(db_or_dbs, args):
         rows_all = []
         for di, db in enumerate(dbs):
             for r in _netfind_one(db, args.net):
-                r["eprj"] = f"#{di}"
+                r["eprj"] = di
                 rows_all.append(r)
         outj(_multi_json(dbs, rows_all))
         return
@@ -3574,7 +3580,7 @@ def cmd_netfind(db_or_dbs, args):
         rows = _netfind_one(db, args.net)
         if multi:
             for r in rows:
-                r["eprj"] = f"#{di}"
+                r["eprj"] = di
             rows_all.extend(rows)
         else:
             rows_all = rows
@@ -4229,7 +4235,7 @@ def cmd_render(db, args):
     实例属性布局（§2.3）：[id,parent,key,value,showKey(5),showValue(6),
     X(7),Y(8),rot(9),styleId(10),locked(11)]。"""
     cfg = _render_cfg(args)
-    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None), args.json)
     if page is None:
         out(f"未找到页: {args.sheet}")
         sys.exit(2)
@@ -4871,7 +4877,7 @@ def cmd_datasheets(db, args):
 
 
 def cmd_attrs(db, args):
-    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None), args.json)
     if page is None:
         out(f"未找到页: {args.sheet}")
         sys.exit(2)
@@ -4914,7 +4920,7 @@ def cmd_devmap(db, args):
 
 
 def cmd_raw(db, args):
-    page = resolve_page(db, args.sheet, getattr(args, "schematic", None))
+    page = resolve_page(db, args.sheet, getattr(args, "schematic", None), args.json)
     if page is None:
         out(f"未找到页: {args.sheet}")
         sys.exit(2)
