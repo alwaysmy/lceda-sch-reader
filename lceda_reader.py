@@ -1865,7 +1865,8 @@ def _norm_segs(segs):
 
 def _is_dnp(c):
     """器件未贴装判定（实例属性）：Add into BOM=no 或 Convert to PCB=no。
-    典型场景：0Ω 跳线标不上BOM 表示 DNP——两脚物理不通，不得合并网络。"""
+    两种标志都表示物理不存在（不上件 / PCB 无封装），手焊等后续流程不在
+    本工具判定范围。典型场景：0Ω 跳线标不上BOM 表示 DNP——两脚物理不通。"""
     a = c.get("attrs") or {}
     for k, v in a.items():
         kl = str(k).strip().lower()
@@ -1875,6 +1876,24 @@ def _is_dnp(c):
         if kl in ("add into bom", "convert to pcb"):
             return True
     return False
+
+
+_NC_VARIANT_RE = re.compile(r"(?:^|[\s_\-])NC(?:$|[\s_\-])", re.I)
+
+
+def _is_nc_marked(value):
+    """器件值标 NC 变体（``NC_`` 开头 / ``_NC`` 结尾等独立 NC token，如
+    ``0Ω_NC``、``NC_0R``、``0Ω_NC_2``）→ 视为不上件。兜底：正常工程用实例
+    属性 Add into BOM=no 表达不上件；若只改了 Value 而漏设 DNP 标志，这里
+    识别并在 parse_sheet 告警，避免 0Ω 跳线被误当物理直连合并两侧网络。
+    token 需分隔符界定，避免误伤 ``NCU1``/``RNC`` 等型号串。"""
+    return bool(_NC_VARIANT_RE.search(str(value or "")))
+
+
+def _is_unpopulated(c):
+    """未贴装：DNP 标志（Add into BOM/Convert to PCB=no）或 NC 变体值。
+    未贴装器件不参与 0Ω/SHORT 桥接（两侧网络保持独立）。"""
+    return bool(c.get("dnp") or c.get("nc_marked"))
 
 
 _BUS_SEG_RE = re.compile(r"([A-Za-z_]\w*)\[(\d+):(\d+)\]")
@@ -1982,6 +2001,21 @@ def parse_sheet(db, doc_key):
         if not c["title"]:
             c["title"] = str(a.get("Name") or "")
         c["dnp"] = _is_dnp(c)
+        # NC 变体值兜底：Value 含 NC 标记（如 0Ω_NC）视为不上件，
+        # 防止漏设 Add into BOM=no 时 0Ω 被误当物理直连合并网络。
+        c["nc_marked"] = _is_nc_marked(
+            a.get("Value") if a.get("Value") is not None else c.get("title"))
+        if c["nc_marked"] and not c["dnp"]:
+            wk = ("nc_marked", c.get("designator") or c["cid"])
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                val = (a.get("Value") if a.get("Value") is not None
+                       else c.get("title")) or ""
+                print(f"[lceda_reader] 警告: 器件 {c.get('designator') or c['cid']}"
+                      f"（{c.get('title') or ''}）值 {val!r} 含 NC 标记但未设"
+                      f" Add into BOM/Convert to PCB=no，已按不上件处理"
+                      f"（若是 0Ω/短接符则不参与桥接）——请与设计者确认",
+                      file=sys.stderr)
         # 保留有 Symbol/Device 的实例（含 short 短接符/netport 等无 title 的）
         if c["title"] or c["designator"] or c["symbol_uuid"] or c["device_uuid"]:
             sheet["components"].append(c)
@@ -2340,7 +2374,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
                   "判定降级（描述匹配缺失），网络可能断裂", file=sys.stderr)
         dmap = {}
     for c in sheet["components"]:
-        if c.get("dnp"):
+        if _is_unpopulated(c):
             continue
         du = c.get("device_uuid") or c.get("symbol_uuid") or ""
         desc = dmap.get(du, ("", "", ""))[2] if du else ""
@@ -2357,7 +2391,7 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
     #   否则 DNP 短接符查不到会被错误合并）
     des2dnp = {}
     for c in sheet["components"]:
-        d = bool(c.get("dnp"))
+        d = _is_unpopulated(c)
         des2dnp[c.get("designator")] = d
         des2dnp[f"SHORT{c['cid']}"] = d
         des2dnp[f"PORT{c['cid']}"] = d
@@ -2714,26 +2748,26 @@ def collect_two_pin_bridges(db, sheet, comp_pins, pinmap, endp=None):
         sym_types = {p.get("sym_type") for p in plist}
         title = ""
         uuid = ""
-        c_dnp = False
-        for c in sheet.get("components", []):
-            if c.get("designator") == des:
-                title = c.get("title") or ""
-                uuid = c.get("device_uuid") or c.get("symbol_uuid") or ""
-                c_dnp = bool(c.get("dnp"))
+        comp = None
+        for cc in sheet.get("components", []):
+            if cc.get("designator") == des:
+                title = cc.get("title") or ""
+                uuid = cc.get("device_uuid") or cc.get("symbol_uuid") or ""
+                comp = cc
                 break
         d = dev_map.get(uuid) if uuid else None
         device = (d[0] if d else "") or title
         is_short = 22 in sym_types
         # 0Ω 判定：Value 属性（规范字段，实例→device）优先，title+desc 兜底
-        _v = (c.get("attrs") or {}).get("Value")
-        if not _v and c.get("device_uuid"):
+        _v = ((comp or {}).get("attrs") or {}).get("Value")
+        if not _v and comp and comp.get("device_uuid"):
             try:
-                _v = (db.device_attrs(c["device_uuid"]) or {}).get("Value")
+                _v = (db.device_attrs(comp["device_uuid"]) or {}).get("Value")
             except Exception:
                 _v = None
         is_zero = _is_zero_ohm(title, d[2] if d else "", value=_v)
-        # DNP（不上BOM/不上PCB）器件未贴装：direct 恒为 False（两脚不通）
-        is_dnp = bool(c_dnp)
+        # 未贴装（DNP 标志或 NC 变体值）：direct 恒为 False（两脚不通）
+        is_dnp = _is_unpopulated(comp) if comp else False
         kind = "short" if is_short else ("jumper" if is_zero else "passive")
         net_a = _direct_net(a, des)
         net_b = _direct_net(b, des)
@@ -3105,7 +3139,7 @@ def cmd_pinmap(db, args):
         if comp_pins.get((des, c["cid"])):
             sym_t = comp_pins[(des, c["cid"])][0].get("sym_type")
         rows.append({"designator": des, "symbol": c["title"],
-                     "symbol_type": sym_t, "dnp": bool(c.get("dnp")),
+                     "symbol_type": sym_t, "dnp": _is_unpopulated(c),
                      "pins": pinmap})
     # 连通域网络名解析：为 net 为空的引脚推断网络名（走线拓扑，无启发式噪声）
     if not args.no_domain:
