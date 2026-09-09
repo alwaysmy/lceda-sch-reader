@@ -2281,7 +2281,6 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
 
     # 1) WIRE 记录内部端点相接 => 连通域（归一化后 union，避免尾差断链）
     wire_pts = {}   # wire_id -> set(points)
-    seglist = []
     for wid, segs in wires:
         pts = set()
         for x1, y1, x2, y2 in _norm_segs(segs):
@@ -2289,8 +2288,6 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
             p2 = norm_pt((x2, y2))
             pts.add(p1)
             pts.add(p2)
-            if p1 != p2:
-                seglist.append((p1, p2))
         if not pts:
             continue
         wire_pts[wid] = pts
@@ -2300,12 +2297,11 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
         for p in pts:
             union(p, first)
 
-    # 2) 引脚命中点并入连通域——精确拓扑匹配（实测全工程 2933 引脚命中全部
-    #    为归一化后精确重合，容差从未需要；容差吸附反而可能把悬空引脚误连
-    #    到邻近走线）。三级判定：
-    #    a) 引脚坐标 == 某走线端点（命名或 stub）→ 并入该点所在域；
-    #    b) 引脚落在某线段中间（T 型连接，无端点）→ 与该线段两端 union；
-    #    c) 都不满足 → 真悬空，不归属任何网络。
+    # 2) 引脚命中点并入连通域——精确顶点匹配：引脚电气连接坐标必须与导线
+    #    折线顶点重合（EDA 连线时在该处把导线断成顶点，不会让引脚落在段中段；
+    #    实测全工程引脚命中点 100% 为折线顶点，度=1 自由端或度=2 拐点）。
+    #    坐标归一化消除浮点尾差（引脚与导线同经 norm_pt，2 位小数坐标亦一致）。
+    #    不命中 → 真悬空，不归属任何网络。V3 另有 tip 候选（见下）。
     pin_hit = {}   # (des,pin) -> [命中端点...]（重名引脚(如 VDD×5)各保留命中点，不互相覆盖）
     endp_net = {}
     endp_all = set()
@@ -2320,17 +2316,6 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
     for p in endp_all:
         parent.setdefault(p, p)
 
-    def on_segment(px, py):
-        for p1, p2 in seglist:
-            x1, y1 = p1
-            x2, y2 = p2
-            cross = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)
-            if abs(cross) <= 0.75 and \
-                    min(x1, x2) - 0.01 <= px <= max(x1, x2) + 0.01 and \
-                    min(y1, y2) - 0.01 <= py <= max(y1, y2) + 0.01:
-                return p1, p2
-        return None
-
     for des, plist in comp_pins.items():
         for p in plist:
             if p.get("no_connect"):
@@ -2339,25 +2324,11 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
             if pt in endp_all:
                 pin_hit.setdefault((des, pin_key(p)), []).append(pt)
                 continue
-            seg = on_segment(*pt)
-            if seg:
-                parent.setdefault(pt, pt)
-                union(pt, seg[0])
-                union(pt, seg[1])
-                pin_hit.setdefault((des, pin_key(p)), []).append(pt)
-                continue
             # 候选 2（V3 符号引脚电端点 tip=root+dir*len）：root 未命中
             # 时用 tip 再判一次（实测新格式符号 root≠tip，导线连 tip）
             if p.get("x2") is not None:
                 pt2 = norm_pt((p["x2"], p["y2"]))
                 if pt2 in endp_all:
-                    pin_hit.setdefault((des, pin_key(p)), []).append(pt2)
-                    continue
-                seg2 = on_segment(*pt2)
-                if seg2:
-                    parent.setdefault(pt2, pt2)
-                    union(pt2, seg2[0])
-                    union(pt2, seg2[1])
                     pin_hit.setdefault((des, pin_key(p)), []).append(pt2)
 
     # 3) 0Ω 跳线 + Short Symbol(短接符 symbolType=22) 两脚物理直连合并
