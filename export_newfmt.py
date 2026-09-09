@@ -3,6 +3,10 @@
 前提: lceda-pro.exe --remote-debugging-port=9222 <同一工程> 已启动。
 产物: <工程目录>/<stem>_export.epro2（Epro2DB 可直接读取）。"""
 import io, sys, json, sqlite3, base64, zipfile, time, os, re
+
+# 先保存命令行参数（下面 import cdp_eval 时会被覆写 sys.argv）
+_CLI_ARGV = list(sys.argv)
+
 _probes = os.path.join(os.path.dirname(os.path.abspath(__file__)), "probes")
 sys.path.insert(0, _probes)
 import importlib.util
@@ -14,7 +18,7 @@ spec.loader.exec_module(cdp)
 
 import urllib.request
 
-EPRJ = sys.argv[1] if len(sys.argv) > 1 else \
+EPRJ = _CLI_ARGV[1] if len(_CLI_ARGV) > 1 else \
     r"C:\Users\dell\Documents\LCEDA-Pro\projects\Piezo_Driver.eprj2"
 
 # ── CDP 连接 ──
