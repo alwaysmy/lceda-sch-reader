@@ -2028,8 +2028,10 @@ def parse_sheet(db, doc_key):
         for wid, segs in wires:
             pts = set()
             for x1, y1, x2, y2 in _norm_segs(segs):
-                pts.add((x1, y1))
-                pts.add((x2, y2))
+                # 归一化（round 1 位）与入口点比对口径一致，避免浮点尾差
+                # 导致入口命中不到导线端点（原实现入口 round、线端不 round）
+                pts.add((round(x1, 1), round(y1, 1)))
+                pts.add((round(x2, 1), round(y2, 1)))
             wire_pts[wid] = pts
         for e in bus_entries:
             bus_id = e["bus"]

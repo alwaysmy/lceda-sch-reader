@@ -103,6 +103,42 @@ def test_real(path):
           f"nets={sorted(named)[:8]}")
 
 
+def test_multi_segment(path):
+    """多段总线 order 语义真实样本（CDP 自建 A[2:3]B[7:6] + 4 分支）。
+
+    引擎实测（V3.2.175）：分支 NET 自动命名 order 0→A2B7 / 1→A2B6 /
+    2→A3B7 / 3→A3B6，与 expand_bus_net 完全一致——确认"末段变化最快"。
+    这是 2026-09-09 用 CDP 画线自建（见 docs/审查问题清单 §H）。"""
+    print("[4] 多段总线真实样本")
+    r = lr.detect_backend(path)
+    db = lr.Epro2DB(lr._decrypt_new_eprj2(path)) if r == "DECRYPT_NEW" else r(path)
+    hit = None
+    for uuid, title, _sch, _dt in db.sheets():
+        recs = db.sheet_records(uuid) or []
+        if any(isinstance(x, list) and x[:1] == ["BUSENTRY"] for x in recs):
+            # 找多段组名的页
+            net_names = set()
+            for x in recs:
+                if isinstance(x, list) and x[:1] == ["ATTR"] and len(x) >= 5 \
+                        and x[3] == "NET":
+                    net_names.add(x[4])
+            if "A[2:3]B[7:6]" in net_names:
+                sh = lr.parse_sheet(db, uuid)
+                hit = (title, sh, net_names)
+                break
+    if not hit:
+        check("多段总线样本存在", False, "未找到 A[2:3]B[7:6]")
+        return
+    title, sh, net_names = hit
+    want = {"A2B7", "A2B6", "A3B7", "A3B6"}
+    check(f"多段分支命名 {sorted(want)}", want <= net_names,
+          f"got {sorted(net_names)}")
+    buses = sh.get("buses") or {}
+    check("多段组名进入 buses", any(b["net"] == "A[2:3]B[7:6]"
+                                   for b in buses.values()),
+          f"buses={list(buses.values())}")
+
+
 def main():
     test_expand()
     test_parse_sheet()
@@ -118,6 +154,14 @@ def main():
         test_real(path)
     else:
         print("[3] 真实样本：未提供 --eprj，跳过")
+    # 多段总线样本（仓库 examples 自带）
+    multi = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "..",
+        "examples", "CDP探针-多段总线.eprj2"))
+    if os.path.exists(multi):
+        test_multi_segment(multi)
+    else:
+        print("[4] 多段样本缺失（examples/CDP探针-多段总线.eprj2），跳过")
     print("=" * 50)
     print("ALL PASS" if not FAILS else f"FAILED: {FAILS}")
     sys.exit(1 if FAILS else 0)
