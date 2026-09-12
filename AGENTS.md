@@ -9,7 +9,8 @@
 
 - **通用格式工具**：读取立创EDA 专业版工程（.eprj2/.epro/.epro2），
   **不绑定**任何特定工程/器件/网络名/位号。
-- 单文件 CLI：`lceda_reader.py`（仅标准库）；三后端 duck-typing
+- 单文件 CLI：`lceda_reader.py`（核心路径仅标准库；新版加密 .eprj2
+  解密另需 `cryptography`，懒加载）；三后端 duck-typing
   （LcedaDB/EproDB/Epro2DB，SchemaBackend ABC），命令层复用。
 - 配套文档：`README.md`（用法）、`skill/SKILL.md`（使用规则/审查方法，
   **未安装到 opencode**，需人工验证后按 opencode skill 规范放置）、
@@ -65,10 +66,11 @@
 
 ## 已知限制指引
 
-- 新版加密 .eprj2：`detect_backend` 明确报错+指引导出；CDP 导出工作流见
-  `docs/CDP调试立创EDA-2026-08-21.md` 与 `probes/export_newfmt.py`。
-- BUS/BUSENTRY、PCB 内容、OffPage 语义推断等：见 `TODO.md` 与
-  `docs/开发文档.md` 第 4 节。
+- 新版加密 .eprj2：`detect_backend` 自动检测并解密透明读取（算法见
+  `docs/新版eprj2格式逆向与破解.md`）；CDP 导出路径 `probes/export_newfmt.py`
+  保留为备选（可补 INSTANCE 母图位号映射，直接解密路径暂不含此数据）。
+- OffPage 语义推断等待验证项等：见 `TODO.md` 与 `docs/开发文档.md` 第 4 节
+  （BUS/BUSENTRY 与 PCB 解析已完成，遗留细化项见 TODO 对应「待做」小节）。
 
 ## 参数依据纪律（强制，2026-08-23）
 

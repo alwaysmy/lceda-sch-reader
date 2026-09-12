@@ -6,8 +6,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
 # LCEDA 专业版原理图读取（lceda_sch_reader）
 
 读取立创EDA专业版工程（`.eprj2`，SQLite 格式）的原理图数据。工具为**通用格式
-工具**，不绑定特定工程/器件/位号；只读、仅依赖 Python 标准库，位于
-`lceda_reader.py`。
+工具**，不绑定特定工程/器件/位号；只读，核心路径仅依赖 Python 标准库
+（新版加密 .eprj2 自动解密另需 `cryptography`），位于 `lceda_reader.py`。
 
 ## 汇报规范（重要）
 

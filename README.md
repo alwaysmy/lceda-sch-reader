@@ -15,6 +15,7 @@ python lceda_reader.py list                 rem 列出全部板(Schematic)与页
 python lceda_reader.py tree                 rem 工程层级树: 工程→板→{原理图(页),PCB}+游离实体
 python lceda_reader.py boards               rem 列出每页的 @Board Name/@Page Name 标题块
 python lceda_reader.py components [页名]     rem 页内元件：设计符/型号/显示名/参数描述
+python lceda_reader.py texts <页名>          rem 页内文本注释（设计意图/调试备注）
 python lceda_reader.py nets <页名>           rem 页内网络连接（stub端点归属元件）
 python lceda_reader.py pinmap <页名> [--designator U1]   rem 精确引脚网络表(坐标精确匹配+同网络关联引脚)
 python lceda_reader.py pins <页名>           rem 引脚级网络表（designator→网络+符号引脚名匹配）
@@ -25,6 +26,10 @@ python lceda_reader.py find <设计符>         rem Designator 反查（页/板/
 python lceda_reader.py search <正则>         rem 跨全部页全文搜索
 python lceda_reader.py bom [--board 板名] [--bom-only]   rem 全工程物料清单（按器件uuid归并）
 python lceda_reader.py datasheets           rem 从 attributes 表导出 Datasheet URL 清单
+python lceda_reader.py pcbsch                rem PCB↔SCH 器件核对（反标改名/漏布局）
+python lceda_reader.py polar                 rem 极性器件清单（D/LED/TVS 极性网络归一）
+python lceda_reader.py docs                  rem 文档清单（创建/最后编辑时间/ticket）
+python lceda_reader.py render <页名> [-o 文件] rem 页渲染 SVG（字体/文字位置取自工程存储）
 python lceda_reader.py attrs <页名>          rem 页全部属性（含标题块@项）
 python lceda_reader.py devmap               rem 导出 devices/components 表（uuid->器件）
 python lceda_reader.py raw <页名> [-o 文件]  rem 输出页的原始NDJSON（调试用）
@@ -78,6 +83,7 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `list` | 板与页清单 | --json | 板(schematic)列表 + 每页 |
 | `boards` | 页标题块 | --json | 每页 @Board Name/@Page Name/Version |
 | `components [页]` | 页内元件 | --json | 设计符/型号/参数描述 |
+| `texts <页>` | 页内文本注释 | --schematic, --json | 设计意图/调试备注 |
 | `nets <页>` | 页网络 | --schematic, --json | 网络名 → 归属元件 |
 | `pinmap <页>` | 精确引脚网络表 | --designator, --schematic, --no-domain, --json | 引脚→网络(peers/wire_peers/symbol_type/pin_type) |
 | `pins <页>` | 引脚级网络 | --schematic, --json | 设计符.引脚 → 网络 |
@@ -88,12 +94,17 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `search <正则>` | 全文搜索 | --case, --json | 页内命中行 |
 | `bom` | 物料清单 | --board, --bom-only, --json | 器件→值/供应商/板/页 |
 | `datasheets` | Datasheet URL | --json | 器件→数据手册链接 |
+| `pcbsch` | PCB↔SCH 器件核对 | --json | 反标改名/漏布局清单 |
+| `polar` | 极性器件清单 | --json | D/LED/TVS 极性网络归一（未归一附 datasheet） |
+| `docs` | 文档清单 | --json | 创建/最后编辑时间/编辑人/ticket |
+| `render <页>` | 页渲染 SVG | --schematic, -o, --config, --no-labels, --no-texts, --pin-numbers | SVG（字体/文字位置取自工程存储） |
 | `attrs <页>` | 页属性 | --schematic, --json | 标题块@项 + 元件属性 |
 | `devmap` | uuid→器件 | --json | uuid/型号/描述 |
 | `raw <页>` | 原始 NDJSON | -o | 调试用原始数据 |
 | `link-check` | 连接器对候选(多工程) | --json | 工程A 连接器 ↔ 工程B 连接器 逐pin一致数 |
 
-通用参数：`--json`（结构化输出）、`--eprj`（工程路径，可多次）。
+通用参数：`--json`（结构化输出）、`--eprj`（工程路径，可多次）、
+`--cbb-map`（CBB 实例位号=模板页名，端口自动匹配歧义时显式指定，可多次）。
 
 ## 二、文件格式（与官方规范一致）
 
@@ -145,7 +156,8 @@ dataStr = "base64" 前缀 + base64(gzip(NDJSON 文本))
 打开文件时按**内容特征**自动路由（扩展名仅参考）：ZIP 容器→按
 `project.json`(EproDB)/`*.epru`(Epro2DB) 分派；SQLite→`documents` 表非空=
 LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内容加密）
-会明确报错并提示导出为 .epro/.epro2——不会静默返回空结果。
+自动解密（AES-128-GCM）为临时 .epro2 后按 Epro2DB 读取，对用户透明
+（该路径需第三方库 cryptography）。
 
 ### 兼容导出格式（.epro / .epro2）
 
@@ -337,7 +349,9 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 
 ## 七、开发说明
 
-- 仅依赖 Python 标准库（sqlite3/json/base64/gzip/re/argparse），Python 3.8+ 可用。
+- 核心读取路径仅依赖 Python 标准库（sqlite3/json/base64/gzip/re/argparse），
+  Python 3.8+ 可用；新版加密 .eprj2 自动解密另需第三方库 `cryptography`
+  （懒加载，仅该场景导入）。
 - 只读设计：所有连接使用 `mode=ro` URI，不会写工程文件。
 - 若立创EDA升级格式（dataStr 压缩链变化），`decompress()` 中的 gzip 回退分支
   可扩展（参考 archive 中 sch_magic.py 的 zlib 探测思路）。
@@ -348,7 +362,8 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
   多段按 ticket 最终一致合并）。已按"后端抽象（SchemaBackend ABC）+ 内容
   特征路由（detect_backend，magic/表结构嗅探，扩展名仅参考）"实现三后端，
   命令层复用全部解析逻辑；新增格式 = 实现 SchemaBackend 子类 + 登记内容
-  特征。新版分支加密 .eprj2 不支持内容读取（打开时明确报错并指引导出）。
+  特征。新版分支加密 .eprj2 已支持自动解密读取（AES-128-GCM → 临时
+  .epro2 → Epro2DB，对用户透明，详见 `docs/新版eprj2格式逆向与破解.md`）。
 - **pin_type 为尽力而为**：依赖符号是否标注 "Pin Type" ATTR（实测多数芯片为
   Undefined），不作为判断信号方向的依据，也不为其增加复杂度。
 - 官方 API Skill 项目（可在线调试/扩展立创EDA）：https://github.com/easyeda/easyeda-api-skill
