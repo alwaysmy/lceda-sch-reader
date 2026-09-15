@@ -177,6 +177,7 @@ class NetGraph:
         self.pin_net = {}      # (des, pin_key) -> net_key
         self.dom = {}          # (des, pin_key) -> raw net field
         self.net_name = {}     # net_key -> 可读网络名（无名则空串）
+        self.group_name = {}   # 匿名组键 -> 名称（通常无）
         self._lr = None
 
     # -- 构建 --------------------------------------------------------------
@@ -217,7 +218,53 @@ class NetGraph:
                                                 wires, pt_wires, endp)
             except Exception:
                 dom = {}
-            # 设计符 -> 引脚名（符号定义）
+
+            def _pt(p):
+                if p.get("x") is None or p.get("y") is None:
+                    return None
+                return (round(p["x"], 1), round(p["y"], 1))
+
+            # sheet["nets"] 的每个 net 组是 EDA 认定的**一个连通域**（无名也是），
+            # 把同组的所有点映射到统一组键。用于兜底：引脚落在组内任一点即属
+            # 该组——覆盖"引脚对引脚直接对接"（无导线，如 U16.IN- ↔ R66.2，
+            # 两点坐标不同但在同一 net 组）这一 pin_hit 不覆盖的情形。
+            pt_group = {}
+            for gi, n in enumerate(sheet["nets"]):
+                gkey = f"@grp{gi}"
+                for px, py in n["points"]:
+                    pt_group[(round(px, 1), round(py, 1))] = gkey
+                nm = n.get("net")
+                if nm:
+                    g.group_name.setdefault(gkey, nm)
+                    g.net_name.setdefault(gkey, nm)
+
+            # 引脚 -> 网络键。
+            # 优先级：命名网络 > 导线端点命中(domain_out) > net 组键。
+            for (des, cid), plist in comp_pins.items():
+                du = des.upper()
+                for p in plist:
+                    pk = p.get("key") or p.get("pin")
+                    if (du, pk) in g.pin_net:
+                        continue
+                    net = dom.get((des, pk), "")
+                    key = None
+                    if net:
+                        toks = lr.net_tokens(net)
+                        key = toks[0] if toks else None
+                    if key is None:
+                        key = domain_out.get((des, pk))
+                    if key is None:
+                        p0 = _pt(p)
+                        if p0 and p0 in pt_group:
+                            key = pt_group[p0]
+                    if key is None:
+                        continue
+                    g.dom.setdefault((du, pk), net)
+                    g.pin_net[(du, pk)] = key
+                    g.net_name.setdefault(
+                        key, (lr.net_tokens(net)[0] if net else ""))
+                    g.net_pins.setdefault(key, set()).add((du, pk))
+            # 设计符 -> 引脚名（符号定义）——先建 parts，供后续分类与查询
             for (des, cid), plist in comp_pins.items():
                 c = next((x for x in sheet["components"]
                           if x["cid"] == cid), None)
@@ -233,17 +280,6 @@ class NetGraph:
                 g.parts[des.upper()] = Part(
                     des, cid, c.get("title") or (dev[1] if dev else ""),
                     desc, pin_names, pins, title)
-            # 引脚 -> 网络键
-            for (des, pk), net in dom.items():
-                du = des.upper()
-                g.dom[(du, pk)] = net
-                key = (lr.net_tokens(net)[0] if net else None) \
-                    or domain_out.get((des, pk))
-                if not key:
-                    continue
-                g.pin_net[(du, pk)] = key
-                g.net_name.setdefault(key, lr.net_tokens(net)[0] if net else "")
-                g.net_pins.setdefault(key, set()).add((du, pk))
         return g
 
     # -- 查询 --------------------------------------------------------------

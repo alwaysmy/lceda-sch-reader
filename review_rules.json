@@ -1,0 +1,26 @@
+{
+ "_note": "审查规则配置（工具配置层，非工程配置）——阈值依据 docs/电气规则层建议-2026-09-15.md §5；钳位余量 <warn 判 WARN、<error 判 ERROR。修改后直接生效。",
+ "rules": {
+  "R1": {
+   "_note": "端子/输出电气包络 vs 钳位件起始。余量 = 钳位起始 - 驱动可达上限",
+   "enabled": true,
+   "clamp_margin_warn_v": 0.5,
+   "clamp_margin_error_v": 0.0
+  },
+  "R2": {
+   "_note": "串联件(磁珠 Isat/PTC Ihold)能力 vs 驱动级最坏灌出电流",
+   "enabled": true,
+   "current_margin": 0.8
+  },
+  "R3": {
+   "_note": "电源轨来源/参考脚核对（INFO，需人工确认——网络表看不出刻意浮动接法）",
+   "enabled": true
+  },
+  "R4": {
+   "_note": "反相极性语义提示（INFO，供固件映射对照需求）",
+   "enabled": true
+  }
+ },
+ "tvs_bidir_vf": 0.7,
+ "_tvs_bidir_vf_note": "[实测] 双向 TVS 反串联结构，实际钳位比标称 VBR 高约 V_F；V2 信号板实测 7.28~7.48V 与仿真 BV+V_F 吻合（docs/电气规则层建议-2026-09-15.md §7）"
+}

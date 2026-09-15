@@ -4039,6 +4039,63 @@ def cmd_polar(db, args):
             out(f"   datasheet: {r['datasheet']}")
 
 
+def cmd_review(db, args):
+    """电气规则审查（R1~R4）。规则只面对统一模型（后端合成 + 语义量 + 净图），
+    阈值外置 review_rules.json。依据 docs/电气规则层建议-2026-09-15.md。"""
+    import lceda_rules as RULESMOD
+    pages = None
+    if getattr(args, "pages", None):
+        pages = {p.strip() for p in args.pages.split(",") if p.strip()}
+    graph = RULESMOD.NetGraph.build(db, sys.modules[__name__], pages=pages)
+    cfg = RULESMOD.load_config(getattr(args, "config", None))
+    only = None
+    if getattr(args, "rules", None):
+        only = {r.strip().upper() for r in args.rules.split(",") if r.strip()}
+    findings = RULESMOD.run_rules(graph, cfg, sys.modules[__name__], only=only)
+    table = RULESMOD.terminal_table(graph, cfg, sys.modules[__name__]) \
+        if getattr(args, "table", False) else []
+
+    if args.json:
+        out(json.dumps({
+            "findings": [f.as_dict() for f in findings],
+            "terminal_table": table,
+            "graph": {"parts": len(graph.parts), "nets": len(graph.net_pins)},
+        }, ensure_ascii=False, indent=1))
+        if not findings:
+            sys.exit(2)          # 查无 = 2（与 netfind/find 等约定一致）
+        return
+
+    sev_n = {"error": 0, "warn": 0, "info": 0}
+    for f in findings:
+        sev_n[f.severity] = sev_n.get(f.severity, 0) + 1
+    out(f"== 电气规则审查（{len(graph.parts)} 元件 / "
+        f"{len(graph.net_pins)} 网络；"
+        f"{sev_n['error']} ERROR / {sev_n['warn']} WARN / {sev_n['info']} INFO）==")
+    if not findings:
+        out("  未发现（或所用规则未覆盖本工程形态）")
+    for f in findings:
+        out(f"  [{f.severity.upper():5s}] {f.rule}  {f.subject}")
+        out(f"          {f.message}")
+    if table:
+        out("")
+        out("== 端子电气包络表（R5 规格书雏形）==")
+        out("  驱动    型号              增益   参考V  可达上限V  钳位件  VBR    钳位V  余量V  极性")
+        for r in table:
+            gain_s = f"{r['gain']:.3g}" if r["gain"] is not None else "?"
+            vref_s = f"{r['vref']:.2f}" if r["vref"] is not None else "?"
+            top_s = f"{r['top_v']:.2f}" if r["top_v"] is not None else "?"
+            onset_s = (f"{r['clamp_onset_v']:.2f}"
+                       if r["clamp_onset_v"] is not None else "-")
+            margin_s = (f"{r['margin_v']:.2f}"
+                        if r["margin_v"] is not None else "-")
+            out(f"  {r['driver']:6s}  {r['part'][:16]:16s}  "
+                f"{gain_s:5s}  {vref_s:5s}  {top_s:8s}  "
+                f"{r['clamp']:5s}  {r['clamp_vbr']:6s}  {onset_s:5s}  "
+                f"{margin_s:5s}  {'反相' if r['inverting'] else '同相'}")
+    if not findings:
+        sys.exit(2)
+
+
 def cmd_pcbsch(db, args):
     """PCB↔SCH 器件核对：以 COMPONENT 内联 Unique ID(ggeN) 为全局键。
     输出：位号一致 / PCB 改名(反标清单) / 仅SCH(未布局) / 仅PCB(SCH无)。"""
@@ -5116,6 +5173,15 @@ def main():
 
     p = sub.add_parser("polar", help="极性器件清单(D/LED/TVS: 阳极/阴极网络归一, 未归一附 datasheet)")
     p.set_defaults(fn=cmd_polar)
+
+    p = sub.add_parser("review", help="电气规则审查(R1~R4: 端子包络vs钳位件/串联件能力/电源轨/反相极性)")
+    p.add_argument("--rules", default=None,
+                   help="只跑指定规则(逗号分隔, 如 R1,R4; 默认全部启用项)")
+    p.add_argument("--config", default=None, help="规则配置 json(默认 review_rules.json)")
+    p.add_argument("--table", action="store_true",
+                   help="附端子电气包络表(R5 规格书雏形)")
+    p.add_argument("--pages", default=None, help="限定页(逗号分隔)")
+    p.set_defaults(fn=cmd_review)
 
     sub.add_parser("docs", help="文档清单(创建/最后编辑时间、ticket/段数——残留副本页判别)").set_defaults(fn=cmd_docs)
 

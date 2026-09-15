@@ -28,6 +28,7 @@ python lceda_reader.py bom [--board 板名] [--bom-only]   rem 全工程物料�
 python lceda_reader.py datasheets           rem 从 attributes 表导出 Datasheet URL 清单
 python lceda_reader.py pcbsch                rem PCB↔SCH 器件核对（反标改名/漏布局）
 python lceda_reader.py polar                 rem 极性器件清单（D/LED/TVS 极性网络归一）
+python lceda_reader.py review                  rem 电气规则审查(R1~R4: 端子包络vs钳位件/串联件能力/电源轨/反相极性)
 python lceda_reader.py docs                  rem 文档清单（创建/最后编辑时间/ticket）
 python lceda_reader.py render <页名> [-o 文件] rem 页渲染 SVG（字体/文字位置取自工程存储）
 python lceda_reader.py attrs <页名>          rem 页全部属性（含标题块@项）
