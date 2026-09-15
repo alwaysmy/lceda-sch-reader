@@ -66,16 +66,29 @@ def _des_prefix(des):
 
 
 def _has_out_pin(pin_names):
-    return any(str(n).upper() == "OUT" or str(n).upper().startswith("OUT")
-               for n in pin_names)
+    """是否有输出引脚。兼容多通道运放的 "OUT A"/"OUTA"/"OUT1" 写法。"""
+    for n in pin_names:
+        u = str(n).upper().replace(" ", "")
+        if u == "OUT" or u.startswith("OUT"):
+            return True
+    return False
 
 
 def _has_in_pair(pin_names):
-    ups = {str(n).upper() for n in pin_names}
+    """是否有反相/同相输入对。兼容 "IN+"/"IN-"/"INP"/"INN"、
+    "IN A+"/"IN A-"/"INB+"/"IN1-"/"VIN+"/"VIN-" 等多通道/多前缀写法。"""
+    ups = {str(n).upper().replace(" ", "") for n in pin_names}
     if {"IN+", "IN-"} <= ups or {"INP", "INN"} <= ups:
         return True
-    # 纯 "+"/"-" 引脚（部分运放符号）
-    return "+" in ups and "-" in ups
+    if "+" in ups and "-" in ups:
+        return True
+    # 规范化：把 "IN A+" 这类归一为 (IN,A,+) —— 存在同基名同通道的 +/- 对
+    norm = {}
+    for u in ups:
+        m = re.match(r"^(.*?)([+-])$", u)
+        if m:
+            norm.setdefault(m.group(1), set()).add(m.group(2))
+    return any(signs == {"+", "-"} for signs in norm.values())
 
 
 class Part:
@@ -377,15 +390,66 @@ class NetGraph:
     # -- 驱动级传递函数（保守） -------------------------------------------
 
     def pin_named(self, des, *names):
-        """取指定引脚名的 (key, net)。names 大小写不敏感，含别名。"""
+        """取指定引脚名的 (key, net)。names 大小写不敏感，含别名。
+
+        兼容多通道后缀：查 "OUT" 时也接受 "OUT A"/"OUTA"/"OUT1"
+        （精确匹配优先，避免多通道件取错通道）。
+        """
         p = self.part(des)
         if not p:
             return None
         want = {n.upper() for n in names}
+        exact, fuzzy = [], []
         for (nm, _num, key) in p.pins:
-            if str(nm).upper() in want:
-                return key, self.pin_net.get((p.des.upper(), key))
+            u = str(nm).upper()
+            u_ns = u.replace(" ", "")
+            if u in want:
+                exact.append((key, self.pin_net.get((p.des.upper(), key))))
+                continue
+            base = re.match(r"^([A-Z]+)", u_ns)
+            if base and base.group(1) in want:
+                fuzzy.append((key, self.pin_net.get((p.des.upper(), key))))
+        if exact:
+            return exact[0]
+        if fuzzy:
+            return fuzzy[0]
         return None
+
+    def channel_pins(self, des):
+        """把引脚按"通道后缀"分组，便于多通道运放整体解析。
+
+        返回 ``{"": {base: key}, "A": {base: key}, ...}``——base 为去掉通道
+        后缀的引脚名（OUT/IN+/IN-/V+/V-）。单通道件全部落在 ``""`` 组。
+        多通道运放（实测 OPA2350: OUT A/OUT B/IN A±/IN B±）按通道拆分后，
+        每个通道可独立算传递函数。
+        """
+        p = self.part(des)
+        if not p:
+            return {}
+        chans = {}
+        for (nm, _num, key) in p.pins:
+            u = str(nm).upper().replace(" ", "")
+            # 供电脚（可能带通道/前缀，如 V+/VDD/VSSA）归公共组
+            if re.match(r"^(V[+-]|VDD|VSS|GND|VCC|VS[+-])$", u):
+                chans.setdefault("", {})[u] = key
+                continue
+            # 通道后缀：IN A- / INA- / IN1- / OUT A / OUTA / OUT1 / INP/INN
+            m = re.match(r"^(IN|OUT)([A-D]|[1-4])?([+-]?)$", u)
+            if not m:
+                m = re.match(r"^(INP|INN)([A-D]|[1-4])?$", u)
+                if m:
+                    base = {"INP": "IN+", "INN": "IN-"}[m.group(1)]
+                    chans.setdefault(m.group(2) or "", {})[base] = key
+                    continue
+                chans.setdefault("", {})[u] = key
+                continue
+            kind, suf, sign = m.group(1), (m.group(2) or ""), m.group(3)
+            if kind == "IN" and not sign:
+                chans.setdefault("", {})[u] = key      # 无符号的 IN（如 IN）
+                continue
+            base = ("IN" + sign) if kind == "IN" else "OUT"
+            chans.setdefault(suf, {})[base] = key
+        return chans
 
     def driver_transfer(self, des, max_hops=6):
         """保守估计运放级的输出包络：``Vout = offset - gain*Vin``。
@@ -413,19 +477,50 @@ class NetGraph:
             notes.append("非驱动级")
             return res
 
-        inn = self.pin_named(des, "IN-", "INN", "-")
-        inp = self.pin_named(des, "IN+", "INP", "+")
-        outp = self.pin_named(des, "OUT")
-        if not (inn and inp and outp):
-            notes.append("缺少 IN-/IN+/OUT 引脚")
+        # 逐通道解析（多通道运放如 OPA2350：OUT A/OUT B/IN A±/IN B±）。
+        # 取第一个 confidence=high 的通道；否则取第一个有输出的通道并带回
+        # 各自的 notes 串，说明为什么不可算。
+        chans = self.channel_pins(des)
+        picks = []
+        for suf, d in chans.items():
+            if {"OUT", "IN+", "IN-"} <= set(d):
+                picks.append((suf, d))
+        if not picks:
+            notes.append("缺少 OUT/IN± 引脚")
             return res
-        inn_net, inp_net, out_net = inn[1], inp[1], outp[1]
+        if len(picks) > 1:
+            notes.append(f"多通道运放，逐通道尝试：{', '.join(s for s,_ in picks)}")
+
+        first = None
+        for suf, d in picks:
+            sub = self._transfer_for(des, d, max_hops, suf)
+            if sub["confidence"] == "high":
+                if first is not None and first.get("notes"):
+                    sub["notes"] = first["notes"] + sub["notes"]
+                return sub
+            if first is None:
+                first = sub
+        return first
+
+    def _transfer_for(self, des, chan, max_hops, suffix=""):
+        """单通道传递函数（chan = {OUT/IN+/IN-/V±: pin_key}）。"""
+        notes = []
+        res = {"des": des, "gain": None, "offset": None, "inverting": None,
+               "vref": None, "rf": None, "rin": None,
+               "confidence": "low", "notes": notes, "channel": suffix}
+        tag = f"通道{suffix}：" if suffix else ""
+        inn_net = self.pin_net.get((des.upper(), chan["IN-"]))
+        inp_net = self.pin_net.get((des.upper(), chan["IN+"]))
+        out_net = self.pin_net.get((des.upper(), chan["OUT"]))
+        if not (inn_net and inp_net and out_net):
+            notes.append(tag + "通道引脚未全部连接")
+            return res
 
         # 参考：优先解析同相端网络名里的电压（实测 "+1.96V-REF"）
         vref = _voltage_from_netname(inp_net)
         if vref is None:
-            notes.append(f"同相端网络 {inp_net!r} 未含可解析电压，"
-                         f"参考电平需人工确认")
+            notes.append(tag + f"同相端网络 {inp_net!r} 未含可解析电压，"
+                              f"参考电平需人工确认")
         res["vref"] = vref
 
         # 求和节点：IN- 经电阻到达的节点（运放输入无电流，V(求和)=V(IN-)=Vref）
@@ -442,13 +537,12 @@ class NetGraph:
                         sum_net = onet
                         break
         if sum_net is None:
-            notes.append("IN- 未经电阻连到求和节点（非电阻反馈形态）")
+            notes.append(tag + "IN- 未经电阻连到求和节点（非电阻反馈形态）")
             return res
 
         # Rf：反馈电阻。**不假设它直接连 OUT**——实测 V2 信号板运放输出
         # 经 R67(22Ω) 到开关前节点 nsw，反馈 R63 接在 nsw 上（文档的 V_sw）。
         # 判据：一端落在"从 OUT 排除求和节点后的可达集"、另一端落在求和节点。
-        out_net = outp[1]
         out_reach = self.walk(out_net, max_hops=max_hops, exclude={sum_net})
         out_reach[out_net] = 0
 
@@ -473,7 +567,7 @@ class NetGraph:
         # 排除：Rf；通向 OUT 侧可达集的；通向驱动级自身输入引脚网的
         # （实测 V2 的 R66=3.9k 是 IN- 隔离电阻，因运放输入无电流而不影响
         #  直流增益——文档公式里不出现，不应被当成 Rin）。
-        drv_input_nets = {inn_net, inp[1]} - {None}
+        drv_input_nets = {inn_net, inp_net} - {None}
         rin = None
         unknown_series = []
         for (des2, pk) in list(self.net_pins.get(sum_net, ())):
@@ -504,18 +598,19 @@ class NetGraph:
                 unknown_series.append((pp.des, onet))
         if unknown_series:
             notes.append(
-                "求和节点存在未建模的串联支路（疑似 T 型/多路输入网络）："
+                tag + "求和节点存在未建模的串联支路（疑似 T 型/多路输入网络）："
                 + ", ".join(f"{d}→{n}" for d, n in unknown_series)
                 + "；两电阻模型不适用，需人工确认")
             return res
         if rf is None or rin is None:
-            notes.append(f"未能同时确定 Rf/Rin（Rf={rf.des if rf else None}, "
+            notes.append(f"{tag}未能同时确定 Rf/Rin（Rf="
+                         f"{rf.des if rf else None}, "
                          f"Rin={rin.des if rin else None}）")
             return res
 
         rfq, rinq = rf.attrs.qty("RESISTANCE"), rin.attrs.qty("RESISTANCE")
         if not (rfq and rinq) or rinq.typ == 0:
-            notes.append("Rf/Rin 阻值缺失或为 0")
+            notes.append(tag + "Rf/Rin 阻值缺失或为 0")
             return res
         gain = rfq.typ / rinq.typ
         res["rf"] = rfq.typ
@@ -534,11 +629,23 @@ class NetGraph:
         if tr["offset"] is None:
             return None, "传递函数不可算：" + "; ".join(tr["notes"])
         rail = None
-        vp = self.pin_named(des, "V+", "VDD", "VCC", "VS+")
-        if vp and vp[1]:
-            rail = self._rail_voltage(des, vp[1])
+        # 供电脚可能在公共组（channel_pins 的 ""）或与通道同组
+        vp_key = None
+        chans = self.channel_pins(des)
+        for grp in [chans.get(tr.get("channel") or "", {}), chans.get("", {})]:
+            for nm in ("V+", "VDD", "VCC", "VS+"):
+                if nm in grp:
+                    vp_key = grp[nm]
+                    break
+            if vp_key:
+                break
+        if vp_key:
+            rail_net = self.pin_net.get((des.upper(), vp_key))
+            rail = self._rail_voltage(des, rail_net)
         top = tr["offset"]
-        note = f"Vin=0 时输出 {top:.3g}V（增益 {tr['gain']:.3g}, 参考 {tr['vref']:.3g}V）"
+        ch = f"[通道{tr['channel']}] " if tr.get("channel") else ""
+        note = (f"{ch}Vin=0 时输出 {top:.3g}V（增益 {tr['gain']:.3g}, "
+                f"参考 {tr['vref']:.3g}V）")
         if rail is not None and rail < top:
             return rail, note + f"；受正轨 {rail:.3g}V 限制"
         return top, note

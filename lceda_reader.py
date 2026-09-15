@@ -2245,8 +2245,13 @@ def _is_zero_ohm(title, desc="", value=None):
 
 
 def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
-                           _cbb_depth=0):
+                           _cbb_depth=0, domain_out=None):
     """基于走线连通域的网络名解析。
+
+    ``domain_out``（可选）：传入 dict 时填充 ``{(designator, pin_key): 域标识}``
+    ——**未命名网络也有域标识**（值为域根点，形如 ``"(x, y)"``），供需要
+    "物理同一网络"而非"网络名"的消费点（如 netgraph 的受引导遍历）使用。
+    纯加性出参，不影响返回值与既有调用。
 
     规则（修订版）：
       1) 同 WIRE 记录端点相接 = 同一连通域（物理网络）
@@ -2422,6 +2427,9 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
         for pt in pts:
             ns |= dom_nets.get(domain_of_pt[pt], set())
         result[(des, pin)] = NET_SEP.join(sorted(ns))
+        # 加性出参：域标识（未命名网络也可用，供 netgraph 物理连通性判断）
+        if domain_out is not None and pts:
+            domain_out[(des, pin)] = repr(domain_of_pt[pts[0]])
     # 7) CBB（复用块）展开：模板内部电路按端口映射进实例网络
     if _cbb_depth < 2:
         _expand_cbb(db, sheet, comp_pins, result, _cbb_depth)
