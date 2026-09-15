@@ -4060,13 +4060,34 @@ def cmd_review(db, args):
     if getattr(args, "rules", None):
         only = {r.strip().upper() for r in args.rules.split(",") if r.strip()}
     findings = RULESMOD.run_rules(graph, cfg, sys.modules[__name__], only=only)
+
+    # --netlist：第2层出口——导出指定驱动块的网表（不依赖识别成功）
+    if getattr(args, "netlist", None):
+        import lceda_blocks as BL
+        import lceda_spice as SP
+        blk = BL.recognize(graph, args.netlist)
+        if blk is None:
+            out(f"未找到驱动级 {args.netlist}")
+            sys.exit(2)
+        out(SP.emit_for_block(graph, blk, args.netlist))
+        return
+
     table = RULESMOD.terminal_table(graph, cfg, sys.modules[__name__]) \
         if getattr(args, "table", False) else []
+    blocks_out = None
+    if getattr(args, "blocks", False):
+        import lceda_blocks as BL
+        blocks_out = []
+        for b in BL.recognize_all(graph):
+            d = b.as_dict()
+            d["computed"] = BL.evaluate(b)      # 第3层：可闭式算的块直接给值
+            blocks_out.append(d)
 
     if args.json:
         out(json.dumps({
             "findings": [f.as_dict() for f in findings],
             "terminal_table": table,
+            "blocks": blocks_out,
             "graph": {"parts": len(graph.parts), "nets": len(graph.net_pins)},
         }, ensure_ascii=False, indent=1))
         if not findings:
@@ -4084,6 +4105,24 @@ def cmd_review(db, args):
     for f in findings:
         out(f"  [{f.severity.upper():5s}] {f.rule}  {f.subject}")
         out(f"          {f.message}")
+    if blocks_out:
+        out("")
+        out("== 电路块识别（第1层；认不出的交网表/LLM）==")
+        for b in blocks_out:
+            ch = f"#{b['channel']}" if b.get("channel") else ""
+            comp = b.get("computed") or {}
+            cv = ""
+            if comp.get("gain") is not None:
+                cv = f"  增益={comp['gain']:.4g}"
+            elif comp.get("fc_hz") is not None:
+                cv = f"  fc={comp['fc_hz']:.4g}Hz Q={comp.get('q', 0):.3g}"
+            elif comp.get("tau_s") is not None:
+                cv = f"  τ={comp['tau_s']:.4g}s"
+            out(f"  {b['anchor']}{ch:4s} {b['kind']:18s} conf={b['confidence']:6s} "
+                f"成员={','.join(b['members']) or '(未识别)'}{cv}")
+            for e in b.get("evidence", [])[:1]:
+                out(f"          {e}")
+
     if table:
         out("")
         out("== 端子电气包络表（R5 规格书雏形）==")
@@ -5188,6 +5227,10 @@ def main():
     p.add_argument("--config", default=None, help="规则配置 json(默认 review_rules.json)")
     p.add_argument("--table", action="store_true",
                    help="附端子电气包络表(R5 规格书雏形)")
+    p.add_argument("--blocks", action="store_true",
+                   help="附电路块识别结果(第1层: kind/置信度/成员/依据)")
+    p.add_argument("--netlist", default=None, metavar="位号",
+                   help="导出该驱动块邻域的 SPICE 网表(第2层)到 stdout")
     p.add_argument("--pages", default=None, help="限定页(逗号分隔)")
     p.set_defaults(fn=cmd_review)
 
