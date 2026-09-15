@@ -4051,9 +4051,39 @@ def cmd_review(db, args):
     """电气规则审查（R1~R4）。规则只面对统一模型（后端合成 + 语义量 + 净图），
     阈值外置 review_rules.json。依据 docs/电气规则层建议-2026-09-15.md。"""
     import lceda_rules as RULESMOD
+    import lceda_blocks as BLK
+    # --blocks-cap：只列能力注册表（无需建图，最快）
+    if getattr(args, "blocks_cap", False):
+        BLK.load_extensions()
+        info = BLK.registry_info()
+        vs = {"real": "已验证(真实工程)", "synthetic": "合成样本验证",
+              "stub": "未验证"}
+        if args.json:
+            out(json.dumps(info, ensure_ascii=False, indent=1))
+            return
+        out("== 块识别能力注册表（第1层）==")
+        out("  kind                 优先级  验证状态              来源")
+        for r in info["recognizers"]:
+            out(f"  {r['kind']:20s} {r['priority']:6d}  "
+                f"{vs.get(r['verified'], r['verified']):20s} {r['source']}")
+            if r.get("note"):
+                out(f"      └ {r['note']}")
+        out("")
+        out("== 闭式公式注册表（第3层）==")
+        out("  kind                 验证状态              来源")
+        for f in info["formulas"]:
+            out(f"  {f['kind']:20s} {vs.get(f['verified'], f['verified']):20s} "
+                f"{f['source']}")
+        out("")
+        out("  扩展方式：在工具目录建 block_ext.py，顶层调用")
+        out("    lceda_blocks.register_recognizer(kind, fn, priority, verified)")
+        out("    lceda_blocks.register_formula(kind, fn, verified)")
+        return
+
     pages = None
     if getattr(args, "pages", None):
         pages = {p.strip() for p in args.pages.split(",") if p.strip()}
+    BLK.load_extensions()          # 加载可选扩展（block_ext.py），再建图
     graph = RULESMOD.NetGraph.build(db, sys.modules[__name__], pages=pages)
     cfg = RULESMOD.load_config(getattr(args, "config", None))
     only = None
@@ -4108,6 +4138,8 @@ def cmd_review(db, args):
     if blocks_out:
         out("")
         out("== 电路块识别（第1层；认不出的交网表/LLM）==")
+        _VS = {"real": "[已验证]", "synthetic": "[合成验证]",
+               "stub": "[未验证]"}
         for b in blocks_out:
             ch = f"#{b['channel']}" if b.get("channel") else ""
             comp = b.get("computed") or {}
@@ -4118,8 +4150,9 @@ def cmd_review(db, args):
                 cv = f"  fc={comp['fc_hz']:.4g}Hz Q={comp.get('q', 0):.3g}"
             elif comp.get("tau_s") is not None:
                 cv = f"  τ={comp['tau_s']:.4g}s"
+            vs = _VS.get(b.get("verified"), "")
             out(f"  {b['anchor']}{ch:4s} {b['kind']:18s} conf={b['confidence']:6s} "
-                f"成员={','.join(b['members']) or '(未识别)'}{cv}")
+                f"{vs:10s} 成员={','.join(b['members']) or '(未识别)'}{cv}")
             for e in b.get("evidence", [])[:1]:
                 out(f"          {e}")
 
@@ -5229,6 +5262,8 @@ def main():
                    help="附端子电气包络表(R5 规格书雏形)")
     p.add_argument("--blocks", action="store_true",
                    help="附电路块识别结果(第1层: kind/置信度/成员/依据)")
+    p.add_argument("--blocks-cap", action="store_true", dest="blocks_cap",
+                   help="列出块识别/公式注册表能力(含验证状态与来源)")
     p.add_argument("--netlist", default=None, metavar="位号",
                    help="导出该驱动块邻域的 SPICE 网表(第2层)到 stdout")
     p.add_argument("--pages", default=None, help="限定页(逗号分隔)")

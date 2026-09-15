@@ -69,16 +69,161 @@ K_MFB_BP = "mfb_bp"
 K_COMPARATOR = "comparator"
 K_UNKNOWN = "opamp_network"
 
-# 可闭式计算参数的种类（第 3 层能直接算，无需仿真/LLM）
-FORMULA_KINDS = {K_FOLLOWER, K_INVERTING, K_NONINV, K_INTEGRATOR,
-                 K_SK_LP, K_SK_HP, K_MFB_LP, K_MFB_BP}
+# ---------------------------------------------------------------- 注册表
+#
+# 设计目标（用户 2026-09-15）：**逐渐拓展的结构**——内置若干能力，同时可添加。
+# 识别器与公式都走注册表：
+#   - 内置项在文件末尾 _register_builtins() 注册；
+#   - 扩展项由 load_extensions() 从工具目录 block_ext.py 导入，
+#     该文件顶层调用 register_recognizer()/register_formula() 即可增补；
+#   - 新拓扑**不需要改本文件**，也便于让 LLM 走"提议→落盘→回归"。
+#
+# 每项带 verified 标记：输出与文档据此打「未验证」标（docs/...§十三）。
+
+VERIFIED_REAL = "real"        # 在真实工程样本上验证过
+VERIFIED_SYNTH = "synthetic"  # 仅合成样本验证
+VERIFIED_STUB = "stub"        # 未验证
+
+
+class Recognizer:
+    """一条块识别规则。``fn(nb) -> Block|None``；priority 小者先试。"""
+
+    __slots__ = ("kind", "fn", "priority", "verified", "note", "source")
+
+    def __init__(self, kind, fn, priority=50, verified=VERIFIED_STUB,
+                 note="", source="builtin"):
+        self.kind = kind
+        self.fn = fn
+        self.priority = priority
+        self.verified = verified
+        self.note = note
+        self.source = source
+
+    def __repr__(self):
+        return (f"<Rec {self.kind} p={self.priority} "
+                f"{self.verified} {self.source}>")
+
+
+class Formula:
+    """一条闭式解公式。``fn(block) -> dict``（第 3 层，可算则返回值）。"""
+
+    __slots__ = ("kind", "fn", "verified", "note", "source")
+
+    def __init__(self, kind, fn, verified=VERIFIED_STUB, note="",
+                 source="builtin"):
+        self.kind = kind
+        self.fn = fn
+        self.verified = verified
+        self.note = note
+        self.source = source
+
+
+RECOGNIZERS = []      # [Recognizer]，按 priority 排序
+FORMULAS = {}         # kind -> Formula
+_LOADING_SOURCE = None   # 扩展加载期间置 "ext:<file>"，供 source 自动标注
+
+
+def _resolve_source(source):
+    if source and source != "builtin":
+        return source
+    return _LOADING_SOURCE or "builtin"
+
+
+def register_recognizer(kind, fn, priority=50, verified=VERIFIED_STUB,
+                        note="", source="builtin"):
+    """注册一条块识别规则（内置或扩展）。同 kind 重复注册则覆盖。"""
+    src = _resolve_source(source)
+    for i, r in enumerate(RECOGNIZERS):
+        if r.kind == kind:
+            RECOGNIZERS[i] = Recognizer(kind, fn, priority, verified, note,
+                                        src)
+            RECOGNIZERS.sort(key=lambda x: x.priority)
+            return RECOGNIZERS[i]
+    RECOGNIZERS.append(Recognizer(kind, fn, priority, verified, note, src))
+    RECOGNIZERS.sort(key=lambda x: x.priority)
+    return RECOGNIZERS[-1]
+
+
+def register_formula(kind, fn, verified=VERIFIED_STUB, note="",
+                     source="builtin"):
+    """注册一个块种类的闭式解（第 3 层）。"""
+    FORMULAS[kind] = Formula(kind, fn, verified, note,
+                             _resolve_source(source))
+    return FORMULAS[kind]
+
+
+def is_formula_kind(kind):
+    """该种类当前是否有闭式解（替代静态 FORMULA_KINDS 常量）。"""
+    return kind in FORMULAS
+
+
+def verified_of(kind):
+    """某块种类的验证状态（供输出打标记）。"""
+    f = FORMULAS.get(kind)
+    if f:
+        return f.verified
+    for r in RECOGNIZERS:
+        if r.kind == kind:
+            return r.verified
+    return VERIFIED_STUB
+
+
+def registry_info():
+    """注册表自省（供 CLI/文档输出：能力/验证状态/来源）。"""
+    return {
+        "recognizers": [
+            {"kind": r.kind, "priority": r.priority, "verified": r.verified,
+             "source": r.source, "note": r.note} for r in RECOGNIZERS],
+        "formulas": [
+            {"kind": k, "verified": f.verified, "source": f.source,
+             "note": f.note} for k, f in sorted(FORMULAS.items())],
+    }
+
+
+def load_extensions(path=None):
+    """加载可选扩展文件（工具目录 block_ext.py）。
+
+    扩展文件在模块顶层调用 register_recognizer/register_formula 即可增补
+    能力；文件不存在时静默跳过（正常情况）。
+    """
+    import os as _os
+    import sys as _sys
+    p = path or _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                              "block_ext.py")
+    if not _os.path.isfile(p):
+        return {"loaded": False, "path": p, "reason": "不存在（正常）"}
+    global _LOADING_SOURCE
+    try:
+        import importlib.util as _ilu
+        spec = _ilu.spec_from_file_location("block_ext", p)
+        mod = _ilu.module_from_spec(spec)
+        _sys.modules["block_ext"] = mod
+        _LOADING_SOURCE = "ext:" + _os.path.basename(p)
+        try:
+            spec.loader.exec_module(mod)
+        finally:
+            _LOADING_SOURCE = None
+        n_rec = sum(1 for r in RECOGNIZERS if r.source.startswith("ext:"))
+        n_fml = sum(1 for f in FORMULAS.values()
+                    if f.source.startswith("ext:"))
+        return {"loaded": True, "path": p,
+                "recognizers": n_rec, "formulas": n_fml}
+    except Exception as e:
+        _LOADING_SOURCE = None
+        return {"loaded": False, "path": p,
+                "reason": f"{type(e).__name__}: {e}"}
+
+
+# 历史常量（保留兼容旧引用；能力查询请用 is_formula_kind）
+FORMULA_KINDS = set()
+
 
 
 class Block:
     """一个识别出的电路块。"""
 
     __slots__ = ("kind", "confidence", "anchor", "channel", "members",
-                 "nets", "params", "evidence", "graph")
+                 "nets", "params", "evidence", "graph", "source_verified")
 
     def __init__(self, kind, anchor, graph, channel="", confidence="low"):
         self.kind = kind
@@ -90,17 +235,23 @@ class Block:
         self.nets = {}                # 角色 -> net_key
         self.params = {}              # 提取到的元件值
         self.evidence = []
+        self.source_verified = None   # 由 recognize() 从注册表回填
 
     @property
     def label(self):
         return f"{self.anchor}{('#' + self.channel) if self.channel else ''}"
 
     def can_compute(self):
-        return self.kind in FORMULA_KINDS and self.confidence != "low"
+        return is_formula_kind(self.kind) and self.confidence != "low"
+
+    @property
+    def verified(self):
+        return verified_of(self.kind)
 
     def as_dict(self):
         return {"kind": self.kind, "anchor": self.anchor,
                 "channel": self.channel, "confidence": self.confidence,
+                "verified": self.verified,
                 "members": sorted(self.members),
                 "params": {k: (round(v, 6) if isinstance(v, float) else v)
                            for k, v in self.params.items()},
@@ -551,19 +702,20 @@ def recognize(graph, des, chan=None):
     best = None
     for suf, keys in picks:
         nb = _NB(graph, des, keys, suf)
-        # 顺序要紧：先认**有结构特征的滤波块**（SK/MFB——它们的 OUT↔IN-
-        # 可能同网，会被 follower 抢先），再认放大/跟随，最后才认兜底归类
-        # （T 型）。T 型判据最宽，放最后避免把最简级误吞。
-        for rec in (_rec_sk, _rec_mfb, _rec_follower, _rec_integrator,
-                    _rec_noninv, _rec_inverting, _rec_tnet):
-            blk = rec(nb)
+        # 识别顺序由注册表 priority 决定（小者先试）：SK/MFB(10，结构特征最
+        # 明确且 OUT↔IN- 可能同网须先于 follower) → 跟随/积分(20) → 同相/反相
+        # (30) → T 型(90，判据最宽兜底归类) → 比较器(95)。
+        for rec in RECOGNIZERS:
+            try:
+                blk = rec.fn(nb)
+            except Exception:
+                continue                 # 单个识别器出错不拖垮整轮
+            if blk is not None:
+                blk.source_verified = rec.verified
             if blk and blk.confidence == "high":
                 return blk
             if blk and best is None:
                 best = blk
-        blk = _rec_comparator(nb)
-        if blk and best is None:
-            best = blk
     if best:
         return best
     # 兜底：有源但认不出 → 交第 3 层
@@ -594,52 +746,95 @@ def recognize_all(graph):
 
 # ---------------------------------------------------------------- 第3层公式
 
+def _vref_of(block):
+    return _voltage_from_netname(block.nets.get("vin") or "")         or _voltage_from_netname(block.graph.net_name.get(
+            block.nets.get("inp") or "", ""))
+
+
+def _fml_follower(block):
+    return {"gain": 1.0, "offset": _vref_of(block), "inverting": False}
+
+
+def _fml_inverting(block):
+    pr = block.params
+    if not (pr.get("rf") and pr.get("rin")):
+        return {}
+    out = {"gain": -pr["rf"] / pr["rin"], "inverting": True,
+           "vref": _vref_of(block), "rf": pr["rf"], "rin": pr["rin"]}
+    v = out["vref"]
+    if v is not None:
+        out["offset"] = v * (1 + pr["rf"] / pr["rin"])
+    return out
+
+
+def _fml_noninv(block):
+    """⚠ 未验证（verified=stub）——标准同相式，未在真实/合成样本验证。"""
+    pr = block.params
+    if not (pr.get("rf") and pr.get("rg")):
+        return {}
+    gain = 1 + pr["rf"] / pr["rg"]
+    v = _vref_of(block)
+    return {"gain": gain, "inverting": False, "vref": v,
+            "rf": pr["rf"], "rg": pr["rg"],
+            "offset": v * gain if v is not None else None}
+
+
+def _fml_integrator(block):
+    """⚠ 未验证（verified=stub）。"""
+    tau = block.params.get("tau")
+    if not tau:
+        return {}
+    return {"tau_s": tau, "f_unity_hz": 1.0 / (2 * math.pi * tau)}
+
+
+def _fml_sk(block):
+    """Sallen-Key 单位增益：fc=1/(2π√(R1R2C1C2))，Q=√(R1R2C1C2)/(C2(R1+R2))。
+
+    验证：⚠ synthetic——仅合成样本（R=10k/C=10n → 1591.55Hz/Q=0.5）；
+    真实工程尚无样本。
+    """
+    pr = block.params
+    r1, r2, c1, c2 = (pr.get("r1"), pr.get("r2"), pr.get("c1"),
+                      pr.get("c2"))
+    if not all((r1, r2, c1, c2)):
+        return {}
+    fc = 1.0 / (2 * math.pi * math.sqrt(r1 * r2 * c1 * c2))
+    q = math.sqrt(r1 * r2 * c1 * c2) / (c2 * (r1 + r2))
+    return {"fc_hz": fc, "q": q, "order": 2}
+
+
+def _fml_mfb(block):
+    """⚠ 未验证（verified=stub）——参数提取(3R2C)未完成，当前恒返回 {}。"""
+    pr = block.params
+    need = ("r1", "r2", "r3", "c1", "c2")
+    if not all(pr.get(k) for k in need):
+        return {"note": "MFB 参数提取未完成（需 3R+2C），交网表/LLM"}
+    r1, r2, r3 = pr["r1"], pr["r2"], pr["r3"]
+    c1, c2 = pr["c1"], pr["c2"]
+    fc = 1.0 / (2 * math.pi * math.sqrt(r2 * r3 * c1 * c2))
+    q = math.sqrt(r2 * r3 * c1 * c2) / (c2 * (r2 + r3)) * (1 + r3 / r1)
+    return {"fc_hz": fc, "q": q, "order": 2, "gain_dc": -r2 / r1}
+
+
+def _fml_none(block):
+    """无闭式解——显式声明"交第2层网表"。"""
+    return {}
+
+
 def evaluate(block):
     """对可闭式计算的块套公式（第 3 层；不需仿真/LLM）。
 
-    返回 ``{参数: 值}``；不可算返回 ``{}``（调用方转交第 2 层网表）。
-    公式为标准教科书式，依据见各分支注释。
+    公式取自 FORMULAS 注册表——扩展新块种类时一并 register_formula 即可，
+    本函数无需改动。不可算返回 {}（调用方转交第 2 层网表）。
     """
     if not block.can_compute():
         return {}
-    k, pr = block.kind, block.params
-    out = {}
-    vref = _voltage_from_netname(block.nets.get("vin") or "") \
-        or _voltage_from_netname(block.graph.net_name.get(
-            block.nets.get("inp") or "", ""))
+    f = FORMULAS.get(block.kind)
+    if f is None:
+        return {}
     try:
-        if k == K_FOLLOWER:
-            out["gain"] = 1.0
-            out["offset"] = vref if vref is not None else None
-            out["inverting"] = False
-        elif k == K_INVERTING:
-            if not (pr.get("rf") and pr.get("rin")):
-                return {}
-            out["gain"] = -pr["rf"] / pr["rin"]
-            out["inverting"] = True
-            out["vref"] = vref
-            out["rf"] = pr["rf"]
-            out["rin"] = pr["rin"]
-            if vref is not None:
-                out["offset"] = vref * (1 + pr["rf"] / pr["rin"])
-        elif k == K_INTEGRATOR:
-            if pr.get("tau"):
-                out["tau_s"] = pr["tau"]
-                out["f_unity_hz"] = 1.0 / (2 * math.pi * pr["tau"])
-        elif k in (K_SK_LP, K_SK_HP):
-            r1, r2, c1, c2 = pr.get("r1"), pr.get("r2"), pr.get("c1"), pr.get("c2")
-            if not all((r1, r2, c1, c2)):
-                return {}
-            # Sallen-Key 单位增益：fc = 1/(2π√(R1R2C1C2))，
-            # Q = √(R1R2C1C2)/(C2(R1+R2))（LP；HP 对偶，fc 同式）
-            fc = 1.0 / (2 * math.pi * math.sqrt(r1 * r2 * c1 * c2))
-            q = math.sqrt(r1 * r2 * c1 * c2) / (c2 * (r1 + r2))
-            out.update(fc_hz=fc, q=q, order=2)
-        elif k == K_MFB_LP:
-            # MFB 低通需 3R+2C；参数不全时不硬算
-            out["note"] = "MFB 参数提取不完整，交网表/LLM"
-        return out
-    except (ZeroDivisionError, ValueError, TypeError):
+        return f.fn(block)
+    except (ZeroDivisionError, ValueError, TypeError, AttributeError):
         return {}
 
 
@@ -663,3 +858,57 @@ def features(block, graph):
         members = sorted({d for d, _ in graph.net_pins.get(key, ())})
         nets[role] = {"net": name, "members": members}
     return {"components": comps, "nets": nets}
+
+
+# ---------------------------------------------------------------- 内置注册
+#
+# priority 小者先试；顺序 = 从"结构特征最明确"到"最宽泛"：
+#   10 SK/MFB（结构特征明确，且 OUT↔IN- 可能同网必须先于 follower）
+#   20 follower / 积分器
+#   30 同相 / 反相（最简放大）
+#   90 T 型（判据最宽，兜底归类，避免吞掉最简级）
+#   95 比较器（无反馈=开环）
+#
+# verified 依据见 docs/电气规则层-实现说明.md §十三「验证状态」表：
+#   real      = 真实工程验证
+#   synthetic = 仅合成样本
+#   stub      = 未验证
+def _register_builtins():
+    reg = register_recognizer
+    # SK 的 LP/HP 是同一识别器的对偶分支（函数内循环、返回实际匹配的
+    # kind），故只注册一次（kind 取 LP 作代表），避免同一函数被调两遍。
+    reg(K_SK_LP, _rec_sk, priority=10, verified=VERIFIED_SYNTH,
+        note="SK 二阶（LP/HP 对偶）；合成样本验证 LP"
+             "（R=10k/C=10n → 1591.55Hz/Q=0.5）；真实工程尚无样本")
+    reg(K_MFB_LP, _rec_mfb, priority=10, verified=VERIFIED_STUB,
+        note="识别形态已实现；参数提取(3R2C)未完成，公式恒返回空")
+    reg(K_FOLLOWER, _rec_follower, priority=20, verified=VERIFIED_REAL,
+        note="v4(U3#A) 与 Piezo(U31#A/U56#B) 真实验证")
+    reg(K_INTEGRATOR, _rec_integrator, priority=20, verified=VERIFIED_STUB,
+        note="未在真实工程或合成样本上验证")
+    reg(K_NONINV, _rec_noninv, priority=30, verified=VERIFIED_STUB,
+        note="未验证")
+    reg(K_INVERTING, _rec_inverting, priority=30, verified=VERIFIED_REAL,
+        note="V2 信号板 U16/U18 真实验证（增益 4.286/offset 10.36）")
+    reg(K_TNET, _rec_tnet, priority=90, verified=VERIFIED_REAL,
+        note="V2 信号板 U19 真实验证（复合网络，正确降级不给错值）")
+    reg(K_COMPARATOR, _rec_comparator, priority=95, verified=VERIFIED_STUB,
+        note="未验证")
+
+    fml = register_formula
+    fml(K_FOLLOWER, _fml_follower, verified=VERIFIED_REAL)
+    fml(K_INVERTING, _fml_inverting, verified=VERIFIED_REAL)
+    fml(K_NONINV, _fml_noninv, verified=VERIFIED_STUB)
+    fml(K_INTEGRATOR, _fml_integrator, verified=VERIFIED_STUB)
+    fml(K_SK_LP, _fml_sk, verified=VERIFIED_SYNTH)
+    fml(K_SK_HP, _fml_sk, verified=VERIFIED_STUB,
+        note="与 LP 同式（fc 对偶相同）；HP 未单独验证")
+    fml(K_MFB_LP, _fml_mfb, verified=VERIFIED_STUB,
+        note="标准反相 MFB 低通式；参数提取未完成故当前恒返回空")
+    fml(K_TNET, _fml_none, verified=VERIFIED_REAL,
+        note="交第2层网表（复合网络无预设公式）")
+    fml(K_UNKNOWN, _fml_none, verified=VERIFIED_REAL,
+        note="兜底种类：交网表/LLM")
+
+
+_register_builtins()
