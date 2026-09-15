@@ -452,175 +452,51 @@ class NetGraph:
         return chans
 
     def driver_transfer(self, des, max_hops=6):
-        """保守估计运放级的输出包络：``Vout = offset - gain*Vin``。
+        """驱动级的直流传递（``Vout = offset - gain*Vin``）。
 
-        仅支持**最常见的反相/同相两电阻反馈**（含"参考经电阻注入求和节点"
-        的变体，即 V2 信号板的实测形态）。识别不确定时返回
-        ``confidence='low'`` 并说明原因，交由人工确认——符合工具既有的
-        "分级置信度"原则，不做通用拓扑识别。
+        **已改为委托** ``lceda_blocks``（第1层识别 + 第3层公式），本函数
+        只做结构适配——避免"识别+公式"两份实现漂移（曾因硬编码两电阻模型
+        无法覆盖 T 型/滤波网络）。认不出的块返回 ``confidence='low'`` 且
+        ``gain=None``，并在 notes 指明"交网表/LLM"。
 
-        返回 dict:
-          gain       Rf/Rin（≥0）
-          offset     Vin=0 时的输出（反相级的上端，用于与钳位件比较）
-          inverting  是否反相
-          vref       参考电压（V）
-          rf/rin     反馈/输入电阻（Ω）
-          confidence 'high' | 'low'
-          notes      [str]
+        返回 dict（字段与历史一致，兼容既有消费点）:
+          gain/offset/inverting/vref/rf/rin/confidence/notes/channel/block
         """
-        notes = []
+        try:
+            import lceda_blocks as BL
+        except ImportError:
+            import os
+            import sys
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import lceda_blocks as BL
         res = {"des": des, "gain": None, "offset": None, "inverting": None,
                "vref": None, "rf": None, "rin": None,
-               "confidence": "low", "notes": notes}
+               "confidence": "low", "notes": [], "channel": "",
+               "block": None}
         p = self.part(des)
         if not p or p.role != R_DRIVER:
-            notes.append("非驱动级")
+            res["notes"].append("非驱动级")
             return res
-
-        # 逐通道解析（多通道运放如 OPA2350：OUT A/OUT B/IN A±/IN B±）。
-        # 取第一个 confidence=high 的通道；否则取第一个有输出的通道并带回
-        # 各自的 notes 串，说明为什么不可算。
-        chans = self.channel_pins(des)
-        picks = []
-        for suf, d in chans.items():
-            if {"OUT", "IN+", "IN-"} <= set(d):
-                picks.append((suf, d))
-        if not picks:
-            notes.append("缺少 OUT/IN± 引脚")
+        blk = BL.recognize(self, des)
+        if blk is None:
+            res["notes"].append("无法识别为驱动块")
             return res
-        if len(picks) > 1:
-            notes.append(f"多通道运放，逐通道尝试：{', '.join(s for s,_ in picks)}")
-
-        first = None
-        for suf, d in picks:
-            sub = self._transfer_for(des, d, max_hops, suf)
-            if sub["confidence"] == "high":
-                if first is not None and first.get("notes"):
-                    sub["notes"] = first["notes"] + sub["notes"]
-                return sub
-            if first is None:
-                first = sub
-        return first
-
-    def _transfer_for(self, des, chan, max_hops, suffix=""):
-        """单通道传递函数（chan = {OUT/IN+/IN-/V±: pin_key}）。"""
-        notes = []
-        res = {"des": des, "gain": None, "offset": None, "inverting": None,
-               "vref": None, "rf": None, "rin": None,
-               "confidence": "low", "notes": notes, "channel": suffix}
-        tag = f"通道{suffix}：" if suffix else ""
-        inn_net = self.pin_net.get((des.upper(), chan["IN-"]))
-        inp_net = self.pin_net.get((des.upper(), chan["IN+"]))
-        out_net = self.pin_net.get((des.upper(), chan["OUT"]))
-        if not (inn_net and inp_net and out_net):
-            notes.append(tag + "通道引脚未全部连接")
-            return res
-
-        # 参考：优先解析同相端网络名里的电压（实测 "+1.96V-REF"）
-        vref = _voltage_from_netname(inp_net)
-        if vref is None:
-            notes.append(tag + f"同相端网络 {inp_net!r} 未含可解析电压，"
-                              f"参考电平需人工确认")
-        res["vref"] = vref
-
-        # 求和节点：IN- 经电阻到达的节点（运放输入无电流，V(求和)=V(IN-)=Vref）
-        # 实测 V2 形态：IN- ─R66─ nx ─┬─ R63 ─ OUT
-        #                              ├─ R65 ─ 输入(DAx)
-        #                              └─ C85 ─ GND
-        sum_net = None
-        for (des2, pk) in list(self.net_pins.get(inn_net, ())):
-            pp = self.part(des2)
-            if pp and pp.role == R_SERIES and pp.is_two_pin:
-                for o in self.other_pins(des2, pk):
-                    onet = self.pin_net.get((pp.des.upper(), o))
-                    if onet:
-                        sum_net = onet
-                        break
-        if sum_net is None:
-            notes.append(tag + "IN- 未经电阻连到求和节点（非电阻反馈形态）")
-            return res
-
-        # Rf：反馈电阻。**不假设它直接连 OUT**——实测 V2 信号板运放输出
-        # 经 R67(22Ω) 到开关前节点 nsw，反馈 R63 接在 nsw 上（文档的 V_sw）。
-        # 判据：一端落在"从 OUT 排除求和节点后的可达集"、另一端落在求和节点。
-        out_reach = self.walk(out_net, max_hops=max_hops, exclude={sum_net})
-        out_reach[out_net] = 0
-
-        def _other_net(part, pin_key):
-            for o in self.other_pins(part.des, pin_key):
-                return self.pin_net.get((part.des.upper(), o))
-            return None
-
-        rf = None
-        for net in out_reach:
-            for (des2, pk) in list(self.net_pins.get(net, ())):
-                pp = self.part(des2)
-                if not (pp and pp.role == R_SERIES and pp.is_two_pin):
-                    continue
-                if _other_net(pp, pk) == sum_net:
-                    rf = pp
-                    break
-            if rf:
-                break
-
-        # Rin：挂在求和节点、通向**外部输入**的串联件。
-        # 排除：Rf；通向 OUT 侧可达集的；通向驱动级自身输入引脚网的
-        # （实测 V2 的 R66=3.9k 是 IN- 隔离电阻，因运放输入无电流而不影响
-        #  直流增益——文档公式里不出现，不应被当成 Rin）。
-        drv_input_nets = {inn_net, inp_net} - {None}
-        rin = None
-        unknown_series = []
-        for (des2, pk) in list(self.net_pins.get(sum_net, ())):
-            pp = self.part(des2)
-            if not (pp and pp.role == R_SERIES and pp.is_two_pin):
-                continue
-            if rf and pp.des.upper() == rf.des.upper():
-                continue
-            onet = _other_net(pp, pk)
-            if not onet or onet == sum_net:
-                continue
-            if onet in out_reach or onet in drv_input_nets:
-                continue                      # OUT 侧 / IN- 隔离
-            # T 型检测：候选输入件的另一端**还挂着别的串联件**，说明输入
-            # 不是直接进来，而是经 T 型/两级网络（实测 U19：求和节点 -R75-
-            # 中间节点 -R74- 输入，另有 R76；简单两电阻模型会算出错误增益）。
-            further = [q for q in self.net_pins.get(onet, ())
-                       if (self.part(q[0]) and self.part(q[0]).role == R_SERIES
-                           and self.part(q[0]).is_two_pin
-                           and q[0].upper() != pp.des.upper()
-                           and _other_net(self.part(q[0]), q[1]) != sum_net)]
-            if further:
-                unknown_series.append((pp.des, onet))
-                continue
-            if rin is None:
-                rin = pp
-            else:
-                unknown_series.append((pp.des, onet))
-        if unknown_series:
-            notes.append(
-                tag + "求和节点存在未建模的串联支路（疑似 T 型/多路输入网络）："
-                + ", ".join(f"{d}→{n}" for d, n in unknown_series)
-                + "；两电阻模型不适用，需人工确认")
-            return res
-        if rf is None or rin is None:
-            notes.append(f"{tag}未能同时确定 Rf/Rin（Rf="
-                         f"{rf.des if rf else None}, "
-                         f"Rin={rin.des if rin else None}）")
-            return res
-
-        rfq, rinq = rf.attrs.qty("RESISTANCE"), rin.attrs.qty("RESISTANCE")
-        if not (rfq and rinq) or rinq.typ == 0:
-            notes.append(tag + "Rf/Rin 阻值缺失或为 0")
-            return res
-        gain = rfq.typ / rinq.typ
-        res["rf"] = rfq.typ
-        res["rin"] = rinq.typ
-        res["gain"] = gain
-        res["inverting"] = True          # 观测形态；同相需另做
-        if vref is None:
-            return res                       # 无参考不敢算 offset
-        res["offset"] = vref * (1 + gain)
-        res["confidence"] = "high" if not notes else "low"
+        res["block"] = blk
+        res["channel"] = blk.channel
+        vals = BL.evaluate(blk)
+        if vals:
+            res["gain"] = abs(vals.get("gain")) if vals.get("gain") is not None else None
+            res["offset"] = vals.get("offset")
+            res["inverting"] = vals.get("inverting")
+            res["vref"] = vals.get("vref")
+            res["rf"] = vals.get("rf")
+            res["rin"] = vals.get("rin")
+            res["confidence"] = blk.confidence
+        else:
+            res["notes"].extend(blk.evidence or [])
+            res["notes"].append(
+                f"块 {blk.kind}（conf={blk.confidence}）无闭式解 → "
+                f"请用第2层网表交 LLM/SPICE 分析")
         return res
 
     def driver_envelope(self, des):

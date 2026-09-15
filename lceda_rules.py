@@ -31,12 +31,20 @@ try:
     from lceda_attrs import Attrs, clamp_onset, is_bidirectional
     from lceda_netgraph import (NetGraph, R_CLAMP, R_CONNECTOR, R_DRIVER,
                                 R_POWER, R_SERIES, R_SWITCH)
+    from lceda_blocks import (Block, features, recognize_all, evaluate,
+                              FORMULA_KINDS, K_UNKNOWN, K_TNET, K_COMPARATOR,
+                              K_INVERTING, K_FOLLOWER)
+    from lceda_spice import emit_for_block, NetlistWriter
 except ImportError:
     import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from lceda_attrs import Attrs, clamp_onset, is_bidirectional
     from lceda_netgraph import (NetGraph, R_CLAMP, R_CONNECTOR, R_DRIVER,
                                 R_POWER, R_SERIES, R_SWITCH)
+    from lceda_blocks import (Block, features, recognize_all, evaluate,
+                              FORMULA_KINDS, K_UNKNOWN, K_TNET, K_COMPARATOR,
+                              K_INVERTING, K_FOLLOWER)
+    from lceda_spice import emit_for_block, NetlistWriter
 
 
 SEV_INFO = "info"
