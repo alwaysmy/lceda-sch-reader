@@ -770,6 +770,12 @@ class EproDB(SchemaBackend):
             if isinstance(a, list) and len(a) > 2 and a[0] == "COMPONENT":
                 a = list(a)
                 a[2] = ""
+            elif isinstance(a, list) and len(a) > 2 and a[0] == "WIRE":
+                # B-P2：.epro 的 WIRE segs 是"平铺点链"（[[x1,y1,x2,y2,x3,y3,..]]），
+                # 与 V2 嵌套段表示不同——在**后端内**归一为嵌套段
+                # [[x1,y1,x2,y2],...]，使消费点只面对一种形状。
+                a = list(a)
+                a[2] = _canon_segs(a[2])
             records.append(a)
         _warn_bad_rows("页记录", doc_key, bad)
         self._records_cache[ck] = records
@@ -1856,25 +1862,57 @@ def detect_backend(path):
 
 # ---------------------------------------------------------------- 解析层
 
-def _norm_segs(segs):
-    """走线段归一化：兼容两种格式 -> [(x1,y1,x2,y2),...]
-    - V2 (.eprj2) 嵌套段：[[x1,y1,x2,y2], [x2,y2,x3,y3], ...]
-    - .epro 平铺点链：[x1,y1,x2,y2,y3,y3...]（相邻点成段，可多条）
-      实测 .epro 一条 WIRE 的 segs 为若干平铺数组，如
-      [[1425,745,1390,745,1390,735,...], [1390,735,1425,735]]。"""
+def _canon_segs(segs):
+    """走线段规范化（**后端 sheet_records 内调用**，B-P2）：把两种格式的
+    表示统一为**嵌套段** ``[[x1,y1,x2,y2], ...]``：
+
+      - V2 嵌套段 ``[[x1,y1,x2,y2], [x2,y2,x3,y3], ...]``：每元素 4 数，原样；
+      - .epro 平铺点链 ``[[x1,y1,x2,y2,x3,y3,...], ...]``：相邻点成段
+        （也兼容"顶层直接是一条链"的形态）。
+
+    不合格元素（非列表 / 长度<4 / 奇数 / 非数值）跳过并 stderr 一次性告警。"""
     out = []
     if not isinstance(segs, list):
+        _warn_seg_shape("segs 非列表")
         return out
-    for s_ in segs:
-        if not isinstance(s_, list) or len(s_) < 4 or \
-                not all(isinstance(v, (int, float)) for v in s_):
+    if segs and all(isinstance(v, (int, float)) for v in segs):
+        segs = [segs]                     # 顶层直接是一条点链
+    bad = 0
+    for s in segs:
+        if not isinstance(s, list) or len(s) < 4 or len(s) % 2 or \
+                not all(isinstance(v, (int, float)) for v in s):
+            bad += 1
             continue
-        if len(s_) == 4:
-            out.append((s_[0], s_[1], s_[2], s_[3]))
-        elif len(s_) % 2 == 0:
-            pts = [(s_[i], s_[i + 1]) for i in range(0, len(s_), 2)]
-            for p1, p2 in zip(pts, pts[1:]):
-                out.append((p1[0], p1[1], p2[0], p2[1]))
+        for i in range(0, len(s) - 2, 2):
+            out.append([s[i], s[i + 1], s[i + 2], s[i + 3]])
+    if bad:
+        _warn_seg_shape(f"{bad} 条线段元素不合格")
+    return out
+
+
+def _warn_seg_shape(detail):
+    if "seg-shape" not in _WARN_ONCE:
+        _WARN_ONCE.add("seg-shape")
+        print(f"[lceda_reader] 警告: 走线线段形状异常（{detail}），已跳过",
+              file=sys.stderr)
+
+
+def _norm_segs(segs):
+    """消费点解包：**嵌套段** -> ``[(x1,y1,x2,y2), ...]``。
+
+    契约（B-P2）：后端 `sheet_records` 已统一输出嵌套段；此处只解包，
+    遇到非 4 数元素计数并告警（**不再做跨格式兼容**——那是后端职责）。
+    """
+    out = []
+    bad = 0
+    for s in (segs or []):
+        if isinstance(s, list) and len(s) == 4 and \
+                all(isinstance(v, (int, float)) for v in s):
+            out.append((s[0], s[1], s[2], s[3]))
+        else:
+            bad += 1
+    if bad:
+        _warn_seg_shape(f"{bad} 条线段非规范形状（后端未归一）")
     return out
 
 
