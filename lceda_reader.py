@@ -216,8 +216,12 @@ class SchemaBackend(ABC):
     def symbol_records(self, symbol_uuid):
         """符号文档原始记录数组（V2 图形原语 POLY/RECT/CIRCLE/ARC/PIN/TEXT
         + LINESTYLE/FONTSTYLE 样式表），供渲染器使用；无原始图形的后端
-        返回 None（渲染器退化为 bbox+引脚桩）。坐标为符号相对坐标，
-        HEAD.originX/originY 偏移由渲染器统一处理。"""
+        返回 None（渲染器退化为 bbox+引脚桩）。
+
+        **坐标契约（B-P1）**：原始坐标**含**符号原点偏移（HEAD.originX/
+        originY），由渲染器自行读取并扣除；而 `symbol_pins` 返回**已扣除
+        origin 的实例相对坐标**（连通域/引脚匹配用）。两者分工不同，
+        消费点按需选择，勿混用。"""
         return None
 
     @abstractmethod
@@ -255,7 +259,9 @@ class SchemaBackend(ABC):
     @abstractmethod
     def symbol_pins(self, symbol_uuid):
         """符号引脚表 {pins:[{id,name,number,x,y,rot,part,...}], bbox,
-        parts, symbol_type}；坐标为符号相对坐标。"""
+        parts, symbol_type}；坐标为**已扣除符号原点 origin 的实例相对
+        坐标**（三后端统一口径，B-P1）——消费点直接叠加实例位置/旋转/
+        镜像即得页面坐标，勿再减 origin。"""
 
     @abstractmethod
     def datasheet_rows(self):
@@ -576,7 +582,8 @@ class LcedaDB(SchemaBackend):
 
     def symbol_pins(self, symbol_uuid):
         """components.dataStr（SYMBOL 定义）-> 引脚表
-        [{id, name, number, x, y, rot, part}]（坐标为符号相对坐标）。"""
+        [{id, name, number, x, y, rot, part}]（坐标 = 已扣除 HEAD 符号原点
+        originX/Y 的实例相对坐标，与 EproDB/Epro2DB 口径统一）。"""
         row = self.cur.execute(
             "SELECT dataStr FROM components WHERE uuid=?", (symbol_uuid,)
         ).fetchone()
@@ -589,6 +596,7 @@ class LcedaDB(SchemaBackend):
         bbox = None
         cur_part = None
         symbol_type = None
+        origin_x = origin_y = 0.0
         bad = 0
         for ln in text.splitlines():
             if not ln.strip():
@@ -602,6 +610,11 @@ class LcedaDB(SchemaBackend):
                 continue
             if a[0] == "HEAD" and len(a) > 1 and isinstance(a[1], dict):
                 symbol_type = a[1].get("symbolType")
+                # 符号原点：symbol_pins 返回"已扣 origin 的实例相对坐标"
+                # （与 EproDB/Epro2DB 口径统一，B-P1）；实测 .eprj2 多为 0，
+                # 减法为无损加固
+                origin_x = float(a[1].get("originX", 0) or 0)
+                origin_y = float(a[1].get("originY", 0) or 0)
             elif a[0] == "PART" and len(a) > 2 and isinstance(a[2], dict):
                 cur_part = a[1]
                 b = a[2].get("BBOX")
@@ -610,7 +623,9 @@ class LcedaDB(SchemaBackend):
                     bbox = [min(b[0], b[2]), min(b[1], b[3]),
                             max(b[0], b[2]), max(b[1], b[3])]
             elif a[0] == "PIN" and len(a) >= 8:
-                pins[a[1]] = {"id": a[1], "x": a[4], "y": a[5],
+                pins[a[1]] = {"id": a[1],
+                              "x": (a[4] or 0) - origin_x,
+                              "y": (a[5] or 0) - origin_y,
                               "rot": a[7] if a[7] is not None else 0,
                               "part": cur_part,
                               "name": None, "number": None,
