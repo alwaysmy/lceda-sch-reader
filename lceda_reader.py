@@ -1138,7 +1138,24 @@ class Epro2DB(SchemaBackend):
             h = self._jl(head)
             if h and not self._jl(body.rstrip("|")):
                 dead.add(str(h.get("id")))
-        if dead:
+        # 几何组"声明集"（2026-09-30 实测）：删除导线/总线还有**第二种编码**
+        # ——导出包里该对象的 WIRE/BUS 记录**整体消失**（连空 body 墓碑都不
+        # 留），但 append-only 的 .epru 仍保留它的 LINE 记录（lineGroup = 已
+        # 删对象 id）。只按 lineGroup 聚合就会把这些孤儿几何复活成"幽灵导线"
+        # 并凭空造出短路：实测本机 74 个 .epro2 共 36971 个 lineGroup，其中
+        # 6179 个（16.7%）没有 WIRE/BUS 记录；本工程 MCU 页 PA8↔PA9、
+        # PA6↔PA7 即由此被误判为短接，而官方导出 PDF 里并无这两段线。
+        # 故：只有被声明过的组才接受 LINE。BUS 一并计入——总线图形 LINE 的
+        # lineGroup 就是 bus_id，删除总线时同样丢 BUS 记录。
+        # 护栏：仅当该文档确实使用 WIRE/BUS 声明机制时才过滤，避免误伤
+        # 本就不写 WIRE 记录的 PCB 文档（其走线几何不走 lineGroup）。
+        declared = set()
+        for ln in merged:
+            h = self._jl(ln.partition("||")[0])
+            if h and h.get("type") in ("WIRE", "BUS"):
+                declared.add(str(h.get("id")))
+        orphans = 0
+        if dead or declared:
             kept = []
             for ln in merged:
                 head, _, body = ln.partition("||")
@@ -1149,12 +1166,24 @@ class Epro2DB(SchemaBackend):
                 if str(h.get("id")) in dead:
                     continue
                 b = self._jl(body.rstrip("|")) or {}
-                if h.get("type") == "LINE" and b.get("lineGroup") in dead:
-                    continue
+                if h.get("type") == "LINE":
+                    g = b.get("lineGroup")
+                    if g in dead:
+                        continue
+                    if declared and g and g not in declared:
+                        orphans += 1
+                        continue
                 if h.get("type") == "ATTR" and b.get("parentId") in dead:
                     continue
                 kept.append(ln)
             merged = kept
+        if orphans:
+            wk = ("v3-orphan-line", str(uuid))
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                print(f"[lceda_reader] 提示: 文档 {uuid} 有 {orphans} 段几何属于"
+                      f"已删除的导线/总线（无 WIRE/BUS 记录），已忽略",
+                      file=sys.stderr)
         return iter(merged)
 
     # -- duck-typed API ----------------------------------------------------
