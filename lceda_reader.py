@@ -2485,6 +2485,19 @@ def _cbb_dom(db, tmpl_uuid):
         db._cbb_dom_cache = cache
     if tmpl_uuid not in cache:
         t_sheet = parse_sheet(db, tmpl_uuid)
+        # 模板页可能解析不出：INSTANCE 文档里会残留已删除实例的映射，其 src
+        # 指向非原理图页（甚至已不存在的 uuid）。此处必须挡在
+        # _collect_pinmap_data 之前——否则 sheet["nets"] 对 None 取下标直接
+        # 崩掉整条 netlist/trace（实测：本工程 TEC Controller 页残留
+        # src=b1958471d75069f5，仅存 IMAGE 缩略图，无对应页）。
+        if t_sheet is None:
+            wk = ("cbb_badtmpl", tmpl_uuid)
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                print(f"[lceda_reader] CBB 模板页 {tmpl_uuid} 无对应原理图页，"
+                      f"跳过展开（多为 INSTANCE 文档残留映射）", file=sys.stderr)
+            cache[tmpl_uuid] = {}
+            return cache[tmpl_uuid]
         t_pinc = _collect_pinmap_data(db, t_sheet, tmpl_uuid)
         if t_pinc is None:
             cache[tmpl_uuid] = {}
@@ -2972,8 +2985,17 @@ def _collect_pinmap_data(db, sheet, page_name):
     # 引脚命中端点无 wire 网络名，则以端口名补充（防御 wire 无 NET 仅靠端口
     # 命名的场景；补进 sheet["nets"] 使连通域解析与 pinmap 同时生效）。
     # 只认 18/19 实例——防止普通器件偶带 NET 属性时被误当端口命名。
-    port_nets = {cid: nm for cid, nm in net_of.items()
-                 if nm and cid in port_cids}
+    # 端口名有两个存放位：`Global Net Name`（网络标识/电源符号）与 `Name`
+    # （网络端口符号，Symbol uuid 实测 a029f22680921aa0/ed17ac3692b0f0b6）。
+    # 后者同样必须认——否则其 stub 线无 NET 时端口名整条丢失，网络退回
+    # 立创自动名（实测本工程 I2C2_SDA/I2C2_SCL/EEPROM_WP/ADC_CS/ADC_SYNC
+    # 退化成 PA8/PA9/PA10/PD2/PB3，跨页同名归并随之失效）。
+    attrs_of = {c["cid"]: (c.get("attrs") or {}) for c in sheet["components"]}
+    port_nets = {}
+    for cid in port_cids:
+        nm = net_of.get(cid) or attrs_of.get(cid, {}).get("Name")
+        if nm:
+            port_nets[cid] = nm
     if port_nets:
         # 端口命名向触点上的**未命名导线**传播（实测：API 建的电源符号
         # 压在 stub 线端点上，stub 可能无 NET 属性——符号名即为网络名）。
