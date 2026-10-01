@@ -56,6 +56,16 @@
 
 ## 其他未支持（记录，暂不做）
 
+- **`.eprj3`（V4 文件夹式工程格式）**：官方新一代本地格式（文件夹 +
+  `.esch2`/`.epcb2`/`.epan2`/`.ecfg`/`.evar`，记录仍为 `{type,id,ticket}||{data}|`
+  行式 JSON）。reader 尚无 `Eprj3DB` 后端。差异要点：docType 11→20
+  （`CONFIG` 改名、+EDIT_HEAD/PANEL_LIB/FONT/VARIANT/COMPONENT_GROUP/
+  SIMULATION/SIMULATION_SCH）、**PCB 坐标改 mil**、`yAxisDirection` 翻转表、
+  布尔/颜色编码变更、删除语义细化（META 不可空串删）。详见
+  `docs/eprj3与V4格式调研-2026-10-01.md`。另：官方
+  `easyeda/easyeda-format-skill`（V4 图元/Schema/ajv 校验）可作为格式
+  依据与测试对拍来源。
+
 - PANEL/拼版（立创EDA 面板设计功能，structure.panels / project.json
   panels 键）：**不属于原理图审查范围，暂不处理**；openlceda 或 PCB
   级审查时可能用上（2026-08-24 用户标记）。
