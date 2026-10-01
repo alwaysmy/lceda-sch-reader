@@ -37,6 +37,7 @@ python lceda_reader.py devmap               rem 导出 devices/components 表（
 python lceda_reader.py raw <页名> [-o 文件]  rem 输出页的原始NDJSON（调试用）
 
 python lceda_reader.py --json <命令>         rem 结构化 JSON 输出（供脚本消费）
+python lceda_reader.py --json-report --strict <命令> rem 带CBB覆盖诊断的JSON报告
 python lceda_reader.py --eprj <路径> <命令>  rem 指定工程文件（可多次，支持单工程或多工程关联）
 python lceda_reader.py link-check           rem 多工程连接器对核对（网络逐pin一致候选）
 python lceda_reader.py trace U1 --link "0:H2<->1:H2"  rem 多工程链路（经连接器桥跨工程）
@@ -107,6 +108,20 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 
 通用参数：`--json`（结构化输出）、`--eprj`（工程路径，可多次）、
 `--cbb-map`（CBB 实例位号=模板页名，端口自动匹配歧义时显式指定，可多次）。
+
+可选 `--json-report` 隐含 `--json`，返回
+`{schema_version, query, data, diagnostics, complete, completeness_scope,
+semantic_validation, query_exit_code}`；`data` 保留原查询结果。
+`complete` **仅表示本次查询未遇到已记录的查询错误/CBB 引用覆盖缺口**，
+不证明全部字段、变体、层次、接线或电气理论正确，也不会主动检查查询未访问的页。
+失效 INSTANCE 改走原生映射时仍为 `complete:false`，因为旧成员位号覆盖未应用。
+`--strict` 在正常完成查询但存在这些覆盖缺口时退出 `3`；原查询错误仍保留其
+退出码。默认 `--json` 形状保持不变。报告选项不适用于 `raw`、`render` 或
+`review --netlist` 文本导出。工程打开/参数错误仍沿用原 CLI 错误通道。
+
+`pinmap` 默认查询新增 `resolved_nets`：保留同页显式短接/同名网络形成的
+完整别名集合。原 `net/nets` 仍表示既有直标/补名结果，不改写工程内线名；
+`--no-domain` 不计算或输出该派生字段，NC 引脚的 `resolved_nets` 为空。
 
 ## 二、文件格式（与官方规范一致）
 

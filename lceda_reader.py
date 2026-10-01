@@ -91,6 +91,7 @@ class SchemaBackend(ABC):
         self._cbb_sym_map = None
         self._cbb_sig = None
         self._cbb_dom_cache = {}
+        self.diagnostics = []    # 本次查询实际遇到的 CBB 引用/展开完整性问题
 
     def project_name(self):
         """可读项目名：以文件名（去扩展名）为准——工程内 projects.name 为
@@ -1069,15 +1070,17 @@ class Epro2DB(SchemaBackend):
     def _index(self):
         lines = self._lines_of()
         cur = None
+        deleted = {}             # uuid -> ((段序, ticket), isDelete)
         for i, ln in enumerate(lines):
-            if '"DOCHEAD"' not in ln[:30] and '"META"' not in ln[:16]:
+            if ('"DOCHEAD"' not in ln[:30] and '"META"' not in ln[:16]
+                    and '"DELETE_DOC"' not in ln[:24]):
                 continue
             head, _, body = ln.partition("||")
             h = self._jl(head)
             if not h:
                 continue
             t = h.get("type")
-            b = self._jl(body.rstrip("|")) if t in ("DOCHEAD", "META") else None
+            b = self._jl(body.rstrip("|")) if t in ("DOCHEAD", "META", "DELETE_DOC") else None
             if t == "DOCHEAD" and b:
                 u = b.get("uuid")
                 if cur:
@@ -1108,8 +1111,23 @@ class Epro2DB(SchemaBackend):
                 if not old or h.get("ticket", 0) >= old.get("_t", 0):
                     b["_t"] = h.get("ticket", 0)
                     self._meta[cur[0]] = b
+            elif t == "DELETE_DOC" and isinstance(b, dict) and cur:
+                state = b.get("isDelete")
+                if isinstance(state, bool):
+                    rank = (len(self._docs[cur[0]]["segs"]) - 1,
+                            h.get("ticket", 0))
+                    old = deleted.get(cur[0])
+                    if old is None or rank >= old[0]:
+                        deleted[cur[0]] = (rank, state)
         if cur:
             self._docs[cur[0]]["segs"][-1] = (cur[1], len(lines), cur[2])
+        # DELETE_DOC 是可撤销的文档状态，不是删除原子/删除日志。只从活动
+        # 索引移除最终为已删除的文档；原始 _lines 保留，false 可恢复旧记录。
+        for u, (_rank, is_deleted) in deleted.items():
+            if is_deleted:
+                self._docs.pop(u, None)
+                self._meta.pop(u, None)
+                self._dh.pop(u, None)
         # 结构树：BOARD / SCH(board) / SCH_PAGE(schematic)
         for u, d in self._docs.items():
             m = self._meta.get(u) or {}
@@ -1631,13 +1649,15 @@ class Epro2DB(SchemaBackend):
             elif t == "ATTR":
                 pid = b.get("parentId")
                 k = b.get("key")
-                if pid in pins:
-                    if k == "Pin Name":
-                        names[pid] = b.get("value")
-                    elif k == "Pin Number":
-                        numbers[pid] = str(b.get("value"))
-                    elif k == "Pin Type":
-                        ptypes[pid] = b.get("value")
+                # 最终日志中更新后的 PIN 可排在未改动 ATTR 之后。先独立
+                # 收集属性，扫描结束后按 parentId 关联，不能依赖记录顺序。
+                if k == "Pin Name":
+                    names[pid] = b.get("value")
+                elif k == "Pin Number":
+                    value = b.get("value")
+                    numbers[pid] = str(value) if value is not None else None
+                elif k == "Pin Type":
+                    ptypes[pid] = b.get("value")
         for pid, p in pins.items():
             p["name"] = names.get(pid) or numbers.get(pid) or "1"
             p["number"] = numbers.get(pid)
@@ -2473,6 +2493,30 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
     #    电源/地判定复用模块级 POWER_NET_RE（trace 同源，避免两份正则漂移）
     # 5) 普通两脚无源器件不再传播网络名；两侧网络保持独立，器件作为中间 hop。
 
+    # 同页显式同名网属于同一逻辑网络。某个物理域经有效短接已有 A/B
+    # 别名时，另一处单独绘制的 A 也必须得到 B；仅闭包已有名称集合，
+    # 不改变几何域、不跨普通有源件，也不把别名状态带到其它页。
+    alias_parent = {}
+
+    def alias_root(name):
+        while alias_parent[name] != name:
+            alias_parent[name] = alias_parent[alias_parent[name]]
+            name = alias_parent[name]
+        return name
+
+    for names in dom_nets.values():
+        ordered = sorted(names)
+        for name in ordered:
+            alias_parent.setdefault(name, name)
+        for name in ordered[1:]:
+            alias_parent[alias_root(name)] = alias_root(ordered[0])
+    alias_groups = {}
+    for name in alias_parent:
+        alias_groups.setdefault(alias_root(name), set()).add(name)
+    for domain, names in list(dom_nets.items()):
+        if names:
+            dom_nets[domain] = alias_groups[alias_root(next(iter(names)))]
+
     # 6) 汇总（重名引脚多命中点：合并所有命中点的域网络）
     result = {}
     for (des, pin), pts in pin_hit.items():
@@ -2492,6 +2536,14 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
 # ---------------------------------------------------------------- CBB 展开
 
 _CBB_MAP = {}   # --cbb-map 显式映射：实例位号 -> 模板页（uuid 或页名）
+
+
+def _record_cbb_issue(db, code, **context):
+    """记录已观察到的 CBB 覆盖缺口；不代表其它解析/电气语义已验证。"""
+    issue = {"code": code, "severity": "warning",
+             "affects_completeness": True, "context": context}
+    if issue not in db.diagnostics:
+        db.diagnostics.append(issue)
 
 
 def _set_cbb_map(pairs):
@@ -2538,6 +2590,16 @@ def _cbb_dom(db, tmpl_uuid):
         db._cbb_dom_cache = cache
     if tmpl_uuid not in cache:
         t_sheet = parse_sheet(db, tmpl_uuid)
+        if t_sheet is None:
+            _record_cbb_issue(db, "CBB_TEMPLATE_UNAVAILABLE", template=tmpl_uuid)
+            wk = ("cbb_missing_template", str(db.path), tmpl_uuid)
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                print(f"[lceda_reader] 警告: CBB 模板页 {tmpl_uuid} 不存在或"
+                      "不是原理图页，未展开；结果不包含该模板内部连接",
+                      file=sys.stderr)
+            cache[tmpl_uuid] = {}
+            return cache[tmpl_uuid]
         t_pinc = _collect_pinmap_data(db, t_sheet, tmpl_uuid)
         if t_pinc is None:
             cache[tmpl_uuid] = {}
@@ -2657,6 +2719,8 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
         if explicit:
             tmpl = _resolve_cbb_target(db, sig, explicit)
             if tmpl is None:
+                _record_cbb_issue(db, "CBB_EXPLICIT_TARGET_UNAVAILABLE",
+                                  page=self_uuid, instance=des, target=explicit)
                 wk = ("cbb_badmap", des, explicit)
                 if wk not in _WARN_ONCE:
                     _WARN_ONCE.add(wk)
@@ -2667,8 +2731,26 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
             # ② V3 INSTANCE 文档：母图页+实例cid -> 模板页（唯一精确）
             info = inst_map.get((self_uuid, cid_of.get(des)))
             if info and info.get("src"):
-                tmpl = info["src"]
-                members = info.get("members") or {}
+                source = info["src"]
+                if source in sig:
+                    tmpl = source
+                    members = info.get("members") or {}
+                else:
+                    _record_cbb_issue(db, "CBB_INSTANCE_TARGET_UNAVAILABLE",
+                                      page=self_uuid, instance=des, target=source,
+                                      member_overrides_applied=False,
+                                      resolution="try_existing_mapping_chain")
+                    # 导出可保留指向已不存在模板的 INSTANCE。它不是有效的
+                    # 精确映射；不得把旧模板成员覆盖套到后续选中的另一个模板。
+                    # 后续仍按既有原生映射/唯一端口匹配规则查找，不猜对应关系。
+                    wk = ("cbb_stale_instance", str(db.path), self_uuid,
+                          cid_of.get(des), source)
+                    if wk not in _WARN_ONCE:
+                        _WARN_ONCE.add(wk)
+                        print(f"[lceda_reader] 警告: CBB {des} 的 INSTANCE 引用"
+                              f"模板页 {source} 不存在或不是原理图页；"
+                              "未使用该成员位号覆盖，继续检查原生映射/唯一端口匹配",
+                              file=sys.stderr)
         if tmpl is None:
             # ③ 后端原生符号映射（.epro symbols.title / .epro2 docType=17 /
             #    同目录 .eprj2 structure.blockSymbols）
@@ -2687,6 +2769,8 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
                 tmpl = cands[0]
             elif len(cands) > 1:
                 names = sorted(sig[u][2] for u in cands)
+                _record_cbb_issue(db, "CBB_TEMPLATE_AMBIGUOUS", page=self_uuid,
+                                  instance=des, candidates=names)
                 wk = ("cbb_ambig", des)
                 if wk not in _WARN_ONCE:
                     _WARN_ONCE.add(wk)
@@ -2694,6 +2778,8 @@ def _expand_cbb(db, sheet, comp_pins, result, depth=0):
                           f"{names}，无法唯一确定，未展开；请用 --cbb-map "
                           f"{des}=<页名> 指定", file=sys.stderr)
             else:
+                _record_cbb_issue(db, "CBB_TEMPLATE_NOT_FOUND", page=self_uuid,
+                                  instance=des)
                 wk = ("cbb_nomatch", des, tuple(sorted(pin_names)))
                 if wk not in _WARN_ONCE:
                     _WARN_ONCE.add(wk)
@@ -3180,10 +3266,12 @@ def cmd_pinmap(db, args):
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
         for row in rows:
             for pm in row["pins"]:
+                key = (row["designator"], pm["pin"])
+                pm["resolved_nets"] = ([] if pm["not_connected"] else
+                                       net_tokens(dom.get(key, "")))
                 if pm["not_connected"]:
                     continue
                 if not pm["net"]:
-                    key = (row["designator"], pm["pin"])
                     n = dom.get(key, "")
                     if n:
                         pm["net"] = net_disp(n)
@@ -3198,7 +3286,8 @@ def cmd_pinmap(db, args):
                 wp = f"  [wire: {','.join(pm['wire_peers'])}]" if pm["wire_peers"] else ""
                 tag = "*" if pm.get("net_inferred") else ""
                 nc = " [X]" if pm["not_connected"] else ""
-                out(f"  {pm['pin']:12s} (#{pm['number']:>3})  {net_disp(pm['net']) or '(未命名)'}{tag}{nc}{peer}{wp}")
+                number = str(pm["number"]) if pm["number"] is not None else "?"
+                out(f"  {pm['pin']:12s} (#{number:>3})  {net_disp(pm['net']) or '(未命名)'}{tag}{nc}{peer}{wp}")
     if args.json:
         outj(rows)
 
@@ -5226,6 +5315,10 @@ def main():
                     help="工程文件路径（.eprj2 SQLite 或 .epro ZIP），可多次(单工程或关联多工程)")
     ap.add_argument("--json", action="store_true",
                     help="结构化 JSON 输出（供脚本消费）")
+    ap.add_argument("--json-report", action="store_true",
+                    help="JSON 报告(data/diagnostics/complete)；完整性仅指本查询已观察的CBB引用问题")
+    ap.add_argument("--strict", action="store_true",
+                    help="本查询发现CBB引用/覆盖缺口时退出3；不代表已完成电气验证")
     ap.add_argument("--cbb-map", action="append", default=None,
                     help="CBB 实例位号=模板页名（如 CBB1=_CBB_LDO_TPS7A3001_2LAYER），"
                          "端口自动匹配歧义时显式指定，可多次")
@@ -5352,6 +5445,10 @@ def main():
     p.set_defaults(fn=cmd_raw)
 
     args = ap.parse_args()
+    if args.json_report:
+        if args.cmd in ("raw", "render") or (args.cmd == "review" and args.netlist):
+            ap.error("--json-report 不适用于 raw/render 或 review --netlist 文本导出")
+        args.json = True
     _set_cbb_map(args.cbb_map)
     if args.eprj:
         paths = args.eprj
@@ -5383,20 +5480,57 @@ def main():
         out(f"无法打开工程: {e}")
         sys.exit(1)
     args.eprj_paths = paths
-    if len(dbs) == 1:
-        args.fn(dbs[0], args)
-    else:
-        # 多工程：命令需支持多工程（netfind/link-check/trace/find/search 等）
-        multi = getattr(args, 'fn', None)
-        if multi in (cmd_netfind, cmd_link_check, cmd_trace, cmd_find, cmd_search):
-            args.dbs = dbs
-            if not args.json:
-                for i, p in enumerate(paths):
-                    out(f"工程{i} = {p}")
-            multi(dbs, args)
+    def dispatch():
+        if len(dbs) == 1:
+            args.fn(dbs[0], args)
         else:
-            out(f"多工程模式仅支持 netfind/link-check/trace/find/search，当前命令不支持")
-            sys.exit(1)
+            # 多工程：命令需支持多工程（netfind/link-check/trace/find/search 等）
+            multi = getattr(args, 'fn', None)
+            if multi in (cmd_netfind, cmd_link_check, cmd_trace, cmd_find, cmd_search):
+                args.dbs = dbs
+                if not args.json:
+                    for i, p in enumerate(paths):
+                        out(f"工程{i} = {p}")
+                multi(dbs, args)
+            else:
+                out("多工程模式仅支持 netfind/link-check/trace/find/search，当前命令不支持")
+                sys.exit(1)
+
+    if not args.json_report:
+        dispatch()
+        if args.strict and any(db.diagnostics for db in dbs):
+            sys.exit(3)
+        return
+
+    # 选择新报告协议时才包装；默认 --json 的数组/对象形状保持兼容。
+    import contextlib
+    import io
+    captured = io.StringIO()
+    query_exit = 0
+    with contextlib.redirect_stdout(captured):
+        try:
+            dispatch()
+        except SystemExit as exc:
+            query_exit = exc.code if isinstance(exc.code, int) else 1
+    issues = [dict(issue, project_index=i) for i, db in enumerate(dbs)
+              for issue in db.diagnostics]
+    raw_output = captured.getvalue()
+    try:
+        data = json.loads(raw_output)
+    except (ValueError, TypeError):
+        data = None
+        issues.append({"code": "QUERY_OUTPUT_NOT_JSON", "severity": "error",
+                       "affects_completeness": True, "message": raw_output.strip()})
+        query_exit = query_exit or 1
+    complete = query_exit == 0 and not issues
+    outj({"schema_version": 1, "query": args.cmd, "data": data,
+          "diagnostics": issues, "complete": complete,
+          "completeness_scope": "observed_query_errors_and_cbb_reference_coverage",
+          "semantic_validation": "not_assessed", "query_exit_code": query_exit})
+    if query_exit:
+        sys.exit(query_exit)
+    if args.strict and not complete:
+        sys.exit(3)
 
 
 if __name__ == "__main__":
