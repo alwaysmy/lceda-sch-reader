@@ -1159,7 +1159,24 @@ class Epro2DB(SchemaBackend):
             h = self._jl(head)
             if h and not self._jl(body.rstrip("|")):
                 dead.add(str(h.get("id")))
-        if dead:
+        # 几何组"声明集"（2026-09-30 实测）：删除导线/总线还有**第二种编码**
+        # ——导出包里该对象的 WIRE/BUS 记录**整体消失**（连空 body 墓碑都不
+        # 留），但 append-only 的 .epru 仍保留它的 LINE 记录（lineGroup = 已
+        # 删对象 id）。只按 lineGroup 聚合就会把这些孤儿几何复活成"幽灵导线"
+        # 并凭空造出短路：实测本机 74 个 .epro2 共 36971 个 lineGroup，其中
+        # 6179 个（16.7%）没有 WIRE/BUS 记录；本工程 MCU 页 PA8↔PA9、
+        # PA6↔PA7 即由此被误判为短接，而官方导出 PDF 里并无这两段线。
+        # 故：只有被声明过的组才接受 LINE。BUS 一并计入——总线图形 LINE 的
+        # lineGroup 就是 bus_id，删除总线时同样丢 BUS 记录。
+        # 护栏：仅当该文档确实使用 WIRE/BUS 声明机制时才过滤，避免误伤
+        # 本就不写 WIRE 记录的 PCB 文档（其走线几何不走 lineGroup）。
+        declared = set()
+        for ln in merged:
+            h = self._jl(ln.partition("||")[0])
+            if h and h.get("type") in ("WIRE", "BUS"):
+                declared.add(str(h.get("id")))
+        orphans = 0
+        if dead or declared:
             kept = []
             for ln in merged:
                 head, _, body = ln.partition("||")
@@ -1170,12 +1187,24 @@ class Epro2DB(SchemaBackend):
                 if str(h.get("id")) in dead:
                     continue
                 b = self._jl(body.rstrip("|")) or {}
-                if h.get("type") == "LINE" and b.get("lineGroup") in dead:
-                    continue
+                if h.get("type") == "LINE":
+                    g = b.get("lineGroup")
+                    if g in dead:
+                        continue
+                    if declared and g and g not in declared:
+                        orphans += 1
+                        continue
                 if h.get("type") == "ATTR" and b.get("parentId") in dead:
                     continue
                 kept.append(ln)
             merged = kept
+        if orphans:
+            wk = ("v3-orphan-line", str(uuid))
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                print(f"[lceda_reader] 提示: 文档 {uuid} 有 {orphans} 段几何属于"
+                      f"已删除的导线/总线（无 WIRE/BUS 记录），已忽略",
+                      file=sys.stderr)
         return iter(merged)
 
     # -- duck-typed API ----------------------------------------------------
@@ -2538,6 +2567,19 @@ def _cbb_dom(db, tmpl_uuid):
         db._cbb_dom_cache = cache
     if tmpl_uuid not in cache:
         t_sheet = parse_sheet(db, tmpl_uuid)
+        # 模板页可能解析不出：INSTANCE 文档里会残留已删除实例的映射，其 src
+        # 指向非原理图页（甚至已不存在的 uuid）。此处必须挡在
+        # _collect_pinmap_data 之前——否则 sheet["nets"] 对 None 取下标直接
+        # 崩掉整条 netlist/trace（实测：本工程 TEC Controller 页残留
+        # src=b1958471d75069f5，仅存 IMAGE 缩略图，无对应页）。
+        if t_sheet is None:
+            wk = ("cbb_badtmpl", tmpl_uuid)
+            if wk not in _WARN_ONCE:
+                _WARN_ONCE.add(wk)
+                print(f"[lceda_reader] CBB 模板页 {tmpl_uuid} 无对应原理图页，"
+                      f"跳过展开（多为 INSTANCE 文档残留映射）", file=sys.stderr)
+            cache[tmpl_uuid] = {}
+            return cache[tmpl_uuid]
         t_pinc = _collect_pinmap_data(db, t_sheet, tmpl_uuid)
         if t_pinc is None:
             cache[tmpl_uuid] = {}
@@ -3025,8 +3067,17 @@ def _collect_pinmap_data(db, sheet, page_name):
     # 引脚命中端点无 wire 网络名，则以端口名补充（防御 wire 无 NET 仅靠端口
     # 命名的场景；补进 sheet["nets"] 使连通域解析与 pinmap 同时生效）。
     # 只认 18/19 实例——防止普通器件偶带 NET 属性时被误当端口命名。
-    port_nets = {cid: nm for cid, nm in net_of.items()
-                 if nm and cid in port_cids}
+    # 端口名有两个存放位：`Global Net Name`（网络标识/电源符号）与 `Name`
+    # （网络端口符号，Symbol uuid 实测 a029f22680921aa0/ed17ac3692b0f0b6）。
+    # 后者同样必须认——否则其 stub 线无 NET 时端口名整条丢失，网络退回
+    # 立创自动名（实测本工程 I2C2_SDA/I2C2_SCL/EEPROM_WP/ADC_CS/ADC_SYNC
+    # 退化成 PA8/PA9/PA10/PD2/PB3，跨页同名归并随之失效）。
+    attrs_of = {c["cid"]: (c.get("attrs") or {}) for c in sheet["components"]}
+    port_nets = {}
+    for cid in port_cids:
+        nm = net_of.get(cid) or attrs_of.get(cid, {}).get("Name")
+        if nm:
+            port_nets[cid] = nm
     if port_nets:
         # 端口命名向触点上的**未命名导线**传播（实测：API 建的电源符号
         # 压在 stub 线端点上，stub 可能无 NET 属性——符号名即为网络名）。
