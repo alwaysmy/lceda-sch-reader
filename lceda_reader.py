@@ -1072,10 +1072,10 @@ class Epro2DB(SchemaBackend):
         cur = None
         deleted = {}             # uuid -> ((段序, ticket), isDelete)
         for i, ln in enumerate(lines):
-            if ('"DOCHEAD"' not in ln[:30] and '"META"' not in ln[:16]
-                    and '"DELETE_DOC"' not in ln[:24]):
-                continue
             head, _, body = ln.partition("||")
+            # JSON object key order and whitespace are not format semantics.
+            # Parse the header before selecting document-state records; a
+            # fixed prefix search loses valid reordered/escaped type fields.
             h = self._jl(head)
             if not h:
                 continue

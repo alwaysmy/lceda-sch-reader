@@ -270,6 +270,39 @@ class PortableReaderTests(unittest.TestCase):
         self.assertIsNone(backend.sheet_records("page1"))
         self.assertNotIn("page1", [d["uuid"] for d in backend.doc_metas()])
 
+    def test_epro2_delete_header_order_whitespace_and_escapes(self):
+        headers = ['{"ticket":20,"type":"DELETE_DOC"}',
+                   '{     "ticket" : 20,     "type" : "DELETE_DOC"   }',
+                   '{"ticket":20,"t\\u0079pe":"DELETE_DOC"}',
+                   '{"ticket":20,"type":"DELETE_\\u0044OC"}']
+        for header in headers:
+            with self.subTest(header=header):
+                self.paths["epro2"] = write_fixture(Path(self.temp.name), "epro2")
+                backend = self.append_fixture_log([header + '||{"isDelete":true}|'])
+                self.assertEqual(backend.sheets(), [])
+                self.assertIsNone(backend.sheet_records("page1"))
+
+    def test_epro2_dochead_and_meta_header_order(self):
+        path = self.paths["epro2"]
+        with zipfile.ZipFile(path) as zf:
+            contents = {name: zf.read(name) for name in zf.namelist()}
+        rows = []
+        for line in contents["generic.epru"].decode("utf-8").splitlines():
+            header, separator, body = line.partition("||")
+            fields = json.loads(header)
+            if fields["type"] in ("DOCHEAD", "META"):
+                header = json.dumps({"ticket": fields.get("ticket", 0),
+                                     "id": fields.get("id", fields["type"]),
+                                     "type": fields["type"]}, indent=None)
+            rows.append(header + separator + body)
+        contents["generic.epru"] = ("\n".join(rows) + "\n").encode("utf-8")
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for name, data in contents.items():
+                zf.writestr(name, data)
+        backend = self.open_backend(path)
+        self.assertEqual(len(backend.sheets()), 1)
+        self.assertEqual(backend.sheets()[0][1], "Board::Page")
+
     def test_epro2_document_restore_obeys_ticket_within_segment(self):
         backend = self.append_fixture_log([
             log_record("DELETE_DOC", None, {"isDelete": True}, 20),
