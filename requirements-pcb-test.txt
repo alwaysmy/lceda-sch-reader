@@ -1,0 +1,2 @@
+-r requirements-pcb-validation.txt
+jsonschema>=4.23,<5

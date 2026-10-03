@@ -1,0 +1,23 @@
+name: Portable reader tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Standard-library SCH and PCB replay tests
+        run: |
+          python -m unittest discover -s probes -p test_reader_portable.py -v
+          python -m unittest discover -s probes -p test_pcb_replay.py -v
+      - name: Install optional PCB test dependencies
+        run: python -m pip install -r requirements-pcb-test.txt
+      - name: Synthetic geometry and export tests
+        run: python -m unittest discover -s probes -p 'test_pcb*.py' -v
