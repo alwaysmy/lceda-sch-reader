@@ -38,6 +38,18 @@ def gerber(body=None):
     return "%FSLAX46Y46*%\n%MOMM*%\n" + (region() if body is None else body) + "M02*\n"
 
 
+def contour(points):
+    return "G36*\n" + "\n".join(
+        f"X{round(x*1000000)}Y{round(y*1000000)}D{'02' if i == 0 else '01'}*"
+        for i, (x, y) in enumerate(points)) + "\nG37*\n"
+
+
+def cutin_square():
+    # Invented 10x10 square, clockwise 2x2 hole and one exact horizontal cut-in.
+    return [(0, 0), (10, 0), (10, 10), (0, 10), (0, 5),
+            (4, 5), (4, 6), (6, 6), (6, 4), (4, 4), (4, 5), (0, 5), (0, 0)]
+
+
 def excellon(points=((5, 5),), diameter=1):
     return "M48\nMETRIC\nT01C" + f"{diameter:.6f}" + "\n%\nT01\n" + "\n".join(
         f"X{x:.6f}Y{y:.6f}" for x, y in points) + "\nM30\n"
@@ -324,14 +336,12 @@ class ExportComparisonTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertEqual(json.loads(run.stderr)["status"], "error")
 
-    def test_self_touching_region_requires_explicit_audited_repair(self):
-        # Invented 10x10 outer square with a 2x2 hole, reached by retracing
-        # a zero-width bridge. This is not just an adjacent duplicate vertex.
+    def test_diagonal_cutin_requires_explicit_audited_repair(self):
+        # A coincident DIAGONAL bridge is not a valid Gerber cut-in. It remains
+        # an explicit topology repair, despite yielding the same filled area.
         points = [(0, 0), (10, 0), (10, 10), (0, 10), (0, 5),
-                  (4, 5), (4, 6), (6, 6), (6, 4), (4, 4), (4, 5), (0, 5), (0, 0)]
-        body = "G36*\n" + "\n".join(f"X{x*1000000}Y{y*1000000}D{'02' if i == 0 else '01'}*"
-                                      for i, (x, y) in enumerate(points)) + "\nG37*\n"
-        raw = gerber(body).encode()
+                  (4, 6), (6, 6), (6, 4), (4, 4), (4, 6), (0, 5), (0, 0)]
+        raw = gerber(contour(points)).encode()
         with self.assertRaisesRegex(comparator.ComparisonError, "invalid"):
             comparator.gerber_geometry(raw, "invented.gbr", expected_units="mm", tolerance_mm=.0001)
         geometry, parser = comparator.gerber_geometry(raw, "invented.gbr", expected_units="mm", tolerance_mm=.0001,
@@ -352,6 +362,148 @@ class ExportComparisonTests(unittest.TestCase):
         self.assertFalse(result["manufacturing_verified"])
         self.assertEqual(result["export_geometry_repair_count"], 1)
         self.assertIn("export_geometry_repairs_applied", result["coverage"]["blockers"])
+
+    def test_exact_linear_cutin_decodes_without_repair(self):
+        self.top.write_text(gerber(contour(cutin_square())))
+        geometry, parser = comparator.gerber_geometry(self.top.read_bytes(), self.top.name,
+                                                     expected_units="mm", tolerance_mm=.0001)
+        self.assertAlmostEqual(geometry.area, 96)
+        self.assertFalse(geometry.contains(Point(5, 5)))
+        self.assertEqual(parser["geometry_repairs"], [])
+        audit = parser["contour_decodings"][0]
+        self.assertEqual((audit["cutin_pairs"], audit["simple_rings"]), (1, 2))
+        self.assertFalse(audit["snapping_applied"])
+        self.assertFalse(audit["topology_repair_applied"])
+        self.ir["geometry"]["features"][3]["geometry"] = mapping(self.board.difference(box(4, 4, 6, 6)))
+        self.save_ir()
+        result = self.run_comparison()
+        self.assertTrue(result["comparison_passed"])
+        self.assertEqual(result["status"], "complete")
+        self.assertFalse(result["manufacturing_verified"])
+        self.assertEqual(result["export_geometry_repair_count"], 0)
+
+    def test_cutin_direction_and_start_point_do_not_change_area(self):
+        points = cutin_square()
+        for variant in (points[::-1], [(y, x) for x, y in points],
+                        points[6:-1] + points[:7]):
+            with self.subTest(variant=variant):
+                geometry, parser = comparator.gerber_geometry(gerber(contour(variant)).encode(), "invented.gbr",
+                                                             expected_units="mm", tolerance_mm=.0001)
+                self.assertAlmostEqual(geometry.area, 96)
+                self.assertEqual(parser["geometry_repairs"], [])
+                self.assertEqual(len(parser["contour_decodings"]), 1)
+
+    def test_multiple_same_direction_cutins_preserve_each_hole(self):
+        points = [(0, 0), (10, 0), (10, 10), (0, 10), (0, 8),
+                  (2, 8), (4, 8), (4, 6), (2, 6), (2, 8), (0, 8), (0, 4),
+                  (6, 4), (8, 4), (8, 2), (6, 2), (6, 4), (0, 4), (0, 0)]
+        geometry, parser = comparator.gerber_geometry(gerber(contour(points)).encode(), "invented.gbr",
+                                                     expected_units="mm", tolerance_mm=.0001)
+        self.assertAlmostEqual(geometry.area, 92)
+        self.assertFalse(geometry.contains(Point(3, 7)))
+        self.assertFalse(geometry.contains(Point(7, 3)))
+        self.assertEqual(parser["contour_decodings"][0]["cutin_pairs"], 2)
+
+    def test_nested_island_uses_alternating_ring_depths(self):
+        # 20x20 outer area - 12x14 hole + 4x4 island = 248 square mm.
+        points = [(0, 0), (20, 0), (20, 20), (0, 20), (0, 10), (4, 10),
+                  (4, 17), (16, 17), (16, 3), (4, 3), (4, 8), (8, 8),
+                  (12, 8), (12, 12), (8, 12), (8, 8), (4, 8), (4, 10), (0, 10), (0, 0)]
+        expected = box(0, 0, 20, 20).difference(box(4, 3, 16, 17)).union(box(8, 8, 12, 12))
+        transposed = box(0, 0, 20, 20).difference(box(3, 4, 17, 16)).union(box(8, 8, 12, 12))
+        for variant, target in ((points, expected), (points[::-1], expected),
+                                ([(y, x) for x, y in points], transposed)):
+            with self.subTest(variant=variant):
+                geometry, parser = comparator.gerber_geometry(gerber(contour(variant)).encode(), "invented.gbr",
+                                                             expected_units="mm", tolerance_mm=.0001)
+                self.assertAlmostEqual(geometry.area, 248)
+                self.assertTrue(geometry.equals(target))
+                self.assertEqual(parser["geometry_repairs"], [])
+                self.assertEqual(parser["contour_decodings"][0]["simple_rings"], 3)
+
+    def test_coincident_bridge_can_connect_disjoint_filled_areas(self):
+        points = [(0, 0), (2, 0), (2, 2), (0, 2), (0, 1),
+                  (-2, 1), (-2, 2), (-4, 2), (-4, 0), (-2, 0), (-2, 1), (0, 1), (0, 0)]
+        geometry, parser = comparator.gerber_geometry(gerber(contour(points)).encode(), "invented.gbr",
+                                                     expected_units="mm", tolerance_mm=.0001)
+        self.assertAlmostEqual(geometry.area, 8)
+        self.assertEqual(geometry.geom_type, "MultiPolygon")
+        self.assertFalse(geometry.contains(Point(-1, 1)))
+        self.assertEqual(parser["geometry_repairs"], [])
+
+    def test_wrong_hole_winding_is_not_treated_as_valid_cutin(self):
+        points = cutin_square()
+        points[5:11] = points[5:11][::-1]
+        with self.assertRaisesRegex(comparator.ComparisonError, "invalid"):
+            comparator.gerber_geometry(gerber(contour(points)).encode(), "invented.gbr",
+                                       expected_units="mm", tolerance_mm=.0001)
+
+    def test_partial_overlap_and_dangling_spike_are_not_cutins(self):
+        partial = cutin_square()
+        partial.insert(5, (2, 5))  # reverse segment is not split at the same vertex
+        spike = [(0, 0), (10, 0), (10, 10), (0, 10), (0, 5), (4, 5), (0, 5), (0, 0)]
+        for points in (partial, spike):
+            with self.subTest(points=points), self.assertRaisesRegex(comparator.ComparisonError, "invalid"):
+                comparator.gerber_geometry(gerber(contour(points)).encode(), "invented.gbr",
+                                           expected_units="mm", tolerance_mm=.0001)
+
+    def test_mixed_axis_cutins_are_not_accepted(self):
+        points = [(0, 0), (5, 0), (5, 2), (4, 2), (4, 3), (6, 3), (6, 2), (5, 2),
+                  (5, 0), (10, 0), (10, 10), (0, 10), (0, 7),
+                  (2, 7), (2, 8), (3, 8), (3, 6), (2, 6), (2, 7), (0, 7), (0, 0)]
+        with self.assertRaisesRegex(comparator.ComparisonError, "invalid"):
+            comparator.gerber_geometry(gerber(contour(points)).encode(), "invented.gbr",
+                                       expected_units="mm", tolerance_mm=.0001)
+
+    def test_unclosed_regions_are_rejected_even_with_repair_enabled(self):
+        unclosed = [(0, 0), (10, 0), (10, 10), (0, 10)]
+        for repair in (False, True):
+            for body in (contour(unclosed), contour(unclosed).replace("G37*", region(2, 2, 3, 3)[5:])):
+                with self.subTest(repair=repair), self.assertRaisesRegex(comparator.ComparisonError, "explicitly closed"):
+                    comparator.gerber_geometry(gerber(body).encode(), "invented.gbr",
+                                               expected_units="mm", tolerance_mm=.0001, repair_invalid=repair)
+
+    def test_separate_region_contours_are_union_not_even_odd_holes(self):
+        body = region().replace("G37*\n", "") + region(4, 4, 6, 6)[5:]
+        geometry, parser = comparator.gerber_geometry(gerber(body).encode(), "invented.gbr",
+                                                     expected_units="mm", tolerance_mm=.0001)
+        self.assertAlmostEqual(geometry.area, 100)
+        self.assertTrue(geometry.contains(Point(5, 5)))
+        self.assertEqual(parser["contour_decodings"], [])
+
+    def test_nested_and_unterminated_regions_cannot_hide_geometry(self):
+        # A preceding good region ensures this cannot be caught merely by
+        # checking whether the parser returned at least one object.
+        for body in (region() + region(20, 20, 30, 30).replace("G37*", ""),
+                     region().replace("G37*", region(20, 20, 30, 30)),
+                     region() + "G37*\n"):
+            with self.subTest(body=body), self.assertRaises(comparator.ComparisonError):
+                comparator.gerber_geometry(gerber(body).encode(), "invented.gbr",
+                                           expected_units="mm", tolerance_mm=.0001, repair_invalid=True)
+
+    def test_comments_do_not_change_region_state_and_full_circle_is_closed(self):
+        body = "G04 G36*\nG75*\nG36*\nX1000000Y0D02*\nG03X1000000Y0I-1000000J0D01*\nG37*\nG04 G37*\n"
+        geometry, parser = comparator.gerber_geometry(gerber(body).encode(), "invented.gbr",
+                                                     expected_units="mm", tolerance_mm=.00001)
+        self.assertAlmostEqual(geometry.area, math.pi, places=4)
+        self.assertEqual(parser["geometry_repairs"], [])
+
+    def test_zero_length_segments_and_arc_cutins_remain_outside_decoder(self):
+        comparator._dependencies()
+        points = cutin_square()
+        points.insert(6, points[5])
+        self.assertIsNone(comparator._linear_cutin_geometry(gp.ArcPoly(points, [])))
+        arc_centers = [None] * (len(cutin_square())-1)
+        arc_centers[5] = (False, (4, 5.5))
+        self.assertIsNone(comparator._linear_cutin_geometry(gp.ArcPoly(cutin_square(), arc_centers)))
+
+    def test_cutin_clear_polarity_preserves_transparent_hole(self):
+        body = region(-1, -1, 11, 11) + "%LPC*%\n" + contour(cutin_square())
+        geometry, _ = comparator.gerber_geometry(gerber(body).encode(), "invented.gbr",
+                                                expected_units="mm", tolerance_mm=.0001)
+        self.assertAlmostEqual(geometry.area, 48)
+        self.assertTrue(geometry.contains(Point(5, 5)))
+        self.assertFalse(geometry.contains(Point(3, 3)))
 
     def test_self_crossing_primitive_records_area_change_and_default_rejects(self):
         p = gp.ArcPoly([(0, 0), (2, 2), (0, 2), (2, 0)], [])

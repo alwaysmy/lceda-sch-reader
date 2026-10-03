@@ -131,7 +131,118 @@ def _export_polygonal(geometry, name, *, repair_invalid, repairs, source):
     return result
 
 
-def primitive_geometry(primitive, tolerance_mm, *, repair_invalid=False, repairs=None, source=None):
+def _linear_cutin_geometry(primitive):
+    """Decode a narrow, exact Gerber cut-in contour, without topology repair.
+
+    Ucamco 2026.05 section 4.10.3 permits reverse pairs of fully coincident
+    horizontal OR vertical lines. All other boundaries must be simple,
+    disjoint rings with consistent filled-side orientation. Only all-linear
+    contours are handled here; arc-bearing invalid contours retain the
+    existing explicit-repair boundary. No snapping or polygonization occurs.
+    """
+    segments = list(primitive.segments)
+    if any(cw is not None or a == b for a, b, (cw, _) in segments):
+        return None
+    directed = Counter((tuple(a), tuple(b)) for a, b, _ in segments)
+    if any(count != 1 for count in directed.values()):
+        return None
+    bridges = [(a, b) for a, b in directed if a < b and (b, a) in directed]
+    if not bridges or len(bridges) > 10000:
+        return None
+    directions = {"horizontal" if a[1] == b[1] else "vertical" if a[0] == b[0] else "diagonal"
+                  for a, b in bridges}
+    if len(directions) != 1 or "diagonal" in directions:
+        return None
+    # Each cut-in end must attach to exactly one simple ring. A dangling
+    # spike, a branching bridge or a shared boundary vertex is not decoded.
+    endpoints = Counter(point for bridge in bridges for point in bridge)
+    if any(count != 1 for count in endpoints.values()):
+        return None
+    remaining = [(a, b) for a, b in directed if (b, a) not in directed]
+    outgoing, incoming = {}, set()
+    for a, b in remaining:
+        if a in outgoing or b in incoming:
+            return None
+        outgoing[a] = b
+        incoming.add(b)
+    if set(outgoing) != incoming:
+        return None
+    rings, membership = [], {}
+    while outgoing:
+        start = next(iter(outgoing))
+        point, coordinates = start, [start]
+        while True:
+            if point not in outgoing:
+                return None
+            membership[point] = len(rings)
+            point = outgoing.pop(point)
+            coordinates.append(point)
+            if point == start:
+                break
+        if len(coordinates) < 4:
+            return None
+        ring = Polygon(coordinates)
+        if not ring.is_valid or ring.area <= 0:
+            return None
+        rings.append(ring)
+    if len(bridges) != len(rings) - 1 or any(p not in membership for p in endpoints):
+        return None
+    from shapely.geometry import MultiPoint
+    from shapely.strtree import STRtree
+    boundaries = [ring.boundary for ring in rings]
+    boundary_tree = STRtree(boundaries)
+    for i, boundary in enumerate(boundaries):
+        if any(int(j) != i for j in boundary_tree.query(boundary, predicate="intersects")):
+            return None
+    parent = list(range(len(rings)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for a, b in bridges:
+        left, right = root(membership[a]), root(membership[b])
+        if left == right:
+            return None
+        parent[left] = right
+        bridge = LineString([a, b])
+        touched = boundary_tree.query(bridge, predicate="intersects")
+        intersection = bridge.intersection(unary_union([boundaries[int(i)] for i in touched]))
+        if not intersection.equals(MultiPoint([a, b])):
+            return None
+    # Distinct axis-aligned cut-ins must not overlap or share a point.
+    bridge_lines = [LineString([a, b]) for a, b in bridges]
+    bridge_tree = STRtree(bridge_lines)
+    if any(len(bridge_tree.query(line, predicate="intersects")) != 1 for line in bridge_lines):
+        return None
+    ring_tree = STRtree(rings)
+    enclosing = [list(map(int, ring_tree.query(ring, predicate="within"))) for ring in rings]
+    depths = [len(indices) - 1 for indices in enclosing]  # contains itself
+    outer_signs = {ring.exterior.is_ccw for ring, depth in zip(rings, depths) if depth == 0}
+    if len(outer_signs) != 1:
+        return None
+    outer_ccw = outer_signs.pop()
+    if any(ring.exterior.is_ccw != (outer_ccw if depth % 2 == 0 else not outer_ccw)
+           for ring, depth in zip(rings, depths)):
+        return None
+    areas = [Polygon(ring.exterior.coords,
+                     [rings[j].exterior.coords for j in range(len(rings))
+                      if depths[j] == depth + 1 and i in enclosing[j]])
+             for i, (ring, depth) in enumerate(zip(rings, depths)) if depth % 2 == 0]
+    result = unary_union(areas)
+    if not result.is_valid or result.is_empty or result.geom_type not in ("Polygon", "MultiPolygon"):
+        return None
+    return result, {"method": "exact_linear_cutins", "specification": "Ucamco Gerber 2026.05 section 4.10.3",
+                    "cutin_pairs": len(bridges), "simple_rings": len(rings),
+                    "direction": next(iter(directions)), "snapping_applied": False,
+                    "topology_repair_applied": False,
+                    "decoded_wkb_sha256": hashlib.sha256(result.wkb).hexdigest()}
+
+
+def primitive_geometry(primitive, tolerance_mm, *, repair_invalid=False, repairs=None, source=None,
+                       contour_decodings=None):
     """Convert one gerbonara primitive; preserve its polarity at the caller."""
     _dependencies()
     _number(tolerance_mm, "curve tolerance", positive=True)
@@ -193,6 +304,12 @@ def primitive_geometry(primitive, tolerance_mm, *, repair_invalid=False, repairs
         if len(points) < 3:
             raise ComparisonError("Gerber region has fewer than three points")
         result = Polygon(points)
+        if not result.is_valid and source and source.get("object_type") == "Region":
+            decoded = _linear_cutin_geometry(p)
+            if decoded is not None:
+                result, audit = decoded
+                if contour_decodings is not None:
+                    contour_decodings.append({"source": source, **audit})
     return _export_polygonal(result, "Gerber primitive", repair_invalid=repair_invalid,
                              repairs=repairs, source=source or {"stage": "primitive"})
 
@@ -226,6 +343,22 @@ def _parse_export(raw, filename, kind, expected_units):
             raise ComparisonError("Gerber must end with M02* (truncated/trailing data unsupported)")
         if re.search(r"%\s*(?:IPNEG|IF)", text):
             raise ComparisonError("Negative image polarity and included files are unsupported")
+        # gerbonara 1.6.3 can replace an unfinished region at another G36,
+        # or discard it at EOF. Check delimiters before information is lost.
+        # G04 comments and parameter payloads are not bare G36/G37 commands.
+        in_region = False
+        for statement in text.split("*"):
+            command = statement.strip().strip("%").strip()
+            if command == "G36":
+                if in_region:
+                    raise ComparisonError("Nested Gerber region (G36 before G37)")
+                in_region = True
+            elif command == "G37":
+                if not in_region:
+                    raise ComparisonError("Gerber G37 outside a region")
+                in_region = False
+        if in_region:
+            raise ComparisonError("Unterminated Gerber region (missing G37)")
         parser = GerberFile.from_string
     else:
         units = re.findall(r"^(METRIC|INCH)(?:,.*)?$", text, re.MULTILINE)
@@ -267,8 +400,12 @@ def gerber_geometry(raw, filename, *, expected_units, tolerance_mm, repair_inval
     """Compose aperture-local clear primitives, then apply object layer polarity."""
     parsed, units, parser_warnings = _parse_export(raw, filename, "gerber", expected_units)
     result, pending, counts, clear_count = GeometryCollection(), [], Counter(), 0
-    repairs = []
+    repairs, contour_decodings = [], []
     for object_index, obj in enumerate(parsed.objects):
+        # ArcPoly.segments silently adds a closing line. Region contours must
+        # already close in the supplied file (Ucamco 4.10.1); never invent it.
+        if isinstance(obj, go.Region) and (not obj.outline or obj.outline[0] != obj.outline[-1]):
+            raise ComparisonError(f"{filename}: region contour is not explicitly closed")
         local = GeometryCollection()
         dark_object = copy.copy(obj)
         dark_object.polarity_dark = True
@@ -282,7 +419,7 @@ def gerber_geometry(raw, filename, *, expected_units, tolerance_mm, repair_inval
                       "primitive_type": type(primitive).__name__, "object_polarity_dark": obj.polarity_dark,
                       "primitive_polarity_dark": primitive.polarity_dark}
             geometry = primitive_geometry(primitive, tolerance_mm, repair_invalid=repair_invalid,
-                                          repairs=repairs, source=source)
+                                          repairs=repairs, source=source, contour_decodings=contour_decodings)
             # A macro's clear primitives affect only the current aperture.
             if primitive.polarity_dark:
                 # Empty-union is an identity; avoiding it also avoids GEOS
@@ -303,6 +440,7 @@ def gerber_geometry(raw, filename, *, expected_units, tolerance_mm, repair_inval
     return result, {"objects": len(parsed.objects), "primitive_counts": dict(counts),
                     "clear_objects": clear_count, "declared_units": units,
                     "bounds_mm_before_translation": list(result.bounds), "geometry_repairs": repairs,
+                    "contour_decodings": contour_decodings,
                     "parser_warnings": parser_warnings}
 
 
