@@ -5,6 +5,12 @@
 支持元件清单、网络连接、引脚级网络表、链路追踪、器件信息、全文搜索、
 BOM、Datasheet 等只读查询。**本工具为只读**，不修改任何工程数据。
 
+可选 PCB 几何入口：`python lceda_pcb.py <导出.epro2> list`，再以
+`extract --pcb <UUID> --profile observed-export-v1` 提取毫米制候选铜层、
+焊盘/孔、声明堆叠及来源诊断。该入口不改变旧 SCH 协议，不等于原生 eprj3
+支持或制造/热设计签核。用法、JSON Schema、可选依赖和 Gerber/钻孔核验见
+[PCB 候选几何与制造导出核验](docs/PCB候选几何与制造导出核验.md)。
+
 ## 一、使用方法
 
 ```bat

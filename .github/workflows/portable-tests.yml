@@ -1,0 +1,37 @@
+name: Portable reader tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Standard-library SCH and PCB replay tests
+        run: |
+          python -m unittest discover -s probes -p test_reader_portable.py -v
+          python -m unittest discover -s probes -p test_pcb_replay.py -v
+      - name: Install optional geometry test dependencies
+        run: python -m pip install -r requirements-pcb.txt 'jsonschema>=4.23,<5'
+      - name: Synthetic geometry and contract tests
+        run: |
+          python -m unittest discover -s probes -p test_pcb_geometry.py -v
+          python -m unittest discover -s probes -p test_pcb_contract.py -v
+  manufacturing-comparison:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install optional manufacturing comparison dependencies
+        run: python -m pip install -r requirements-pcb-test.txt
+      - name: Synthetic Gerber and Excellon tests
+        run: python -m unittest discover -s probes -p test_pcb_export_comparison.py -v
