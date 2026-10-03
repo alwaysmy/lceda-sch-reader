@@ -43,22 +43,23 @@ def log_document(kind, uuid, meta, records=()):
         log_record("META", "META", meta)] + list(records)
 
 
-def fixture_arrays(flat_wires=False):
+def fixture_arrays(flat_wires=False, *, rotation=0, mirror=False,
+                   pin_offsets=((-10, 0), (10, 0)), terminal_offsets=((-10, 0), (10, 0))):
     symbol = [
         ["DOCTYPE", "SYMBOL", "1.1"],
         ["HEAD", {"symbolType": 2, "originX": 0, "originY": 0}],
         ["PART", "Generic.1", {"BBOX": [-5, -5, 5, 5]}],
-        ["PIN", "p1", None, None, -10, 0, 10, 0],
+        ["PIN", "p1", None, None, *pin_offsets[0], 10, 0],
         ["ATTR", "pn1", "p1", "NAME", "LEFT"],
         ["ATTR", "pi1", "p1", "NUMBER", "1"],
-        ["PIN", "p2", None, None, 10, 0, 10, 180],
+        ["PIN", "p2", None, None, *pin_offsets[1], 10, 180],
         ["ATTR", "pn2", "p2", "NAME", "RIGHT"],
         ["ATTR", "pi2", "p2", "NUMBER", "2"],
     ]
     sheet = [
         ["DOCTYPE", "SCH", "1.1"],
         ["COMPONENT", "c1", "sym1" if flat_wires else "Generic.1",
-         100, 100, 0, False, {}, 0],
+         100, 100, rotation, mirror, {}, 0],
         ["ATTR", "a1", "c1", "Designator", "R1"],
         ["ATTR", "a2", "c1", "Symbol", "sym1"],
         ["ATTR", "a3", "c1", "Device", "dev1"],
@@ -71,15 +72,22 @@ def fixture_arrays(flat_wires=False):
          [[110, 100, 130, 100]]],
         ["ATTR", "n2", "w2", "NET", "SIGNAL_B"],
     ]
+    for row, (x, y), direction in zip((r for r in sheet if r[0] == "WIRE"), terminal_offsets, (-1, 1)):
+        x, y = x + 100, y + 100
+        segment = [x-20, y, x, y] if direction == -1 else [x, y, x+20, y]
+        row[2] = segment if flat_wires else [segment]
     return symbol, sheet
 
 
-def write_fixture(directory, kind):
+def write_fixture(directory, kind, *, rotation=0, mirror=False,
+                  pin_offsets=((-10, 0), (10, 0)), terminal_offsets=((-10, 0), (10, 0)),
+                  pin_length=0):
     """Create the same invented two-terminal circuit in three old formats."""
     path = directory / ("generic." + kind)
     attrs = {"Symbol": "sym1", "Description": "阻值:1kΩ;",
              "Manufacturer Part": "Generic", "Add into BOM": "yes"}
-    symbol, sheet = fixture_arrays(flat_wires=kind == "epro")
+    symbol, sheet = fixture_arrays(flat_wires=kind == "epro", rotation=rotation, mirror=mirror,
+                                  pin_offsets=pin_offsets, terminal_offsets=terminal_offsets)
     if kind == "eprj2":
         with sqlite3.connect(path) as conn:
             conn.executescript("""
@@ -120,11 +128,11 @@ def write_fixture(directory, kind):
         pin_records = [log_record("CANVAS", "CANVAS", {
             "originX": 0, "originY": 0}),
             log_record("PART", "Generic.1", {"BBOX": [-5, -5, 5, 5]})]
-        for pin, x, name, number in (("p1", -10, "LEFT", "1"),
-                                     ("p2", 10, "RIGHT", "2")):
+        for pin, (x, y), name, number in (("p1", pin_offsets[0], "LEFT", "1"),
+                                         ("p2", pin_offsets[1], "RIGHT", "2")):
             pin_records += [
                 log_record("PIN", pin, {"partId": "Generic.1", "x": x,
-                           "y": 0, "length": 0, "rotation": 0}),
+                           "y": -y, "length": pin_length, "rotation": 0}),
                 log_record("ATTR", pin + "name", {"parentId": pin,
                            "key": "Pin Name", "value": name}),
                 log_record("ATTR", pin + "num", {"parentId": pin,
@@ -137,19 +145,21 @@ def write_fixture(directory, kind):
         records = [log_record("CANVAS", "CANVAS", {
             "originX": 0, "originY": 0}),
             log_record("COMPONENT", "c1", {"partId": "Generic.1",
-                       "x": 100, "y": -100, "rotation": 0,
-                       "isMirror": False, "attrs": {}})]
+                       "x": 100, "y": -100, "rotation": rotation,
+                       "isMirror": mirror, "attrs": {}})]
         for idx, key, value in ((1, "Designator", "R1"), (2, "Symbol", "sym1"),
                                 (3, "Device", "dev1"), (4, "Name", "Generic.1"),
                                 (5, "Value", "1k")):
             records.append(log_record("ATTR", "a" + str(idx), {
                 "parentId": "c1", "key": key, "value": value}))
-        for wid, start, end, net in (("w1", 70, 90, "SIGNAL_A"),
-                                      ("w2", 110, 130, "SIGNAL_B")):
+        for wid, (x, y), direction, net in (("w1", terminal_offsets[0], -1, "SIGNAL_A"),
+                                            ("w2", terminal_offsets[1], 1, "SIGNAL_B")):
+            x, y = x + 100, y + 100
+            start, end = (x - 20, x) if direction == -1 else (x, x + 20)
             records += [log_record("WIRE", wid, {"groupId": ""}),
                         log_record("LINE", wid + "line", {
-                            "lineGroup": wid, "startX": start, "startY": -100,
-                            "endX": end, "endY": -100}),
+                            "lineGroup": wid, "startX": start, "startY": -y,
+                            "endX": end, "endY": -y}),
                         log_record("ATTR", wid + "net", {
                             "parentId": wid, "key": "NET", "value": net})]
         lines += log_document("SCH_PAGE", "page1", {
@@ -219,6 +229,52 @@ class PortableReaderTests(unittest.TestCase):
                 self.assertEqual([(p["number"], p["nets"]) for p in rows[0]["pins"]],
                                  [("1", ["SIGNAL_A"]), ("2", ["SIGNAL_B"])])
                 self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), before)
+
+    def test_rotated_mirrored_asymmetric_pins_match_all_three_formats(self):
+        # Independently enumerated page-coordinate offsets: rotate, mirror X,
+        # then translate. Asymmetry exposes axis/order mistakes at 90 and 270.
+        poses = {
+            (0, False): ((-13, 7), (19, -11)), (0, True): ((13, 7), (-19, -11)),
+            (90, False): ((-7, -13), (11, 19)), (90, True): ((7, -13), (-11, 19)),
+            (180, False): ((13, -7), (-19, 11)), (180, True): ((-13, -7), (19, 11)),
+            (270, False): ((7, 13), (-11, -19)), (270, True): ((-7, 13), (11, -19)),
+        }
+        for kind in self.paths:
+            for (rotation, mirror), terminals in poses.items():
+                with self.subTest(kind=kind, rotation=rotation, mirror=mirror):
+                    directory = Path(self.temp.name) / f"pose-{kind}-{rotation}-{mirror}"
+                    directory.mkdir()
+                    path = write_fixture(directory, kind, rotation=rotation, mirror=mirror,
+                                         pin_offsets=((-13, 7), (19, -11)), terminal_offsets=terminals)
+                    backend = self.open_backend(path)
+                    sheet = reader.parse_sheet(backend, "page1")
+                    pins, wires, points, ends = reader._collect_pinmap_data(backend, sheet, "page1")
+                    self.assertEqual([(p["x"]-100, p["y"]-100) for p in pins[("R1", "c1")]], list(terminals))
+                    self.assertEqual(reader.resolve_nets_by_domain(backend, sheet, pins, wires, points, ends),
+                                     {("R1", "LEFT"): "SIGNAL_A", ("R1", "RIGHT"): "SIGNAL_B"})
+                    process = self.cli(path, "pinmap", "Page", "--designator", "R1")
+                    self.assertEqual(process.returncode, 0, process.stderr)
+                    self.assertEqual([p["nets"] for p in json.loads(process.stdout)[0]["pins"]],
+                                     [["SIGNAL_A"], ["SIGNAL_B"]])
+
+    def test_mirrored_v3_secondary_pin_candidate_uses_same_transform(self):
+        directory = Path(self.temp.name) / "secondary"
+        directory.mkdir()
+        path = write_fixture(directory, "epro2", rotation=90, mirror=True, pin_length=5,
+                             pin_offsets=((-13, 7), (19, -11)), terminal_offsets=((7, -8), (-11, 24)))
+        process = self.cli(path, "pinmap", "Page", "--designator", "R1")
+        self.assertEqual(process.returncode, 0, process.stderr)
+        self.assertEqual([p["nets"] for p in json.loads(process.stdout)[0]["pins"]],
+                         [["SIGNAL_A"], ["SIGNAL_B"]])
+
+    def test_wrong_order_decoy_wires_do_not_become_connected(self):
+        directory = Path(self.temp.name) / "decoys"
+        directory.mkdir()
+        path = write_fixture(directory, "epro2", rotation=90, mirror=True,
+                             pin_offsets=((-13, 7), (19, -11)), terminal_offsets=((-7, 13), (11, -19)))
+        process = self.cli(path, "pinmap", "Page", "--designator", "R1")
+        self.assertEqual(process.returncode, 0, process.stderr)
+        self.assertEqual([p["nets"] for p in json.loads(process.stdout)[0]["pins"]], [[], []])
 
     def test_cli_missing_page_is_explicit(self):
         for kind, path in self.paths.items():
