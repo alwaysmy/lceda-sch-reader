@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -390,6 +391,11 @@ class ExportComparisonTests(unittest.TestCase):
         with self.assertRaises(comparator.ComparisonError):
             comparator.drill_geometry(raw.replace(b"G90", b"G999"), "invented.drl", role="all-through",
                                        expected_units="mm", tolerance_mm=.00001)
+
+    def test_optional_comparator_explains_python_version_requirement(self):
+        with patch.object(comparator.sys, "version_info", (3, 10, 0)):
+            with self.assertRaisesRegex(comparator.ComparisonError, "Python >=3.12"):
+                comparator._dependencies()
 
 
 if __name__ == "__main__":

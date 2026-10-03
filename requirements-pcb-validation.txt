@@ -1,4 +1,5 @@
 # Optional official-export comparison only; never imported by SCH/core reader.
+# Python >=3.12 is required by gerbonara 1.6.3. Core geometry supports >=3.10.
 # gerbonara 1.6.3 has been checked for primitive polarity and macro-local clears.
 shapely>=2.1,<3
 gerbonara==1.6.3

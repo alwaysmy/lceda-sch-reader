@@ -41,6 +41,8 @@ class ComparisonError(ValueError):
 
 def _dependencies():
     # Lazy imports keep --help and importing this optional script lightweight.
+    if sys.version_info < (3, 12):
+        raise ComparisonError("Manufacturing comparison requires Python >=3.12 (gerbonara 1.6.3); core geometry supports >=3.10")
     global shapely, gp, go, MM, GerberFile, ExcellonFile
     global Point, LineString, Polygon, GeometryCollection, box, shape, unary_union, affinity
     try:

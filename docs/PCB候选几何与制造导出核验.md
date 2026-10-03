@@ -98,6 +98,8 @@ Schema 为 `schemas/pcb-ir-v1.schema.json`，输出单位统一 mm。XY 保留�
 ## 独立制造比较
 
 `scripts/pcb_compare_exports.py` 依赖 `requirements-pcb-validation.txt`。
+核心读取/几何支持 Python 3.10+；制造比较器的 gerbonara 1.6.3 明确要求
+Python 3.12+，CI 分别验证这两个环境范围，不自动降级到未核验的解析器版本。
 它不负责打开编辑器、重新覆铜或导出，不带厂商安装包/激活文件/私有原生代码。
 
 先确认是同一 PCB 和版本的官方导出，再明确传入层映射、导出单位、原点平移、
