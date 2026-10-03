@@ -3080,10 +3080,13 @@ def _collect_pinmap_data(db, sheet, page_name):
                            p["y"] + round(_math.sin(rad) * plen, 4))
 
             def _xform(x, y):
-                if c.get("mirror"):
-                    x = -x
+                # COMPONENT transform: rotation -> horizontal mirror ->
+                # translation. Reversing the first two changes mirrored
+                # 90/270-degree instances, even though 0/180 appear correct.
                 for _ in range(int(rot360 // 90)):
                     x, y = -y, x
+                if c.get("mirror"):
+                    x = -x
                 return c["x"] + x, c["y"] + y
 
             ax, ay = _xform(rx, ry)
@@ -4451,13 +4454,14 @@ def _svg_esc(s):
 
 def _xf(x, y, ox, oy, rot, mirror):
     """符号相对坐标 -> 页面绝对坐标。与 _collect_pinmap_data 的引脚变换
-    完全一致：先镜像 x，再按 rot 度数旋转（90° 步进等价 (x,y)->(-y,x)），
-    最后平移到实例原点。"""
-    if mirror:
-        x = -x
+    顺序一致：先旋转，再镜像 x，最后平移到实例原点。
+    _collect_pinmap_data 的旋转仍限既有 90° 步进；此辅助函数使用三角函数。"""
     r = math.radians(rot or 0)
     c, s = math.cos(r), math.sin(r)
-    return ox + x * c - y * s, oy + x * s + y * c
+    x, y = x * c - y * s, x * s + y * c
+    if mirror:
+        x = -x
+    return ox + x, oy + y
 
 
 def _arc_pts(x1, y1, x2, y2, x3, y3, n=24):
