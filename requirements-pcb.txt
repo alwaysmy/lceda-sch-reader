@@ -1,0 +1,3 @@
+# Only the opt-in PCB geometry path uses this dependency. SCH/list stay stdlib.
+# Validated with Shapely 2.1.2; no thermal solver is included.
+shapely>=2.1,<3

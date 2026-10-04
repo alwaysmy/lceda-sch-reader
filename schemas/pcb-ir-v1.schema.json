@@ -1,0 +1,835 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LCEDA candidate PCB geometry IR, version 1",
+  "description": "Selected exported PCB only. Manufacturing comparison remains separate evidence.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "lceda-pcb-ir/1"
+    },
+    "status": {
+      "const": "candidate"
+    },
+    "units": {
+      "const": "mm"
+    },
+    "profile": {
+      "const": "observed-export-v1"
+    },
+    "pcb": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "board_uuid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "uuid",
+        "title",
+        "board_uuid"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "format": {
+          "enum": [
+            "epro2-export",
+            "epru-export"
+          ]
+        },
+        "replay_policy": {
+          "enum": [
+            "auto",
+            "segment-ticket",
+            "ticket-client"
+          ]
+        },
+        "replay_policy_agreement": {
+          "type": "boolean"
+        },
+        "native_eprj3_supported": {
+          "const": false
+        }
+      },
+      "required": [
+        "sha256",
+        "bytes",
+        "format",
+        "replay_policy",
+        "replay_policy_agreement",
+        "native_eprj3_supported"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "geometry_complete": {
+          "type": "boolean"
+        },
+        "stackup_complete": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "manufacturing_verified": {
+          "const": false
+        },
+        "net_connectivity_verified": {
+          "const": false
+        }
+      },
+      "required": [
+        "complete",
+        "geometry_complete",
+        "stackup_complete",
+        "scope",
+        "manufacturing_verified",
+        "net_connectivity_verified"
+      ]
+    },
+    "coordinate_frame": {
+      "type": "object"
+    },
+    "conventions": {
+      "type": "object"
+    },
+    "document_provenance": {
+      "type": "object"
+    },
+    "stackup": {
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "kind": {
+                "enum": [
+                  "copper",
+                  "interlayer_or_coating"
+                ]
+              },
+              "thickness_mm": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "z_depth_mm": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "thickness_mm",
+              "z_depth_mm"
+            ]
+          }
+        },
+        "copper_order": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/layers"
+            }
+          ]
+        },
+        "active_copper_layers": {
+          "$ref": "#/$defs/layers"
+        },
+        "total_thickness_mm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "declared_not_measured": {
+          "const": true
+        }
+      },
+      "required": [
+        "layers",
+        "copper_order",
+        "active_copper_layers",
+        "total_thickness_mm",
+        "declared_not_measured"
+      ]
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "footprint_uuid": {
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "top",
+              "bottom"
+            ]
+          },
+          "layer": {
+            "type": "integer"
+          },
+          "center_mm": {
+            "$ref": "#/$defs/point"
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          }
+        },
+        "required": [
+          "id",
+          "footprint_uuid",
+          "side",
+          "layer",
+          "center_mm",
+          "provenance"
+        ]
+      }
+    },
+    "pads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "net": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "center_mm": {
+            "$ref": "#/$defs/point"
+          },
+          "layers": {
+            "$ref": "#/$defs/layers"
+          },
+          "geometry": {
+            "$ref": "#/$defs/geometry"
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "net",
+          "center_mm",
+          "layers",
+          "geometry",
+          "provenance"
+        ]
+      }
+    },
+    "vias": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "center_mm": {
+            "$ref": "#/$defs/point"
+          },
+          "drill_mm": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "diameter_mm": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "start_layer": {
+            "type": "integer"
+          },
+          "end_layer": {
+            "type": "integer"
+          },
+          "plated": {
+            "const": true
+          },
+          "hole_geometry": {
+            "$ref": "#/$defs/geometry"
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          }
+        },
+        "required": [
+          "id",
+          "center_mm",
+          "drill_mm",
+          "diameter_mm",
+          "start_layer",
+          "end_layer",
+          "plated",
+          "hole_geometry",
+          "provenance"
+        ]
+      }
+    },
+    "holes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hole"
+      }
+    },
+    "plated_through_holes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hole"
+      }
+    },
+    "nonplated_through_holes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hole"
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "FeatureCollection"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "Feature"
+              },
+              "properties": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "board",
+                      "substrate",
+                      "drill_holes",
+                      "copper"
+                    ]
+                  },
+                  "units": {
+                    "const": "mm"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "units"
+                ]
+              },
+              "geometry": {
+                "$ref": "#/$defs/geometry"
+              }
+            },
+            "required": [
+              "type",
+              "properties",
+              "geometry"
+            ],
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "properties": {
+                      "properties": {
+                        "kind": {
+                          "const": "copper"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "properties": {
+                      "required": [
+                        "layer",
+                        "status"
+                      ],
+                      "properties": {
+                        "layer": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "const": "candidate_unverified"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "minItems": 4,
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "properties"
+                ],
+                "properties": {
+                  "properties": {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "board"
+                      }
+                    }
+                  }
+                }
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "properties"
+                ],
+                "properties": {
+                  "properties": {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "substrate"
+                      }
+                    }
+                  }
+                }
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "properties"
+                ],
+                "properties": {
+                  "properties": {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "drill_holes"
+                      }
+                    }
+                  }
+                }
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "properties"
+                ],
+                "properties": {
+                  "properties": {
+                    "type": "object",
+                    "required": [
+                      "kind"
+                    ],
+                    "properties": {
+                      "kind": {
+                        "const": "copper"
+                      }
+                    }
+                  }
+                }
+              },
+              "minContains": 1
+            }
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "features"
+      ]
+    },
+    "primitive_provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "layer": {
+            "type": "integer"
+          },
+          "net": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          }
+        },
+        "required": [
+          "kind",
+          "layer",
+          "net",
+          "provenance"
+        ]
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "region_type": {
+            "const": "PROHIBIT"
+          },
+          "prohibit_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "geometry": {
+            "$ref": "#/$defs/geometry"
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          },
+          "applied_to_geometry": {
+            "const": false
+          }
+        },
+        "required": [
+          "region_type",
+          "prohibit_types",
+          "geometry",
+          "provenance",
+          "applied_to_geometry"
+        ]
+      }
+    },
+    "poured_cache_audit": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "geometry_repairs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warning",
+              "error"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "affects_completeness": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message",
+          "affects_completeness"
+        ]
+      }
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "official_export_comparison": {
+          "const": "not_run"
+        },
+        "cache_freshness": {
+          "const": "not_proven"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "official_export_comparison",
+        "cache_freshness",
+        "required"
+      ]
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "status",
+    "units",
+    "profile",
+    "pcb",
+    "source",
+    "coverage",
+    "coordinate_frame",
+    "conventions",
+    "document_provenance",
+    "stackup",
+    "components",
+    "pads",
+    "vias",
+    "holes",
+    "plated_through_holes",
+    "nonplated_through_holes",
+    "geometry",
+    "primitive_provenance",
+    "constraints",
+    "poured_cache_audit",
+    "geometry_repairs",
+    "diagnostics",
+    "validation",
+    "unknowns"
+  ],
+  "$defs": {
+    "point": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "segment": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ticket": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "client": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "line",
+        "segment",
+        "ticket",
+        "client"
+      ]
+    },
+    "hole": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "via",
+            "plated_pad",
+            "nonplated_pad",
+            "nonplated_fill"
+          ]
+        },
+        "plated": {
+          "type": "boolean"
+        },
+        "start_layer": {
+          "type": "integer"
+        },
+        "end_layer": {
+          "type": "integer"
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "plated",
+        "start_layer",
+        "end_layer",
+        "geometry",
+        "provenance"
+      ]
+    },
+    "ring": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/point"
+      },
+      "minItems": 4
+    },
+    "geometry": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Polygon"
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ring"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "MultiPolygon"
+            },
+            "coordinates": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/ring"
+                }
+              }
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "GeometryCollection"
+            },
+            "geometries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/geometry"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "geometries"
+          ]
+        }
+      ]
+    }
+  }
+}
