@@ -15,6 +15,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 from pcb_workbench.render import render_png  # noqa: E402
 from pcb_workbench.v4 import load_epcb2  # noqa: E402
+from pcb_workbench.exact import get_exact, pad_geometry, cache_status  # noqa: E402
 
 DEFAULT = (r"C:\Users\dell\Documents\LCEDA-Pro\projects"
            r"\Fresnel_V2.1_LaserDriver_EVM\pcb\PCB1.epcb2")
@@ -85,6 +86,33 @@ if os.path.isfile(PATH):
           "%r/%r" % (nets.get("1"), nets.get("2")))
     check("U601 pad20 无网络（TMPGD 悬空）", not nets.get("20"),
           repr(nets.get("20")))
+
+    ex = get_exact(d)
+    top = ex.layer_geom(1)
+    inner = ex.layer_geom(15)
+    check("精确几何：Top / Inner1 面积非零",
+          top.area > 0 and inner.area > 0,
+          "top=%.1f inner=%.1f" % (top.area, inner.area))
+    bb = d.bbox()
+    board_mm2 = (bb[2] - bb[0]) * (bb[3] - bb[1]) * (0.0254 ** 2)
+    check("Inner1 GND 平面覆盖率 > 70%",
+          inner.area * (0.0254 ** 2) > 0.7 * board_mm2,
+          "inner=%.1f mm2, board=%.1f mm2"
+          % (inner.area * 0.0254 ** 2, board_mm2))
+    p1 = next(p for p in d.pads_of("U601") if p["num"] == "1")
+    g1 = pad_geometry(p1, p1["comp"], 1)
+    exp_area = 26.181 * 11.024
+    check("U601 pad1 精确面积 = 26.18x11.02 mil",
+          g1 is not None and abs(g1.area - exp_area) / exp_area < 0.02,
+          "%s vs %.1f" % (g1.area if g1 else None, exp_area))
+    cs = cache_status(d)
+    check("POURED 实铜缓存存在", cs["cached_pours"] > 0, str(cs))
+    print("  铺铜缓存状态:", cs)
+    img = render_png(d, out=None, bbox=(300, -3200, 750, -2750),
+                     scale=1.2, layers=[1], exact=True, supersample=1,
+                     show_labels=False)
+    nonbg = sum(1 for px in img.getdata() if px != (12, 12, 16))
+    check("精确模式渲染有铜像素", nonbg > 1000, "nonbg=%d" % nonbg)
 else:
     print("  SKIP 真实 PCB（不存在: %s）" % PATH)
 

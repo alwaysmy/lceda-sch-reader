@@ -156,7 +156,8 @@ class PCBDesign:
                     "x": gx + c.get("x", 0), "y": gy + c.get("y", 0),
                     "w": dp.get("width") or 0, "h": dp.get("height") or 0,
                     "shape": dp.get("padType"), "angle": c.get("angle", 0),
-                    "net": pad_nets.get((cid, str(p.get("num"))), "")})
+                    "net": pad_nets.get((cid, str(p.get("num"))), ""),
+                    "comp": c, "raw": p})
 
         self.tracks = [{"net": b.get("netName", ""), "layer": b.get("layerId"),
                         "x1": b.get("startX"), "y1": b.get("startY"),
@@ -167,7 +168,10 @@ class PCBDesign:
                       "y": b.get("centerY"), "d": b.get("viaDiameter") or 0,
                       "hole": b.get("holeDiameter") or 0}
                      for h, b in self.records if h.get("type") == "VIA"]
-        self.pours = [{"net": b.get("netName", ""), "layer": b.get("layerId"),
+        self.pours = [{"id": h.get("id"), "name": b.get("name"),
+                       "net": b.get("netName", ""), "layer": b.get("layerId"),
+                       "pourType": b.get("pourType"),
+                       "path": b.get("path"),
                        "pts": _poly_points(b.get("path"))}
                       for h, b in self.records if h.get("type") == "POUR"]
         self.fills = [{"net": b.get("netName", ""), "layer": b.get("layerId"),

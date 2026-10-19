@@ -10,10 +10,12 @@
 """
 import argparse
 import json
+import os
 import sys
 
 from .v4 import MIL2MM, load_epcb2, load_project
 from .render import render_png
+from .exact import layer_areas, cache_status
 
 
 def open_designs(path, pcb=None):
@@ -53,6 +55,18 @@ def cmd_stats(args):
              s["pours"], s["nets"]))
     print("铜层:", ", ".join("%s(%s)" % (l["name"], l["id"])
                              for l in s["copper_layers"]))
+    if args.exact:
+        areas = layer_areas(d, arc_tol=args.arc_tol)
+        print("\n精确铜面积（POURED 实铜 + 全焊盘 + 孔挖除）:")
+        for l in s["copper_layers"]:
+            print("  L%-3s %-14s %9.3f mm2"
+                  % (l["id"], l["name"], areas.get(l["id"], 0.0)))
+        cs = cache_status(d)
+        print("  铺铜缓存: %d 个；cache max ticket=%s，铜编辑 max ticket=%s%s"
+              % (cs["cached_pours"], cs["max_cache_ticket"],
+                 cs["max_copper_ticket"],
+                 "  ⚠ 可能落后（建议在 LCEDA 重新覆铜）"
+                 if cs["cache_may_be_stale"] else "  (不早于铜编辑)"))
     st = d.net_stats()
     rows = []
     for net, v in st.items():
@@ -73,7 +87,9 @@ def cmd_pads(args):
     d = pick(open_designs(args.input, args.pcb), args.pcb)
     pads = d.pads_of(args.designator)
     if args.json:
-        print(json.dumps(pads, ensure_ascii=False, indent=1))
+        out = [{k: v for k, v in p.items() if k not in ("comp", "raw")}
+               for p in pads]
+        print(json.dumps(out, ensure_ascii=False, indent=1))
         return
     print("%s 焊盘 %d 个（mil）:" % (args.designator, len(pads)))
     for p in sorted(pads, key=lambda x: (len(x["num"]), x["num"])):
@@ -84,22 +100,7 @@ def cmd_pads(args):
 
 def cmd_render(args):
     d = pick(open_designs(args.input, args.pcb), args.pcb)
-    if args.around:
-        des, _, r = args.around.partition(",")
-        pads = d.pads_of(des.strip())
-        if not pads:
-            raise SystemExit("找不到器件 %r 的焊盘" % des)
-        cx = sum(p["x"] for p in pads) / len(pads)
-        cy = sum(p["y"] for p in pads) / len(pads)
-        r = float(r or 300)
-        bbox = (cx - r, cy - r, cx + r, cy + r)
-    elif args.region:
-        vals = [float(v) for v in args.region.split(",")]
-        if len(vals) != 4:
-            raise SystemExit("--region 需要 x1,y1,x2,y2")
-        bbox = tuple(vals)
-    else:
-        bbox = None
+    bbox = _bbox_from_args(d, args)
     layers = args.layers.split(",") if args.layers else None
     out = render_png(d, out=args.out, bbox=bbox, scale=args.scale,
                      layers=layers, round_caps=not args.no_round_caps,
@@ -108,8 +109,53 @@ def cmd_render(args):
                      show_pads=not args.no_pads,
                      show_vias=not args.no_vias,
                      show_labels=not args.no_labels,
-                     title=args.title or d.title)
+                     title=args.title or d.title,
+                     exact=args.exact, arc_tol=args.arc_tol)
     print("saved", out)
+
+
+def _bbox_from_args(d, args):
+    if args.around:
+        des, _, r = args.around.partition(",")
+        pads = d.pads_of(des.strip())
+        if not pads:
+            raise SystemExit("找不到器件 %r 的焊盘" % des)
+        cx = sum(p["x"] for p in pads) / len(pads)
+        cy = sum(p["y"] for p in pads) / len(pads)
+        r = float(r or 300)
+        return (cx - r, cy - r, cx + r, cy + r)
+    if args.region:
+        vals = [float(v) for v in args.region.split(",")]
+        if len(vals) != 4:
+            raise SystemExit("--region 需要 x1,y1,x2,y2")
+        return tuple(vals)
+    return None
+
+
+def cmd_layers(args):
+    d = pick(open_designs(args.input, args.pcb), args.pcb)
+    bbox = _bbox_from_args(d, args)
+    os.makedirs(args.outdir, exist_ok=True)
+    areas = layer_areas(d, arc_tol=args.arc_tol)
+    cs = cache_status(d)
+    if cs["cache_may_be_stale"]:
+        print("警告: 铺铜缓存 max ticket=%s 早于铜编辑 max ticket=%s，"
+              "几何是缓存快照，建议在 LCEDA 重新覆铜"
+              % (cs["max_cache_ticket"], cs["max_copper_ticket"]))
+    ids = d.copper_layers()
+    for lid in ids:
+        name = d.layer_names.get(lid) or ("L%s" % lid)
+        out = os.path.join(args.outdir, "layer%s.png" % lid)
+        render_png(d, out=out, bbox=bbox, scale=args.scale, layers=[lid],
+                   exact=not args.approx, supersample=args.supersample,
+                   title="%s / %s (L%s)" % (d.title, name, lid))
+        print("layer %-3s %-14s area=%8.3f mm2 -> %s"
+              % (lid, name, areas.get(lid, 0.0), out))
+    out = os.path.join(args.outdir, "all_layers.png")
+    render_png(d, out=out, bbox=bbox, scale=args.scale, layers=ids,
+               exact=not args.approx, supersample=args.supersample,
+               title="%s / all copper" % d.title)
+    print("composite -> %s" % out)
 
 
 def _num(v):
@@ -125,6 +171,9 @@ def main(argv=None):
     sp.add_argument("--pcb")
     sp.add_argument("--json", action="store_true")
     sp.add_argument("--top", type=int, default=15)
+    sp.add_argument("--exact", action="store_true",
+                    help="额外输出各铜层精确面积")
+    sp.add_argument("--arc-tol", type=float, default=0.05)
     sp.set_defaults(fn=cmd_stats)
 
     pp = sub.add_parser("pads", help="按位号列出焊盘网络")
@@ -149,7 +198,24 @@ def main(argv=None):
     rp.add_argument("--no-vias", action="store_true")
     rp.add_argument("--no-labels", action="store_true")
     rp.add_argument("--no-round-caps", action="store_true")
+    rp.add_argument("--exact", action="store_true",
+                    help="Shapely 布尔几何（POURED 实铜 + 全焊盘 + 孔挖除）")
+    rp.add_argument("--arc-tol", type=float, default=0.05,
+                    help="圆弧弦高容差（mil）")
     rp.set_defaults(fn=cmd_render)
+
+    lp = sub.add_parser("layers", help="逐铜层渲染 + 面积统计")
+    lp.add_argument("input")
+    lp.add_argument("--pcb")
+    lp.add_argument("--region", help="x1,y1,x2,y2（mil）")
+    lp.add_argument("--around", help="位号,半径（mil），如 U601,350")
+    lp.add_argument("--scale", type=float, default=2.0, help="px/mil")
+    lp.add_argument("--supersample", type=int, default=2)
+    lp.add_argument("--outdir", required=True)
+    lp.add_argument("--approx", action="store_true",
+                    help="用快速审阅模式而非精确几何")
+    lp.add_argument("--arc-tol", type=float, default=0.05)
+    lp.set_defaults(fn=cmd_layers)
 
     args = ap.parse_args(argv)
     if hasattr(args, "input") and not args.input:

@@ -11,7 +11,9 @@ BOM、Datasheet 等只读查询。**本工具为只读**，不修改任何工程
   铜层、焊盘/孔、声明堆叠与来源诊断（见
   [PCB 候选几何与制造导出核验](docs/PCB候选几何与制造导出核验.md)）；
 - `python -m pcb_workbench ...`：直接读 V4 `.epcb2` 源码，按网络着色的
-  区域渲染 + 网络/焊盘统计（见 [pcb_workbench](pcb_workbench/README.md)）。
+  区域渲染 + 网络/焊盘统计；`--exact` 用 POURED 实铜缓存与全焊盘做
+  Shapely 布尔几何，`layers` 逐铜层输出（见
+  [pcb_workbench](pcb_workbench/README.md)）。
 
 ## 一、使用方法
 
