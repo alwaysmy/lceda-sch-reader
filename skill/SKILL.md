@@ -107,6 +107,12 @@ description: Use when the user asks to read, query, search, extract, or verify c
   必须重跑 V3↔V4 全页 pinmap 对比（probes/verify_eprj3_backend.py）。
   空 JSON/无 `sch`/`pcb` 结构会被拒绝（不凭扩展名冒充支持）。V4 文件夹
   不含 CBB 模板时实例按黑盒保留；PANEL/变体/仿真文档暂不解析。
+- **V4 PCB 审阅（`pcb_workbench`）**：直接读 `pcb/*.epcb2`（`LINE/VIA/POUR` 带
+  netName、`PAD_NET` 带 padNet）。默认审阅模式按网络着色、圆头线帽补转角；
+  `--exact` 用 `POURED` 实铜缓存 + 全焊盘 + 孔做 Shapely 布尔几何并给出每层
+  面积；`layers` 逐铜层输出 Top/Bottom/Inner1/Inner2 + 合成图。`POURED` 缓存
+  ticket 落后于铜编辑时会告警（需在 LCEDA 重新覆铜才是最终铜）；无 DRC/热/
+  制造签核。
 - **CBB（复用块，symbol_type=17）已支持展开**：黑盒实例位号 CBBn。匹配
   优先级（前三为**唯一精确映射，单文件即可，无需 --cbb-map**）：
   `--cbb-map` 显式指定 > **V3 INSTANCE 文档**（.epro2：uuid 编码
