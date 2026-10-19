@@ -145,10 +145,13 @@ pdn_<net>_summary.json                    # IR drop / R / Jmax / P / Tmax
 
 **精度校验**：单层直导线 FDM 与 `R=ρL/(wt)` 对比误差 **0.5%**
 （`probes/verify_pdn_solver.py`）。Fresnel TEC_NEG 在 0.5 A 下：
-0.1 mm 网格 IR drop 25.35 mV，0.05 mm 网格 27.35 mV（约 8% 网格差），
-对应 R≈50.7–54.7 mΩ、P≈12.7–13.7 mW；最大电流密度对网格更敏感，
-只用于 hotspot 定位。**这是设计预检，不是制造/热签核**；最终 PDN 用
-PADEN/padne 交叉验证，热用 Elmer/PrePoMax 或实测。
+0.1 mm 网格 IR drop 25.35 mV，0.05 mm 网格 27.35 mV，0.025 mm 网格
+28.44 mV；按三点趋势外推约 **29.5 mV**，即 0.05 mm 仍偏低约 7%。
+对应 R≈50.7–56.9 mΩ、P≈12.7–14.2 mW；最大电流密度随网格从
+37→61→106 A/mm² 变化，**没有收敛**，只用于 hotspot 定位。正式结论
+至少用 0.025 mm + 局部细化，并报告网格误差；**这是设计预检，不是
+制造/热签核**；最终 PDN 用 PADEN/padne 交叉验证，热用 Elmer/PrePoMax
+或实测。
 
 ## 渲染为什么是「意图式」
 
