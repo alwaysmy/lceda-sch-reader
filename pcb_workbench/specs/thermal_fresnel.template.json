@@ -1,0 +1,83 @@
+{
+  "_how_to_use": "把 null 换成实测/ datasheet 数据后再运行；缺任何一项，thermal 会拒绝并列出缺失项。",
+  "grid_mm": 0.5,
+  "ambient_c": null,
+  "convection": {
+    "top_w_m2k": null,
+    "bottom_w_m2k": null,
+    "edge_w_m2k": null
+  },
+  "radiation_emissivity": null,
+  "components": [
+    {
+      "designator": "U601",
+      "power_w": null,
+      "model": "three_node",
+      "theta_jb": null,
+      "theta_jc": 1.65,
+      "theta_ca": null,
+      "height_mm": 0.8,
+      "source": "ADN8834 datasheet: 24-LFCSP theta_JC=1.65 C/W; theta_JA=37 C/W; theta_JB/theta_CA/loss still required",
+      "data_quality": "partial-datasheet"
+    },
+    {
+      "designator": "U602",
+      "power_w": null,
+      "model": "two_node",
+      "theta_jb": null,
+      "theta_ja": null,
+      "height_mm": 1.2,
+      "source": "FTC252012S1R0MBCA DCR 35 mohm typ; power=I^2*DCR once RMS current known; package thermal data missing",
+      "data_quality": "partial-datasheet",
+      "loss_model": "i2r",
+      "current_a": null,
+      "resistance_ohm": 0.035
+    },
+    {
+      "designator": "L214",
+      "power_w": null,
+      "model": "two_node",
+      "theta_jb": null,
+      "theta_ja": null,
+      "height_mm": 4.5,
+      "source": "SWPA6045S680MT DCR 289 mohm typ; power=I^2*DCR once RMS current known; package thermal data missing",
+      "data_quality": "partial-datasheet",
+      "loss_model": "i2r",
+      "current_a": null,
+      "resistance_ohm": 0.289
+    },
+    {
+      "designator": "L602",
+      "power_w": null,
+      "model": "two_node",
+      "theta_jb": null,
+      "theta_ja": null,
+      "source": "GZ2012D601TF DCR 300 mohm; current split between L602/L603 required; package thermal data missing",
+      "data_quality": "partial-datasheet",
+      "loss_model": "i2r",
+      "current_a": null,
+      "resistance_ohm": 0.3
+    },
+    {
+      "designator": "L603",
+      "power_w": null,
+      "model": "two_node",
+      "theta_jb": null,
+      "theta_ja": null,
+      "source": "GZ2012D601TF DCR 300 mohm; current split between L602/L603 required; package thermal data missing",
+      "data_quality": "partial-datasheet",
+      "loss_model": "i2r",
+      "current_a": null,
+      "resistance_ohm": 0.3
+    },
+    {
+      "designator": "U900",
+      "power_w": null,
+      "model": "two_node",
+      "theta_jb": null,
+      "theta_ja": null,
+      "source": "DFB laser module: TEC/laser heat and package thermal path not in PCB; must come from module datasheet/measurement",
+      "data_quality": "missing"
+    }
+  ]
+}

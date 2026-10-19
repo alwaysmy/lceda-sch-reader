@@ -2,13 +2,26 @@
   "net": "TEC_NEG",
   "voltage": 1.0,
   "current": 0.5,
-  "source": {"designator": "U602", "pad": "2"},
-  "sinks": [{"designator": "U900", "pad": "14"}],
-  "layers": [1, 2],
+  "source": {
+    "designator": "U602",
+    "pad": "2"
+  },
+  "sinks": [
+    {
+      "designator": "U900",
+      "pad": "14"
+    }
+  ],
+  "layers": [
+    1,
+    2
+  ],
   "grid_mm": 0.05,
   "board_mm": 1.6,
-  "ambient_c": 25,
-  "convection_w_m2k": 10,
-  "copper_um": {"1": 35, "2": 35, "15": 15, "16": 15},
-  "thermal": true
+  "copper_um": {
+    "1": 35,
+    "2": 35,
+    "15": 15,
+    "16": 15
+  }
 }

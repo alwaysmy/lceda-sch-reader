@@ -81,16 +81,16 @@ python -m pcb_workbench dfm "<工程目录>" --pcb PCB1 ^
 
 回归：`probes/verify_pcb_dfm.py`（松/严阈值双向断言、空网络过滤、缓存字段）。
 
-## PDN 2.5D FDM + 热力图
+## PDN 2.5D FDM（仅电）
 
 `pdn` 子命令把选中网络的**精确铜几何**栅格化成电阻网络，解电压场，
-输出逐层电压/电流密度和总电流密度热力图；`--thermal`（默认开）再做
-一个简化的 2D 热扩散，输出温度图。
+输出逐层电压/电流密度和总电流密度热力图。热模型已拆到独立的
+`thermal` 子命令（下一节），`pdn` 不再生成温度图。
 
 ```bat
 python -m pcb_workbench pdn "<工程目录>" --pcb PCB1 ^
        --spec pcb_workbench\specs\pdn_tec_neg.json ^
-       --outdir pdn_out [--grid 0.05] [--no-thermal] [--json]
+       --outdir pdn_out [--grid 0.05] [--json]
 ```
 
 Spec 是 JSON（不需要 PyYAML）：
@@ -105,10 +105,7 @@ Spec 是 JSON（不需要 PyYAML）：
   "layers": [1, 2],
   "grid_mm": 0.05,
   "board_mm": 1.6,
-  "ambient_c": 25,
-  "convection_w_m2k": 10,
-  "copper_um": {"1": 35, "2": 35, "15": 15, "16": 15},
-  "thermal": true
+  "copper_um": {"1": 35, "2": 35, "15": 15, "16": 15}
 }
 ```
 
@@ -126,8 +123,7 @@ Spec 是 JSON（不需要 PyYAML）：
 pdn_<net>_L1_voltage.png / _current.png   # 逐层
 pdn_<net>_voltage_all.png                 # 各层取最大电位
 pdn_<net>_current_all.png                 # 各层取最大
-pdn_<net>_thermal.png                     # 简化 2D 温度
-pdn_<net>_summary.json                    # IR drop / R / Jmax / P / Tmax
+pdn_<net>_summary.json                    # IR drop / R / Jmax / P
 ```
 
 图上深灰是**同层其他网络铜**作为上下文，彩色是选中网络的场；`SRC`/
@@ -140,8 +136,8 @@ pdn_<net>_summary.json                    # IR drop / R / Jmax / P / Tmax
 - 稀疏线性系统 `A·V=b`，源固定电压、汇注入负电流；只保留源汇所在
   连通分量，孤立铜岛丢弃并在 `dropped_nodes` 计数。
 - 电流密度由边电流 `|I|/(t·h)` 得到；功率按 `I²/G` 累加（含过孔）。
-- 热模型：铜/FR4 等效面导热 + 上下表面对流（`h` 为总对流系数，两侧各
-  `h`），热源是 PDN 功率；不含 TIM、器件、风道、辐射和 3D 过孔导热。
+- `pdn` **只算电**，不再输出旧 2D 等效温度图（那个图已撤下，避免把
+  铜损温升误当成器件/整板温度）。热模型见下一节 `thermal`。
 
 **精度校验**：单层直导线 FDM 与 `R=ρL/(wt)` 对比误差 **0.5%**
 （`probes/verify_pdn_solver.py`）。Fresnel TEC_NEG 在 0.5 A 下：
@@ -152,6 +148,51 @@ pdn_<net>_summary.json                    # IR drop / R / Jmax / P / Tmax
 至少用 0.025 mm + 局部细化，并报告网格误差；**这是设计预检，不是
 制造/热签核**；最终 PDN 用 PADEN/padne 交叉验证，热用 Elmer/PrePoMax
 或实测。
+
+## 器件封装热模型（thermal，严格输入）
+
+旧的 `pdn_*_thermal.png` 是 **2D 等效铜损温升**，不是器件/整板温度，已从
+公开结果里撤下。新的 `thermal` 子命令按下面的模型计算，缺数据直接拒绝：
+
+```bat
+python -m pcb_workbench thermal "<工程目录>" --pcb PCB1 ^
+       --spec pcb_workbench\specs\thermal_fresnel.template.json ^
+       --outdir thermal_out [--grid 0.5] [--json]
+```
+
+模型：
+
+- **板**：读 `.epcb2` 的 `LAYER_PHYS` 实际叠层（本板 Top 1.378 mil /
+  7628 8.283 mil / Inner1 0.598 / 1.1mm core / Inner2 0.598 / 7628 /
+  Bottom 1.378，总 1.586 mm）；每层独立横向导热节点，层间垂向导热；
+  铜层用 `POURED` 铜面积分数做 `k_eff`；过孔作为铜柱并联到介质热阻。
+- **器件**：`three_node` 紧凑模型：`Tj` → `θjb` → 板、`Tj` → `θjc` →
+  壳、壳 → `θca` → 环境；或 `two_node`：`θjb` + `θja`。功耗必须显式给
+  `power_w`，不能由工具“猜一个”。
+- **边界**：上下表面对流、可选线性化辐射、板边对流；环境温度固定。
+- **输出**：Top/Bottom 温度图、`thermal_components.json` 中每个器件的
+  `Tj/Tc/Tboard/P`、`thermal_summary.json`（含能量平衡 `q_in/q_out`）。
+
+严格门禁（缺一项就退出 2，不出图）：
+
+- `LAYER_PHYS` 叠层和 `BOARD_OUTLINE`；
+- 环境温度、上下对流系数；
+- 每个器件的 `power_w`、`source`、`data_quality`；
+- `three_node` 需要 `theta_jb/theta_jc/theta_ca`；`two_node` 需要
+  `theta_jb/theta_ja`。
+
+模板：`pcb_workbench/specs/thermal_fresnel.template.json`。里面保留了
+U601 的 datasheet θJC=1.65 °C/W，以及 U602/L214/L602/L603 的 DCR；
+其余功耗、θJB/θJA/θCA、U900 模块热路径全部留空，**必须用 datasheet/
+实测补全后才允许运行**。本板目前没有这些数据，所以没有 Fresnel 的
+器件温度结论——这是故意的，不是再画一张好看的图。缺失清单见
+`docs/thermal-data-request.md`。
+
+封装模型边界：`θjb/θjc/θca` 是紧凑热阻，不是封装内部 3D 场；没有
+TIM、焊锡、连接器、风道；板边/铜面积分数是网格近似。适合做器件结温
+预算与相对排序，不是制造签核。网格用 0.5 mm 起步；合成 U601 案例
+1.0→0.5 mm 的 Tj 变化约 5% 温升，最终算例至少 0.5 mm 并做一次
+0.25 mm 收敛检查。
 
 ## 渲染为什么是「意图式」
 
@@ -170,10 +211,13 @@ pdn_<net>_summary.json                    # IR drop / R / Jmax / P / Tmax
 | `v4.py` | `.epcb2` 日志解析、器件/焊盘/网络/走线/覆铜数据模型、网络统计 |
 | `render.py` | 意图式渲染（网络配色、层过滤、圆头关节、超采样）+ `--exact` 入口 |
 | `exact.py` | Shapely 精确几何：POURED 缓存、全焊盘、孔、ARC 采样、层并集/面积 |
-| `pdn.py` | 2.5D FDM PDN（电压/电流密度/功率）+ 简化 2D 热 + 热力图 |
-| `cli.py` | `stats` / `pads` / `render` / `layers` / `dfm` / `pdn` 子命令 |
-| `specs/` | `pdn_tec_neg.json`、`pdn_3v5_tec.json` |
+| `pdn.py` | 2.5D FDM PDN（电压/电流密度/功率，仅电） |
+| `thermal.py` | 3D 分层板 FVM + 器件封装紧凑热网络（严格输入） |
+| `cli.py` | `stats` / `pads` / `render` / `layers` / `dfm` / `pdn` / `thermal` |
+| `specs/` | `pdn_*.json`、`thermal_fresnel.template.json` |
 
 回归：`probes/verify_pcb_workbench.py`（转角像素断言 + 精确面积/覆盖率/
 缓存状态 + 实板 pad 面积）；`probes/verify_pdn_solver.py`（解析直导线
-0.5% + 实板 TEC_NEG 求解/功耗/连通性 smoke）。
+0.5% + 实板 TEC_NEG 求解/功耗/连通性 smoke）；
+`probes/verify_thermal_model.py`（7 层实际叠层 + 严格输入门 + 合成
+U601 紧凑网络能量平衡）。

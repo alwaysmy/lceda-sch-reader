@@ -1,14 +1,12 @@
-"""2.5D FDM PDN 求解 + 热力图（headless，基于 exact.py 的实铜几何）。
+"""2.5D FDM PDN 电学求解 + 电压/电流密度热力图（基于 exact.py 实铜几何）。
 
-模型：
-  - 每层铜栅格化成电阻网格（4 邻域），电导 G = σ·t（S）；
+  - 每层铜栅格化成电阻网络（4 邻域），电导 G = σ·t（S）；
   - 过孔按镀铜桶电阻连接相邻层（R = ρL/A，默认 25 µm 镀层）；
   - 源焊盘设为 Dirichlet 电压，汇焊盘注入总电流；
-  - 解稀疏线性系统 A·V=b，得到电压场、边电流、电流密度、功率；
-  - 可选简化 2D 热扩散：铜/FR4 等效面导热 + 上下表面对流，热源=PDN 功率。
+  - 解稀疏线性系统 A·V=b，得到电压场、边电流、电流密度、功率。
 
-边界：FDM 网格 + 简化热边界，不是 3D FEM/CFD/制造签核；网格/铜厚/镀层/
-对流系数决定精度。用于流程闭环与 hotspot 定位。
+热模型已移到 `thermal.py`（3D 分层板 + 器件封装紧凑网络）；本文件不再
+输出温度，避免把铜损温升误当成器件/整板温度。
 """
 import json
 import math
@@ -25,7 +23,6 @@ MIL2MM = 0.0254
 SIGMA_CU = 5.8e7          # S/m
 RHO_CU = 1.0 / SIGMA_CU
 K_CU = 385.0              # W/(m·K)
-K_FR4 = 0.3
 BG = (8, 8, 12)
 
 
@@ -193,10 +190,11 @@ def solve_pdn(design, spec):
     net = spec["net"]
     h_mm = float(spec.get("grid_mm") or 0.1)
     cu_um = spec.get("copper_um") or {}
-    t = {lid: float(cu_um.get(str(lid), 35 if lid in (1, 2) else 15)) * 1e-3
+    stack_cu = {r["layer_id"]: r["thickness_mil"] * 25.4
+                for r in design.stackup() if r["is_copper"]}
+    t = {lid: float(cu_um.get(str(lid), stack_cu.get(
+        lid, 35 if lid in (1, 2) else 15))) * 1e-3
          for lid in layers}  # mm
-    t_all = {lid: float(cu_um.get(str(lid), 35 if lid in (1, 2) else 15)) * 1e-3
-             for lid in design.copper_layers()}
 
     ex = get_exact(design)
     geoms = {}
@@ -429,7 +427,7 @@ def solve_pdn(design, spec):
         "V": V, "masks": keep_masks, "ids": ids, "bbox": bbox, "h": h_mm,
         "jmap": jmap, "pmap": pmap, "fixed": fixed, "vfix": vfix,
         "sink_nodes": sink_nodes, "edges": edges, "layers": layers,
-        "copper_t": t, "copper_t_all": t_all, "board_mm": board_mm,
+        "copper_t": t, "board_mm": board_mm,
         "Vsrc": float(spec["voltage"]), "current": total_i, "net": net,
         "pad_src": spec["source"], "sinks": sinks,
         "src_xy": src_xy, "sink_xy": sink_xy,
@@ -439,50 +437,6 @@ def solve_pdn(design, spec):
         "power_total": total_power,
         "dropped_nodes": dropped, "kept_nodes": N2,
     }
-
-
-def thermal_map(res, spec, copper_masks=None):
-    """简化 2D 热扩散：铜/FR4 等效面导热 + 上下对流。"""
-    bbox, h, masks, layers = res["bbox"], res["h"], res["masks"], res["layers"]
-    W = next(iter(masks.values())).shape[1]
-    H = next(iter(masks.values())).shape[0]
-    board_m = float(res["board_mm"]) * 1e-3
-    Q = np.zeros((H, W))
-    for lid, p in res["pmap"].items():
-        Q += p
-    cu_t = np.zeros((H, W))  # m
-    # 导热用全板铜（不只选中网络）；热源仍只来自选中网络
-    cm = copper_masks or masks
-    ct = res.get("copper_t_all") or res["copper_t"]
-    for lid, m in cm.items():
-        if lid in ct and m is not None:
-            cu_t[m] += ct[lid] * 1e-3
-    t_fr4 = np.maximum(board_m - cu_t, 0.0)
-    k_eff = (cu_t * K_CU + t_fr4 * K_FR4) / np.maximum(board_m, 1e-12)
-    N = H * W
-    ids = np.arange(N).reshape(H, W)
-    rows, cols, data = [], [], []
-    for axis in (0, 1):
-        if axis == 1:
-            a = ids[:, :-1].ravel(); b = ids[:, 1:].ravel()
-            ke = 0.5 * (k_eff[:, :-1] + k_eff[:, 1:]).ravel()
-        else:
-            a = ids[:-1, :].ravel(); b = ids[1:, :].ravel()
-            ke = 0.5 * (k_eff[:-1, :] + k_eff[1:, :]).ravel()
-        G = ke * board_m  # W/K per cell pair (h/h=1)
-        rows += [a, b, a, b]
-        cols += [a, b, b, a]
-        data += [G, G, -G, -G]
-    rows = np.concatenate(rows); cols = np.concatenate(cols)
-    data = np.concatenate(data)
-    A = sparse.coo_matrix((data, (rows, cols)), shape=(N, N)).tocsr()
-    hc = float(spec.get("convection_w_m2k") or 10.0)
-    conv = 2.0 * hc * (h * 1e-3) ** 2
-    A = A + sparse.eye(N, format="csr") * conv
-    amb = float(spec.get("ambient_c") or 25.0)
-    rhs = Q.ravel() + conv * amb
-    T = spsolve(A.tocsc(), rhs)
-    return T.reshape(H, W), k_eff
 
 
 def _all_copper_mask(ex, lid, bbox, h_mm):
@@ -496,7 +450,7 @@ def _all_copper_mask(ex, lid, bbox, h_mm):
     return _raster(g_mm, bbox, h_mm)
 
 
-def run(design, spec, outdir, thermal=True):
+def run(design, spec, outdir):
     import os
     os.makedirs(outdir, exist_ok=True)
     res = solve_pdn(design, spec)
@@ -509,13 +463,6 @@ def run(design, spec, outdir, thermal=True):
             bg[lid] = _all_copper_mask(ex, lid, res["bbox"], res["h"])
         except Exception:
             bg[lid] = None
-    # 热扩散用全部铜层（不只参与 PDN 的层）
-    bg_thermal = {}
-    for lid in design.copper_layers():
-        try:
-            bg_thermal[lid] = _all_copper_mask(ex, lid, res["bbox"], res["h"])
-        except Exception:
-            bg_thermal[lid] = None
     # 电压/电流逐层 + 电流合成
     vmin, vmax = res["vmin"], res["vmax"]
     all_j = None
@@ -574,30 +521,12 @@ def run(design, spec, outdir, thermal=True):
                               "V (min %.4f, max %.4f)" % (vmin, vmax),
                               src=res["src_xy"], sink=res["sink_xy"],
                               bg_mask=bg_all))
-    thermal_max = None
-    if thermal:
-        T, k_eff = thermal_map(res, spec, bg_thermal)
-        mask = np.ones_like(T, bool)
-        bg_all = np.zeros_like(T, bool)
-        for m in bg_thermal.values():
-            if m is not None:
-                bg_all |= m
-        thermal_max = float(np.max(T))
-        files.append(_heatmap(T, mask, os.path.join(outdir,
-                                                   "%s_thermal.png" % prefix),
-                              "%s simplified 2D thermal" % res["net"],
-                              "degC (ambient %.1f, max %.2f)"
-                              % (float(spec.get("ambient_c", 25)), thermal_max),
-                              src=res["src_xy"], sink=res["sink_xy"],
-                              bg_mask=bg_all))
     summary = {k: res[k] for k in ("net", "Vsrc", "current", "sink_v",
                                    "vmin", "vmax", "max_j", "power_total",
                                    "bbox", "h", "kept_nodes", "dropped_nodes")}
     summary["ir_drop"] = res["Vsrc"] - res["sink_v"]
     summary["drop_mv"] = summary["ir_drop"] * 1000.0
     summary["r_ohm"] = summary["ir_drop"] / res["current"]
-    if thermal_max is not None:
-        summary["thermal_max_c"] = thermal_max
     summary["files"] = [f for f in files if f]
     with open(os.path.join(outdir, "%s_summary.json" % prefix), "w",
               encoding="utf-8") as f:

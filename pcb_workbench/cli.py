@@ -215,9 +215,8 @@ def cmd_pdn(args):
         spec = json.load(f)
     if args.grid:
         spec["grid_mm"] = args.grid
-    summary = pdn_mod.run(d, spec, args.outdir,
-                          thermal=bool(spec.get("thermal", True))
-                          and not args.no_thermal)
+    # 热模型不再走 pdn 的 2D 等效图；改用 `thermal` 子命令（严格封装热模型）
+    summary = pdn_mod.run(d, spec, args.outdir)
     if args.json:
         print(json.dumps(summary, ensure_ascii=False, indent=1))
         return
@@ -232,6 +231,34 @@ def cmd_pdn(args):
     print("输出目录: %s" % args.outdir)
     for f in summary["files"]:
         print("  ", f)
+
+
+def cmd_thermal(args):
+    d = pick(open_designs(args.input, args.pcb), args.pcb)
+    from . import thermal as thermal_mod
+    with open(args.spec, encoding="utf-8") as f:
+        spec = json.load(f)
+    if args.grid:
+        spec["grid_mm"] = args.grid
+    errs = thermal_mod.validate(d, spec)
+    if errs:
+        print("热模型输入不完整，拒绝运行：")
+        for e in errs:
+            print(" -", e)
+        raise SystemExit(2)
+    summary = thermal_mod.run(d, spec, args.outdir)
+    if args.json:
+        print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
+    print("Thermal: ambient %.1f C  grid %.3f mm  q=%.4f W"
+          % (summary["ambient_c"], summary["grid_mm"],
+             summary["q_in_w"]))
+    for c in summary["components"]:
+        print("  %-6s P=%.4g W  Tj=%.3f C  Tc=%s  Tboard=%.3f C"
+              % (c["designator"], c["power_w"], c["Tj_c"],
+                 "-" if c["Tc_c"] is None else "%.3f" % c["Tc_c"],
+                 c["Tboard_c"]))
+    print("输出目录: %s" % args.outdir)
 
 
 def _num(v):
@@ -309,16 +336,26 @@ def main(argv=None):
     dp.add_argument("--json", action="store_true")
     dp.set_defaults(fn=cmd_dfm)
 
-    pp = sub.add_parser("pdn", help="2.5D FDM PDN 求解 + 热力图")
+    pp = sub.add_parser("pdn", help="2.5D FDM PDN（仅电压/电流密度）")
     pp.add_argument("input")
     pp.add_argument("--pcb")
     pp.add_argument("--spec", required=True,
                     help="JSON：net/voltage/current/source/sinks/...")
     pp.add_argument("--outdir", required=True)
     pp.add_argument("--grid", type=float, help="覆盖 spec.grid_mm（mm）")
-    pp.add_argument("--no-thermal", action="store_true")
     pp.add_argument("--json", action="store_true")
     pp.set_defaults(fn=cmd_pdn)
+
+    tp = sub.add_parser("thermal",
+                        help="3D 分层板 + 封装紧凑热模型（严格输入）")
+    tp.add_argument("input")
+    tp.add_argument("--pcb")
+    tp.add_argument("--spec", required=True,
+                    help="JSON：ambient/convection/components(power+θ)/...")
+    tp.add_argument("--outdir", required=True)
+    tp.add_argument("--grid", type=float, help="覆盖 spec.grid_mm（mm）")
+    tp.add_argument("--json", action="store_true")
+    tp.set_defaults(fn=cmd_thermal)
 
     args = ap.parse_args(argv)
     if hasattr(args, "input") and not args.input:

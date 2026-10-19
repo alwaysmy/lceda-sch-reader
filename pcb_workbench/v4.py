@@ -102,6 +102,18 @@ class PCBDesign:
                     self.layers[b.get("layerId")] = b.get("layerType")
                     self.layer_names[b.get("layerId")] = b.get("layerName")
         self.records = doc["records"]
+        self.layer_phys = {}
+        for d in docs:
+            for h, b in d["records"]:
+                if h.get("type") != "LAYER_PHYS":
+                    continue
+                try:
+                    arr = json.loads(h.get("id") or "null")
+                except ValueError:
+                    arr = None
+                lid = arr[1] if isinstance(arr, list) and len(arr) >= 2 else None
+                if lid is not None:
+                    self.layer_phys[lid] = dict(b, layerId=lid)
         self._parse()
 
     # ------------------------------------------------------------------
@@ -186,6 +198,25 @@ class PCBDesign:
         """活动铜层（Top/Bottom/Inner），按层号排序。"""
         return sorted(lid for lid, typ in self.layers.items()
                       if typ in ("TOP", "BOTTOM", "SIGNAL"))
+
+    def stackup(self):
+        """按 zIndex 返回实际叠层（mil）；铜层用 layerId，介质用 LAYER_PHYS。"""
+        copper = set(self.copper_layers())
+        rows = []
+        for lid, b in self.layer_phys.items():
+            th = float(b.get("thickness") or 0)
+            if th <= 0:
+                continue
+            rows.append({
+                "layer_id": lid,
+                "name": self.layer_names.get(lid) or b.get("material") or "",
+                "material": b.get("material") or "",
+                "thickness_mil": th,
+                "is_copper": lid in copper,
+                "z": b.get("zIndex") or 0,
+            })
+        rows.sort(key=lambda r: r["z"])
+        return rows
 
     def component(self, des):
         return next((c for c in self.components.values() if c.get("des") == des), None)
