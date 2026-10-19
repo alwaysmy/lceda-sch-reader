@@ -16,6 +16,7 @@ import sys
 from .v4 import MIL2MM, load_epcb2, load_project
 from .render import render_png
 from .exact import layer_areas, cache_status
+from .dfm import check as dfm_check
 
 
 def open_designs(path, pcb=None):
@@ -158,6 +159,55 @@ def cmd_layers(args):
     print("composite -> %s" % out)
 
 
+def cmd_dfm(args):
+    d = pick(open_designs(args.input, args.pcb), args.pcb)
+    ids = None
+    if args.layers:
+        from .render import resolve_layers
+        ids = resolve_layers(d, args.layers.split(","))
+    res = dfm_check(d, min_track=args.min_track, min_neck=args.min_neck,
+                    min_clearance=args.min_clearance,
+                    min_annular=args.min_annular,
+                    layers=ids, max_items=args.max_items)
+    if args.json:
+        print(json.dumps(res, ensure_ascii=False, indent=1))
+        return
+    s = res["summary"]
+    print("DFM: %s  (%s)" % (d.title, d.path.name))
+    print("阈值: 走线 %.3f / 窄颈 %.3f / 同层间距 %.3f / 环宽 %.3f mm"
+          % (args.min_track, args.min_neck, args.min_clearance,
+             args.min_annular))
+    print("结果: track=%d neck=%d clearance=%d annular=%d  (总 %d)"
+          % (s["track"], s["neck"], s["clearance"], s["annular"],
+             s["violations"]))
+    cs = res["cache"]
+    if cs["cache_may_be_stale"]:
+        print("⚠ 铺铜缓存 ticket=%s 早于铜编辑 ticket=%s，结果基于缓存快照"
+              % (cs["max_cache_ticket"], cs["max_copper_ticket"]))
+    if res.get("clearance_scope"):
+        print("间距口径: %s" % res["clearance_scope"])
+    for key, label, field in (
+            ("track", "走线宽度不足", "width_mm"),
+            ("neck", "覆铜窄颈", "neck_mm"),
+            ("clearance", "同层间距不足", "gap_mm"),
+            ("annular", "环宽不足", "ring_mm")):
+        rows = res[key]
+        if not rows:
+            continue
+        print("\n[%s] %d 项%s" % (key, len(rows), "（前 %d）" % args.max_items
+                                   if len(rows) >= args.max_items else ""))
+        for r in rows[:args.max_items]:
+            extra = " %s.%s" % (r.get("des"), r.get("pad")) if r.get("des") else ""
+            if key == "clearance":
+                what = "%s <-> %s" % (r.get("net_a") or "-",
+                                      r.get("net_b") or "-")
+            else:
+                what = r.get("net") or "-"
+            print("  L%-3s %-24s %-10s %8.4f mm at %s"
+                  % (r.get("layer"), what, extra, r.get(field),
+                     r.get("at")))
+
+
 def _num(v):
     return ("%.1f" % v).rstrip("0").rstrip(".")
 
@@ -216,6 +266,22 @@ def main(argv=None):
                     help="用快速审阅模式而非精确几何")
     lp.add_argument("--arc-tol", type=float, default=0.05)
     lp.set_defaults(fn=cmd_layers)
+
+    dp = sub.add_parser("dfm", help="批量 DFM 检查（走线/窄颈/间距/环宽）")
+    dp.add_argument("input")
+    dp.add_argument("--pcb")
+    dp.add_argument("--min-track", type=float, default=0.20,
+                    help="最小走线宽度 mm（默认 0.20）")
+    dp.add_argument("--min-neck", type=float, default=0.20,
+                    help="最小覆铜窄颈 mm（默认 0.20，腐蚀拓扑法）")
+    dp.add_argument("--min-clearance", type=float, default=0.15,
+                    help="同层不同网络最小间距 mm（默认 0.15）")
+    dp.add_argument("--min-annular", type=float, default=0.10,
+                    help="过孔/THT 最小环宽 mm（默认 0.10）")
+    dp.add_argument("--layers", help="top,bottom,inner1,inner2（默认全部铜层）")
+    dp.add_argument("--max-items", type=int, default=100)
+    dp.add_argument("--json", action="store_true")
+    dp.set_defaults(fn=cmd_dfm)
 
     args = ap.parse_args(argv)
     if hasattr(args, "input") and not args.input:

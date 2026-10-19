@@ -219,7 +219,7 @@ def pad_geometry(p, comp, layer, arc_tol=0.05):
         local = _pad_shape(p, dp)
         if local is None:
             return None
-        ang = (p.get("padAngle") or 0) + (p.get("relativeAngle") or 0)
+        ang = (p.get("padAngle") or 0)
         if ang:
             local = affinity.rotate(local, ang, origin=(0, 0))
         local = affinity.translate(local,
@@ -308,10 +308,11 @@ class ExactLayer:
                              % (pour.get("name") or pour.get("id")))
         return g, False
 
-    def nets(self, layer):
+    def nets(self, layer, include_pours=True):
         """{net: geom}；该层所有铜的并集/按网络（按层缓存）。"""
-        if layer in self._net_cache:
-            return self._net_cache[layer]
+        ck = (layer, bool(include_pours))
+        if ck in self._net_cache:
+            return self._net_cache[ck]
         d = self.d
         by_net = {}
 
@@ -351,7 +352,7 @@ class ExactLayer:
             g = pad_geometry(p, comp, layer, self.arc_tol)
             add(p["net"], g)
         for pour in d.pours:
-            if pour["layer"] != layer:
+            if not include_pours or pour["layer"] != layer:
                 continue
             g, _exact = self._pour_geom(pour)
             add(pour["net"], g)
@@ -373,11 +374,11 @@ class ExactLayer:
                 g = _poly_or_none(parse_path(path, 1.0, self.arc_tol))
             add(f["net"], g)
         out = {n: unary_union(v) for n, v in by_net.items()}
-        self._net_cache[layer] = out
+        self._net_cache[ck] = out
         return out
 
-    def layer_geom(self, layer):
-        return unary_union(list(self.nets(layer).values()))
+    def layer_geom(self, layer, include_pours=True):
+        return unary_union(list(self.nets(layer, include_pours).values()))
 
 
 def design_records(design):

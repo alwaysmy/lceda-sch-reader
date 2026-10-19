@@ -31,6 +31,11 @@ python -m pcb_workbench render "<工程目录>" --pcb PCB1 ^
 rem 逐铜层渲染 + 面积统计（Top/Bottom/Inner1/Inner2 + 合成图）
 python -m pcb_workbench layers "<工程目录>" --pcb PCB1 ^
        --around U601,350 --scale 2 --outdir layers [--approx]
+
+rem 批量 DFM：走线宽度 / 覆铜窄颈 / 同层间距 / 过孔环宽
+python -m pcb_workbench dfm "<工程目录>" --pcb PCB1 ^
+       --min-track 0.20 --min-neck 0.20 --min-clearance 0.15 ^
+       --min-annular 0.10 [--layers top,bottom] [--json]
 ```
 
 `--pcb` 可给标题（`PCB1`）或文件名（`PCB1.epcb2`）；工程有多个 PCB 时必填。
@@ -58,6 +63,23 @@ python -m pcb_workbench layers "<工程目录>" --pcb PCB1 ^
 4. MULTI 层的机械挖孔/槽不参与铜布尔（本工程的大矩形 MULTI FILL 不是
    铜挖孔；若你的板用它做 NPTH，需要单独扣除）。
 5. 不做 DRC/间距/热/制造签核；Gerber 对拍仍是独立步骤。
+
+## DFM 批处理（第一版）
+
+`dfm` 子命令基于精确几何做批量检查，输出 JSON 或可读清单：
+
+| 检查 | 方法 | 说明 |
+|---|---|---|
+| `track` | 记录值 | 走线宽度 < 阈值；精确到 `LINE.width` |
+| `neck` | 矢量腐蚀拓扑 | 覆铜窄颈/热焊盘辐条/孤立窄铜；检测“连通分量变化”的最小宽度，非真骨架宽度 |
+| `clearance` | Shapely 距离 | 同层不同**命名网络**的最小间距；铺铜缓存落后时只用走线/焊盘/过孔，避免缓存假重叠 |
+| `annular` | 记录值 | 过孔/THT（ROUND 孔）环宽；跳过 NPTH/无网络机械孔 |
+
+**边界**：不检查阻焊/丝印/孔到铜/孔间距/板边间距；`neck` 对平滑渐变颈缩
+可能低估；clearance 不含无网络铜（机械/图形）；结果受 `POURED` 缓存新鲜度
+影响（会告警）。这是 DFM 辅助清单，不是制造签核。
+
+回归：`probes/verify_pcb_dfm.py`（松/严阈值双向断言、空网络过滤、缓存字段）。
 
 ## 渲染为什么是「意图式」
 
