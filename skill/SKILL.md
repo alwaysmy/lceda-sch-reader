@@ -219,7 +219,8 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 
 1. **直接连接**：`pinmap <页> --schematic <板> --designator <器件> --json`
    - 每个引脚：`net`（网络名，`*`=推断）、`peers`（同物理连接点引脚）、
-     `wire_peers`（同导线记录其他器件引脚）
+     `wire_peers`（同导线记录的其他引脚，**含同器件内短接/堆叠**，如
+     ADN8834 数字 PID 的 IN2N–OUT2、运放跟随器 -IN↔OUT）
 2. **识别连接器件类型**：`components <页>` 查 peers/wire_peers 中器件的 device 字段
    （电阻/电容/磁珠/运放/隔离器/短接符…）
 3. **按类型扩展**：

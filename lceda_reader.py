@@ -3208,7 +3208,8 @@ def cmd_pinmap(db, args):
     """精确引脚网络表：对指定页，用 实例坐标+PIN相对坐标+旋转 精确匹配 WIRE
     端点网络名（100% 可靠，无几何近似）。每个元件输出 引脚名->网络名。
     对网络名为空的引脚，输出 same_wire 关联（同一 WIRE 记录端点上的其他
-    器件引脚），用于识别串阻/耦合/晶体管间接连接（如 LED->R->+5V）。
+    引脚，**含同器件内短接/堆叠引脚**），用于识别串阻/耦合/晶体管间接连接
+    （如 LED->R->+5V，或 ADN8834 数字 PID 的 IN2N–OUT2 短接）。
     --designator 只输出指定元件；--schematic 指定板名解决同名页。"""
     page = resolve_page(db, args.page, args.schematic, args.json)
     if page is None:
@@ -3253,14 +3254,18 @@ def cmd_pinmap(db, args):
                     hit_pt = pt2
                     hit_wires |= wids2
                     net = endp.get(pt2) or None
-            # 同物理连接点的其他器件引脚 + 同 WIRE 记录的其他端点引脚
+            # 同物理连接点的其他引脚 + 同 WIRE 记录的其他端点引脚。
+            # 只排除“本引脚自身”（op is p）；不能按 designator 整器件排除：
+            # 同器件内引脚短接（如 ADN8834 数字 PID 的 IN2N–OUT2、堆叠的
+            # PGND/EP 引脚）与多单元符号（AD7175 的 U600 多个 part 共用位号）
+            # 都是真实连接，按 designator 排除会把它们显示成悬空。
             peers = []
             wire_peers = []
             if hit_pt:
                 for (odes, ocid), plist in comp_pins.items():
-                    if odes == des:
-                        continue
                     for op in plist:
+                        if op is p:
+                            continue
                         cands = {(round(op["x"], 1), round(op["y"], 1))}
                         if op.get("x2") is not None:
                             cands.add((round(op["x2"], 1),
@@ -3276,9 +3281,9 @@ def cmd_pinmap(db, args):
                                 wire_pts.add((round(x1, 1), round(y1, 1)))
                                 wire_pts.add((round(x2, 1), round(y2, 1)))
                 for (odes, ocid), plist in comp_pins.items():
-                    if odes == des:
-                        continue
                     for op in plist:
+                        if op is p:
+                            continue
                         cands = {(round(op["x"], 1), round(op["y"], 1))}
                         if op.get("x2") is not None:
                             cands.add((round(op["x2"], 1),
