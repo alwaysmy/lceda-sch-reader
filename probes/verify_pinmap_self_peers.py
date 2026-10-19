@@ -17,7 +17,12 @@ peers/wire_peers 也为空，与真的没接线无法区分）：
   3. U601.TMPGD 真悬空（peers 与 wire_peers 都为空）——防止“修过头”
      把本引脚自身列进 peers；
   4. U403.-IN ↔ U403.OUT 互相列出（另一类符号：运放跟随器直连）；
-  5. 全页扫描：任何引脚都不得把自身列进 peers/wire_peers，peer 列表无重复。
+  5. RN500/RN501/RN502 的跨 part 直连：4 电阻阵列（4D03）被拆成多个
+     part（同页同 Designator、不同 cid，引脚 1-8 / 2-7 / 3-6 / 4-5），
+     工程里画成两组串接 8–7、6–5；修复前这两对互相不可见（按 designator
+     整器件跳过），现在必须互相列出——这是“多单元符号跨 part”路径的
+     真实样本，无需另造 .epro2 fixture；
+  6. 全页扫描：任何引脚都不得把自身列进 peers/wire_peers，列表无重复。
 
 用法：
     set PYTHONIOENCODING=utf-8
@@ -119,10 +124,17 @@ dac = pinmap_rows(db, "DAC")
 ok, detail = mutual(dac, "U403", "-IN", "OUT")
 check("U403.-IN ↔ U403.OUT（跟随器直连）", ok, detail)
 
-# --- 5) 全页自检：不列自身、列表无重复 -------------------------------------
+# --- 5) Howland 页：多单元符号跨 part 直连（4 电阻阵列串接） ----------------
+howland = pinmap_rows(db, "Howland Current Source")
+for des in ("RN500", "RN501", "RN502"):
+    for a, b in (("8", "7"), ("6", "5")):
+        ok, detail = mutual(howland, des, a, b)
+        check("%s.%s ↔ %s.%s（跨 part 串接）" % (des, a, des, b), ok, detail)
+
+# --- 6) 全页自检：不列自身、列表无重复 -------------------------------------
 bad_self, bad_dup = [], []
-for page in ("TEC Controller", "DAC"):
-    rows = tec if page == "TEC Controller" else dac
+for page, rows in (("TEC Controller", tec), ("DAC", dac),
+                   ("Howland Current Source", howland)):
     for row in rows:
         des = row["designator"]
         for p in row["pins"]:
