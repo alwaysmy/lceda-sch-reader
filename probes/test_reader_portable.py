@@ -109,6 +109,9 @@ def write_fixture(directory, kind, *, rotation=0, mirror=False,
                          ("dev1", "Generic", "Generic", attrs["Description"]))
             conn.executemany("INSERT INTO attributes VALUES(?,?,?)",
                              [("dev1", key, val) for key, val in attrs.items()])
+        # sqlite3 的 with 只提交、不关闭连接；Windows 下未关闭的连接会把
+        # fixture 文件锁住，tearDown 删除临时目录时 WinError 32。
+        conn.close()
     elif kind == "epro":
         project = {
             "boards": {"Board": {"schematic": "sch1"}},

@@ -93,6 +93,26 @@ class SchemaBackend(ABC):
         self._cbb_dom_cache = {}
         self.diagnostics = []    # 本次查询实际遇到的 CBB 引用/展开完整性问题
 
+    def close(self):
+        """释放后端持有的文件句柄（sqlite 游标/连接、zip）。幂等。
+
+        Windows 下未关闭的句柄会锁住工程文件：进程内调用 main()（如
+        portable 测试）时，SystemExit 的 traceback 会持有 dbs 引用，
+        tearDown 删除临时工程文件会 WinError 32。CLI 进程退出时系统会
+        回收，但显式关闭更安全（也便于把后端当库使用）。"""
+        for attr in ("cur", "conn", "zip"):
+            obj = getattr(self, attr, None)
+            if obj is None:
+                continue
+            try:
+                obj.close()
+            except Exception:
+                pass
+            try:
+                setattr(self, attr, None)
+            except Exception:
+                pass
+
     def project_name(self):
         """可读项目名：以文件名（去扩展名）为准——工程内 projects.name 为
         立创EDA默认名（New Project_日期），无实际意义。"""
@@ -5543,41 +5563,46 @@ def main():
                 out("多工程模式仅支持 netfind/link-check/trace/find/search，当前命令不支持")
                 sys.exit(1)
 
-    if not args.json_report:
-        dispatch()
-        if args.strict and any(db.diagnostics for db in dbs):
-            sys.exit(3)
-        return
-
-    # 选择新报告协议时才包装；默认 --json 的数组/对象形状保持兼容。
-    import contextlib
-    import io
-    captured = io.StringIO()
-    query_exit = 0
-    with contextlib.redirect_stdout(captured):
-        try:
-            dispatch()
-        except SystemExit as exc:
-            query_exit = exc.code if isinstance(exc.code, int) else 1
-    issues = [dict(issue, project_index=i) for i, db in enumerate(dbs)
-              for issue in db.diagnostics]
-    raw_output = captured.getvalue()
     try:
-        data = json.loads(raw_output)
-    except (ValueError, TypeError):
-        data = None
-        issues.append({"code": "QUERY_OUTPUT_NOT_JSON", "severity": "error",
-                       "affects_completeness": True, "message": raw_output.strip()})
-        query_exit = query_exit or 1
-    complete = query_exit == 0 and not issues
-    outj({"schema_version": 1, "query": args.cmd, "data": data,
-          "diagnostics": issues, "complete": complete,
-          "completeness_scope": "observed_query_errors_and_cbb_reference_coverage",
-          "semantic_validation": "not_assessed", "query_exit_code": query_exit})
-    if query_exit:
-        sys.exit(query_exit)
-    if args.strict and not complete:
-        sys.exit(3)
+        if not args.json_report:
+            dispatch()
+            if args.strict and any(db.diagnostics for db in dbs):
+                sys.exit(3)
+            return
+
+        # 选择新报告协议时才包装；默认 --json 的数组/对象形状保持兼容。
+        import contextlib
+        import io
+        captured = io.StringIO()
+        query_exit = 0
+        with contextlib.redirect_stdout(captured):
+            try:
+                dispatch()
+            except SystemExit as exc:
+                query_exit = exc.code if isinstance(exc.code, int) else 1
+        issues = [dict(issue, project_index=i) for i, db in enumerate(dbs)
+                  for issue in db.diagnostics]
+        raw_output = captured.getvalue()
+        try:
+            data = json.loads(raw_output)
+        except (ValueError, TypeError):
+            data = None
+            issues.append({"code": "QUERY_OUTPUT_NOT_JSON", "severity": "error",
+                           "affects_completeness": True, "message": raw_output.strip()})
+            query_exit = query_exit or 1
+        complete = query_exit == 0 and not issues
+        outj({"schema_version": 1, "query": args.cmd, "data": data,
+              "diagnostics": issues, "complete": complete,
+              "completeness_scope": "observed_query_errors_and_cbb_reference_coverage",
+              "semantic_validation": "not_assessed", "query_exit_code": query_exit})
+        if query_exit:
+            sys.exit(query_exit)
+        if args.strict and not complete:
+            sys.exit(3)
+    finally:
+        # 释放文件句柄（Windows 下未关闭会锁住工程文件；见 SchemaBackend.close）
+        for db in dbs:
+            db.close()
 
 
 if __name__ == "__main__":
