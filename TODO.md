@@ -56,15 +56,18 @@
 
 ## 其他未支持（记录，暂不做）
 
-- **`.eprj3`（V4 文件夹式工程格式）**：官方新一代本地格式（文件夹 +
-  `.esch2`/`.epcb2`/`.epan2`/`.ecfg`/`.evar`，记录仍为 `{type,id,ticket}||{data}|`
-  行式 JSON）。reader 尚无 `Eprj3DB` 后端。差异要点：docType 11→20
-  （`CONFIG` 改名、+EDIT_HEAD/PANEL_LIB/FONT/VARIANT/COMPONENT_GROUP/
-  SIMULATION/SIMULATION_SCH）、**PCB 坐标改 mil**、`yAxisDirection` 翻转表、
-  布尔/颜色编码变更、删除语义细化（META 不可空串删）。详见
-  `docs/eprj3与V4格式调研-2026-10-01.md`。另：官方
-  `easyeda/easyeda-format-skill`（V4 图元/Schema/ajv 校验）可作为格式
-  依据与测试对拍来源。
+- **`.eprj3`（V4 文件夹式工程格式）→ 已支持（2026-10-19，Eprj3DB）**：
+  读取 `sch/*.esch2` 原理图（页/元件/网络/pinmap/netlist 全套命令）与
+  `pcb/*.epcb2` 的 PCB 文档枚举；Fresnel 工程与 `.epro2` 全 13 页、1875
+  引脚零差异。细节见 README「V4 文件夹工程」与
+  `docs/eprj3与V4格式调研-2026-10-01.md` 的状态更新。
+  **仍未做**：PANEL/变体/仿真文档、V4 CBB 模板缺失时的展开、`.epcj3` 等
+  其他 V4 工程子格式。
+
+- **V4 PCB 几何/制造**：官方 `lceda_pcb.py` 只吃 `.epro2` 导出且在本工程
+  撞到 `UNSUPPORTED_MULTI_CUTOUT`（MULTI 层矩形挖孔）。审阅用途改用
+  `pcb_workbench`（直接读 `.epcb2`，按网络着色渲染 + 焊盘/走线统计）；
+  制造签核仍需补 cutout/圆弧/特殊焊盘/DRC，不在当前范围。
 
 - PANEL/拼版（立创EDA 面板设计功能，structure.panels / project.json
   panels 键）：**不属于原理图审查范围，暂不处理**；openlceda 或 PCB

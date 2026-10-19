@@ -7,7 +7,10 @@
 坐标系或日志重放；没有加入热仿真求解器。
 
 支持一个 `.epro2` ZIP 中恰好一个 `.epru`，或直接传入 UTF-8 `.epru`。
-不解包到磁盘，不自动选取多个成员之一，不支持原生 `.eprj3`。
+不解包到磁盘，不自动选取多个成员之一，不支持原生 `.eprj3`（V4 源码 PCB
+请用 `pcb_workbench`）；本工程实测还会因 **MULTI 层矩形 FILL 挖孔** 报
+`UNSUPPORTED_MULTI_CUTOUT`（当前工具只支持已核实的圆形 SOLID MULTI 挖孔），
+该限制不影响 `pcb_workbench` 的网络/铜层审阅。
 文件与解压后日志默认各限制 256 MiB。
 
 ```sh

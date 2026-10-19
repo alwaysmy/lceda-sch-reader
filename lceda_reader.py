@@ -49,6 +49,7 @@ import argparse
 import atexit
 import base64
 import gzip
+import io
 import json
 import math
 import os
@@ -335,7 +336,7 @@ def find_eprj(path=None):
             break
         bases.append(parent)
         d = parent
-    for pattern in ("*.eprj2", "*.epro2", "*.epro"):
+    for pattern in ("*.eprj2", "*.epro2", "*.epro", "*.eprj3"):
         hits = []
         for base in bases:
             hits.extend(glob.glob(os.path.join(base, pattern)))
@@ -1788,6 +1789,509 @@ class Epro2DB(SchemaBackend):
 
 # ---------------------------------------------------------------- 格式路由
 
+class Eprj3DB(SchemaBackend):
+    """立创EDA V4 文件夹工程（.eprj3）只读后端。
+
+    目录：``<root>/<name>.eprj3``（工程索引 JSON）+ ``sch/<板>/<页>.esch2``
+    + ``pcb/<板>.epcb2``。记录仍为 ``{type,id,ticket}||{data}|`` 行式 JSON。
+
+    坐标：V4 页面 Y 向上（CANVAS.yAxisDirection=up），统一减 CANVAS 原点后
+    取反，归一化为 V2 的 Y 向下语义（与 Epro2DB 同规则）；PCB 坐标单位 mil，
+    只服务 pcbsch 属性核对，不参与 SCH 几何。
+
+    与 V3 的差异按 docs/eprj3与V4格式调研-2026-10-01.md 处理：
+    docType 为字符串（SCH_PAGE/SYMBOL/DEVICE/FOOTPRINT/PCB/INSTANCE）、
+    判优键为文档+归一化 id（ticket 大者胜）、布尔为 true/false。
+    """
+
+    FORMAT_NAME = "立创EDA .eprj3（V4 文件夹）"
+    PCB_SUPPORT = True
+    # 坐标/旋转换算参数（2026-10-19 8 组矩阵标定，勿随意改动）：
+    # 实测 V4 页面/符号坐标数值与 .epro2 存储值一致（yAxisDirection=up
+    # 不需要额外翻转），rotation 也直接沿用；三项保留用于回归标定。
+    PAGE_Y_SIGN = 1
+    SYM_Y_SIGN = 1
+    ROT_NEGATE = False
+
+    def __init__(self, path):
+        super().__init__(path)
+        p = Path(path)
+        self.root = p if p.is_dir() else p.parent
+        idx = None
+        cands = []
+        if p.is_file():
+            cands.append(p)
+        cands.append(self.root / (self.root.name + ".eprj3"))
+        cands.extend(sorted(self.root.glob("*.eprj3")))
+        for cand in cands:
+            if cand is not None and Path(cand).is_file():
+                idx = Path(cand)
+                break
+        self.idx = {}
+        if idx is not None:
+            try:
+                self.idx = json.loads(idx.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                self.idx = {}
+        self._docs = {}          # uuid -> 文档 dict
+        self._doc_file = {}      # uuid -> 文件路径
+        self._sym_cache = {}
+        self._rec_cache = {}
+        self._sym_title_idx = None
+        self._pcb_loaded = False
+        self._load_sch()
+
+    # ---------------------------------------------------------- 文件/记录层
+    @staticmethod
+    def _rank(doc):
+        """文档新旧排序依据：DOCHEAD.updateTime，其次最大 ticket。"""
+        head = doc.get("head") or {}
+        tickets = [h.get("ticket") or 0 for h, _b in doc.get("records") or []]
+        return (head.get("updateTime") or 0, max(tickets, default=0))
+
+    @staticmethod
+    def _merge_records(records):
+        """同 id 多记录按 ticket 取最大（V4 判优键=文档+归一化 id，type 不参与；
+        平票按后出现者优先，足够覆盖本地保存的单文件场景）。"""
+        best = {}
+        order = []
+        for i, (h, b) in enumerate(records):
+            rid = h.get("id")
+            key = ("id", str(rid)) if rid is not None else ("noid", i)
+            tk = h.get("ticket") or 0
+            if key not in best:
+                order.append(key)
+                best[key] = (h, b, tk)
+            elif tk >= best[key][2]:
+                best[key] = (h, b, tk)
+        return [(best[k][0], best[k][1]) for k in order]
+
+    def _scan_file(self, path, kind):
+        docs = []
+        cur = None
+        try:
+            fh = io.open(path, encoding="utf-8")
+        except OSError:
+            return
+        with fh:
+            for line in fh:
+                head, sep, body = line.rstrip("\n").partition("||")
+                if not sep:
+                    continue
+                try:
+                    h = json.loads(head)
+                except ValueError:
+                    continue
+                try:
+                    b = json.loads(body.rstrip("|") or "{}")
+                except ValueError:
+                    b = {}
+                t = h.get("type")
+                if t == "DOCHEAD":
+                    cur = {"uuid": b.get("uuid"), "docType": b.get("docType"),
+                           "head": dict(b), "records": [], "meta": {},
+                           "canvas": {}, "file": str(path), "kind": kind,
+                           "board": Path(path).parent.name}
+                    if cur["uuid"]:
+                        docs.append(cur)
+                    continue
+                if cur is None:
+                    continue
+                if t == "META":
+                    cur["meta"] = b
+                elif t == "CANVAS":
+                    cur["canvas"] = b
+                else:
+                    cur["records"].append((h, b))
+        for d in docs:
+            d["records"] = self._merge_records(d["records"])
+            old = self._docs.get(d["uuid"])
+            if old is not None and self._rank(old) >= self._rank(d):
+                continue
+            self._docs[d["uuid"]] = d
+            self._doc_file[d["uuid"]] = Path(path)
+
+    def _load_sch(self):
+        for f in sorted(self.root.glob("sch/*/*.esch2")):
+            self._scan_file(f, "sch")
+
+    def _load_pcb(self):
+        if self._pcb_loaded:
+            return
+        for f in sorted(self.root.glob("pcb/*.epcb2")):
+            self._scan_file(f, "pcb")
+        self._pcb_loaded = True
+
+    # ---------------------------------------------------------- 板/页
+    def project_title(self):
+        return self.idx.get("name") or None
+
+    def project_name(self):
+        # 文件夹工程名可能含点号（如 Fresnel_V2.1_...），Path.stem 会截断，
+        # 以工程根目录名为准。
+        return self.root.name
+
+    def schematics(self):
+        prof = self.idx.get("profile") or {}
+        schs = prof.get("schematics") or {}
+        rows = [(u, (v.get("name") or u), (v.get("name") or u))
+                for u, v in schs.items()]
+        if rows:
+            return rows
+        # 索引缺失时按 sch/<板> 文件夹兜底
+        return [(d.name, d.name, d.name) for d in sorted(self.root.glob("sch/*"))
+                if d.is_dir()]
+
+    def schem_map(self):
+        return {u: (name, name) for u, name, _disp in self.schematics()}
+
+    def sheets(self, doc_type=1):
+        prof = self.idx.get("profile") or {}
+        if doc_type == 1:
+            meta = prof.get("sheets") or {}
+            sm = self.schem_map()
+            rows = []
+            for u, d in self._docs.items():
+                if d["docType"] != "SCH_PAGE":
+                    continue
+                m = meta.get(u) or {}
+                title = (m.get("title") or (d["meta"] or {}).get("title")
+                         or Path(d["file"]).stem)
+                sch = m.get("schematic_uuid") or ""
+                bt = (sm.get(sch) or (None,))[0] or d.get("board") or "?"
+                rows.append((u, f"{bt}::{title}", sch, 1))
+            rows.sort(key=lambda r: (natkey(r[1].split("::")[0]),
+                                     natkey(r[1])))
+            return rows
+        self._load_pcb()
+        pcbs = prof.get("pcbs") or {}
+        rows = []
+        for u, d in self._docs.items():
+            if d["docType"] != "PCB":
+                continue
+            m = pcbs.get(u) or {}
+            rows.append((u, (m.get("title") or (d["meta"] or {}).get("title") or u),
+                         m.get("board") or "", 3))
+        rows.sort(key=lambda r: natkey(r[1]))
+        return rows
+
+    def pcb_docs(self):
+        return [(u, t) for u, t, _b, _dt in self.sheets(3)]
+
+    # ---------------------------------------------------------- 记录转换
+    def _origin(self, d):
+        c = d.get("canvas") or {}
+        return c.get("originX") or 0, c.get("originY") or 0
+
+    def sheet_records(self, doc_key, doc_type=1):
+        ck = (doc_key, doc_type)
+        if ck in self._rec_cache:
+            return self._rec_cache[ck]
+        if doc_type == 3:
+            self._load_pcb()
+        d = self._docs.get(doc_key)
+        if d is None:
+            return None
+        want = "SCH_PAGE" if doc_type == 1 else "PCB"
+        if d["docType"] != want:
+            self._rec_cache[ck] = None
+            return None
+        if doc_type == 3:
+            out = []
+            for h, b in d["records"]:
+                t = h.get("type")
+                if t == "COMPONENT":
+                    out.append(["COMPONENT", h.get("id"), 0,
+                                b.get("layerId") or 0, b.get("x") or 0,
+                                b.get("y") or 0, b.get("angle") or 0,
+                                b.get("attrs") if isinstance(b.get("attrs"), dict) else {},
+                                0])
+                elif t == "ATTR":
+                    k, v = b.get("key"), b.get("value")
+                    if k and v is not None:
+                        out.append(["ATTR", h.get("id") or "", "",
+                                    b.get("parentId") or "", "", None, None,
+                                    str(k), str(v)])
+                elif t == "NET":
+                    try:
+                        nm = json.loads(h.get("id") or "null")[1]
+                    except Exception:
+                        nm = None
+                    if nm:
+                        out.append(["NET", nm])
+                elif t == "PAD_NET":
+                    try:
+                        cid, pin, pad = (json.loads(h.get("id")) or [None] * 4)[1:4]
+                    except Exception:
+                        cid = pin = pad = None
+                    out.append(["PAD_NET", cid, pin, b.get("padNet") or "", pad])
+            self._rec_cache[ck] = out
+            return out
+
+        ox, oy = self._origin(d)
+        comps, attrs, texts = [], [], []
+        wires = {}       # wire id -> [[x1,y1,x2,y2],...]
+        wire_order = []
+        for h, b in d["records"]:
+            t = h.get("type")
+            if t == "COMPONENT":
+                # 页面/符号/旋转换算由类参数标定（见类头部注释）。
+                rot = b.get("rotation") or 0
+                if self.ROT_NEGATE:
+                    rot = -rot
+                comps.append(["COMPONENT", h.get("id"), b.get("partId") or "",
+                              (b.get("x") or 0) - ox,
+                              ((b.get("y") or 0) - oy) * self.PAGE_Y_SIGN,
+                              rot % 360,
+                              1 if b.get("isMirror") else 0, {}, 0])
+                for k, v in (b.get("attrs") or {}).items():
+                    if v:
+                        attrs.append(["ATTR", "", h.get("id"), k, str(v)])
+            elif t == "WIRE":
+                wid = h.get("id")
+                wires.setdefault(wid, [])
+                wire_order.append(wid)
+            elif t == "LINE":
+                gid = b.get("lineGroup")
+                if gid in wires:
+                    wires[gid].append([
+                        (b.get("startX") or 0) - ox,
+                        ((b.get("startY") or 0) - oy) * self.PAGE_Y_SIGN,
+                        (b.get("endX") or 0) - ox,
+                        ((b.get("endY") or 0) - oy) * self.PAGE_Y_SIGN])
+            elif t == "ATTR":
+                pid = b.get("parentId") or ""
+                k = b.get("key")
+                v = b.get("value")
+                if k == "NO_CONNECT" and pid:
+                    pid = pid.replace("-", "")
+                if k and v is not None:
+                    attrs.append(["ATTR", h.get("id") or "", pid, k, str(v)])
+            elif t == "TEXT":
+                texts.append(["TEXT", h.get("id"), (b.get("x") or 0) - ox,
+                              ((b.get("y") or 0) - oy) * self.PAGE_Y_SIGN,
+                              b.get("rotation") or 0,
+                              b.get("value") or "", None, 0])
+        out = list(comps) + list(attrs)
+        for wid in wire_order:
+            segs = wires.get(wid) or []
+            if segs:
+                out.append(["WIRE", wid, segs, None, 0])
+        out.extend(texts)
+        self._rec_cache[ck] = out
+        return out
+
+    def sheet_text(self, doc_key, doc_type=1):
+        recs = self.sheet_records(doc_key, doc_type)
+        if recs is None:
+            return None
+        return "\n".join(json.dumps(r, ensure_ascii=False) for r in recs)
+
+    # ---------------------------------------------------------- 符号/器件
+    def _sym_by_title(self, title):
+        if self._sym_title_idx is None:
+            idx = {}
+            for u, d in self._docs.items():
+                if d["docType"] != "SYMBOL":
+                    continue
+                t = (d["meta"] or {}).get("title")
+                if not t:
+                    continue
+                rank = self._rank(d)
+                if t not in idx or rank >= idx[t][0]:
+                    idx[t] = (rank, u)
+            self._sym_title_idx = {t: u for t, (_r, u) in idx.items()}
+        return self._sym_title_idx.get(title)
+
+    def symbol_pins(self, symbol_uuid):
+        if not symbol_uuid:
+            return None
+        if symbol_uuid in self._sym_cache:
+            return self._sym_cache[symbol_uuid]
+        result = {"pins": [], "bbox": None, "parts": [], "symbol_type": None}
+        u = symbol_uuid if symbol_uuid in self._docs else self._sym_by_title(symbol_uuid)
+        d = self._docs.get(u) if u else None
+        if d is None or d["docType"] != "SYMBOL":
+            self._sym_cache[symbol_uuid] = result
+            return result
+        mdt = (d["meta"] or {}).get("docType")
+        if mdt in (17, 18, 19, 22):
+            result["symbol_type"] = mdt
+        elif mdt == 25:
+            result["symbol_type"] = 19
+        ox, oy = self._origin(d)
+        pins, names, numbers, ptypes, parts = {}, {}, {}, {}, []
+        bbox = None
+        for h, b in d["records"]:
+            t = h.get("type")
+            if t == "PART":
+                parts.append(h.get("id"))
+                bb = b.get("BBOX")
+                if bb and len(bb) == 4 and bbox is None:
+                    bbox = [min(bb[0], bb[2]), min(bb[1], bb[3]),
+                            max(bb[0], bb[2]), max(bb[1], bb[3])]
+            elif t == "PIN":
+                pins[h.get("id")] = {
+                    "id": h.get("id"),
+                    "x": (b.get("x") or 0) - ox,
+                    "y": ((b.get("y") or 0) - oy) * self.SYM_Y_SIGN,
+                    "rot": b.get("rotation") or 0,
+                    "len": b.get("length"),
+                    "part": b.get("partId"), "name": None,
+                    "number": None, "pin_type": None}
+            elif t == "ATTR":
+                pid = b.get("parentId")
+                k = b.get("key")
+                if k == "Pin Name":
+                    names[pid] = b.get("value")
+                elif k == "Pin Number":
+                    v = b.get("value")
+                    numbers[pid] = str(v) if v is not None else None
+                elif k == "Pin Type":
+                    ptypes[pid] = b.get("value")
+        for pid, p in pins.items():
+            p["name"] = names.get(pid) or numbers.get(pid) or "1"
+            p["number"] = numbers.get(pid)
+            p["pin_type"] = ptypes.get(pid)
+        result["pins"] = list(pins.values())
+        result["parts"] = sorted(parts)
+        result["bbox"] = bbox
+        self._sym_cache[symbol_uuid] = result
+        return result
+
+    def device_map(self):
+        if self._dmap_cache is not None:
+            return self._dmap_cache
+        out = {}
+        for u, d in self._docs.items():
+            if d["docType"] == "DEVICE":
+                m = d["meta"] or {}
+                a = m.get("attributes") or {}
+                disp = ""
+                for k in ("Manufacturer Part", "Manufacturer Part Number",
+                          "MPN", "Part Number", "Supplier Part"):
+                    if a.get(k):
+                        disp = a[k]
+                        break
+                out[u] = (m.get("title") or "", disp,
+                          a.get("Description") or m.get("description") or "")
+            elif d["docType"] == "SYMBOL":
+                out.setdefault(u, ((d["meta"] or {}).get("title") or "", "", ""))
+        self._dmap_cache = out
+        return out
+
+    def device_attrs(self, device_uuid):
+        d = self._docs.get(device_uuid)
+        if d and d["docType"] == "DEVICE":
+            return dict((d["meta"] or {}).get("attributes") or {})
+        return {}
+
+    def symbol_of_device(self, device_uuid):
+        return self.device_attrs(device_uuid).get("Symbol") or None
+
+    def datasheet_rows(self):
+        rows = []
+        for u, d in self._docs.items():
+            if d["docType"] != "DEVICE":
+                continue
+            url = (d["meta"] or {}).get("attributes", {}).get("Datasheet")
+            if url:
+                dm = self.device_map().get(u, ("", "", ""))
+                rows.append({"device": dm[1] or dm[0] or u, "url": url})
+        return rows
+
+    def doc_metas(self):
+        import datetime as _dt
+        self._load_pcb()
+        prof = self.idx.get("profile") or {}
+        sm = self.schem_map()
+        board_title = {u: t for u, t, _ in
+                       [(k, v.get("title") or k, None)
+                        for k, v in (prof.get("boards") or {}).items()]}
+
+        def fmt(ms):
+            if not ms:
+                return ""
+            try:
+                return _dt.datetime.fromtimestamp(
+                    ms / 1000).strftime("%Y-%m-%d %H:%M")
+            except (ValueError, OSError, OverflowError):
+                return ""
+
+        rows = []
+        for u, d in self._docs.items():
+            dt = d["docType"]
+            if dt not in ("SCH_PAGE", "PCB"):
+                continue
+            head = d.get("head") or {}
+            m = d["meta"] or {}
+            meta_row = ((prof.get("sheets") or {}).get(u)
+                        or (prof.get("pcbs") or {}).get(u) or {})
+            up = meta_row.get("updateTime") or head.get("updateTime")
+            sch = ""
+            if dt == "SCH_PAGE":
+                su = meta_row.get("schematic_uuid") or ""
+                sd = sm.get(su, (su, su))
+                sch = sd[0] or sd[1] or su
+            else:
+                sch = board_title.get(meta_row.get("board") or "", "")
+            user = head.get("user") or ""
+            if isinstance(user, dict):
+                user = user.get("uuid") or ""
+            rows.append({"uuid": u, "docType": dt,
+                         "title": meta_row.get("title") or m.get("title") or u,
+                         "schematic": sch, "created": fmt(up),
+                         "updated": fmt(up),
+                         "ticket": max([h.get("ticket") or 0
+                                        for h, _b in d["records"]], default=0),
+                         "user": user, "username": "", "user_uuid": user,
+                         "note": f"段数{len(d['records'])}"})
+        return rows
+
+    def hierarchy(self):
+        prof = self.idx.get("profile") or {}
+        boards = prof.get("boards") or {}
+        schs = prof.get("schematics") or {}
+        sheets = prof.get("sheets") or {}
+        pcbs = prof.get("pcbs") or {}
+        pages_by_sch = {}
+        for pu, p in sheets.items():
+            pages_by_sch.setdefault(p.get("schematic_uuid") or "", []).append(
+                {"uuid": pu, "title": p.get("title") or pu})
+        out_boards = []
+        used_sch = set()
+        used_pcb = set()
+        for bu, b in boards.items():
+            sl = []
+            for su, s in schs.items():
+                if s.get("board") != bu:
+                    continue
+                used_sch.add(su)
+                sl.append({"uuid": su, "title": s.get("name") or su,
+                           "pages": sorted(pages_by_sch.get(su, []),
+                                           key=lambda x: natkey(x["title"]))})
+            pl = [{"uuid": pu, "title": p.get("title") or pu}
+                  for pu, p in pcbs.items() if p.get("board") == bu]
+            used_pcb.update(p["uuid"] for p in pl)
+            out_boards.append({"uuid": bu, "title": b.get("title") or bu,
+                               "schematics": sl, "pcbs": pl})
+        free_sch = [{"uuid": su, "title": s.get("name") or su,
+                     "pages": sorted(pages_by_sch.get(su, []),
+                                     key=lambda x: natkey(x["title"]))}
+                    for su, s in schs.items() if su not in used_sch]
+        free_pcb = [{"uuid": pu, "title": p.get("title") or pu}
+                    for pu, p in pcbs.items() if pu not in used_pcb]
+        return {"project": self.project_name(),
+                "project_title": self.project_title(),
+                "boards": out_boards,
+                "free": {"schematics": free_sch, "pages": [],
+                         "pcbs": free_pcb}}
+
+    def close(self):
+        self._rec_cache.clear()
+        self._sym_cache.clear()
+
+
 def _sniff_zip_backend(path):
     """ZIP 容器内容特征 -> 后端类（Epro2DB/EproDB/None）。"""
     with zipfile.ZipFile(path) as zf:
@@ -1900,13 +2404,51 @@ def _sniff_sqlite_backend(path):
         conn.close()
 
 
+def _is_eprj3_project(path):
+    """内容校验：.eprj3 索引 + 实际文件夹结构（或缺省时有效 profile）。
+
+    仅凭扩展名/一个空 JSON 不宣称支持（回归 test_unknown_json_... 契约）。
+    """
+    p = Path(path)
+    root = p if p.is_dir() else p.parent
+    idx = None
+    if p.is_file() and p.suffix.lower() == ".eprj3":
+        idx = p
+    else:
+        hits = sorted(root.glob("*.eprj3"))
+        idx = hits[0] if hits else None
+    if idx is None or not idx.is_file():
+        return False
+    try:
+        obj = json.loads(idx.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    if not isinstance(obj, dict):
+        return False
+    if not (obj.get("format") == "folder" or "profile" in obj
+            or "boards" in obj):
+        return False
+    prof = obj.get("profile") or {}
+    has_meta = bool(prof.get("sheets") or prof.get("boards")
+                    or prof.get("pcbs") or prof.get("schematics"))
+    has_files = bool(list(root.glob("sch/*/*.esch2"))
+                     or list(root.glob("pcb/*.epcb2")))
+    return has_meta or has_files
+
+
 def detect_backend(path):
     """格式路由：**内容特征优先**（ZIP magic / SQLite magic + 表结构），
-    扩展名仅作参考——同扩展名不同存储（如新版/旧版 .eprj2）也能正确区分。
+    扩展名仅参考。支持 `.eprj2`(V2.2 SQLite/加密) / `.epro`(V2 ZIP) /
+    `.epro2`(V3 ZIP 增量) / `.eprj3`(V4 文件夹，目录或索引文件)。
     返回后端类或字符串 "DECRYPT_NEW"（新版加密 .eprj2 需先解密）。
-    无法识别/不支持时抛 UnsupportedFormatError。
-    新增格式：实现 SchemaBackend 子类 + 在此登记内容特征。"""
+    无法识别/不支持时抛 UnsupportedFormatError。"""
     p = Path(path)
+    if p.is_dir() or p.suffix.lower() == ".eprj3":
+        if _is_eprj3_project(p):
+            return Eprj3DB
+        raise UnsupportedFormatError(
+            f"{p}: 不是有效的 .eprj3 文件夹工程"
+            f"（需要 *.eprj3 索引与 sch/*.esch2 或 pcb/*.epcb2）")
     if not p.is_file():
         raise UnsupportedFormatError(f"{p}: 文件不存在")
     with open(p, "rb") as f:

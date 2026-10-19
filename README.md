@@ -1,15 +1,17 @@
 # 立创EDA专业版原理图读取工具（lceda_reader）
 
-针对**立创EDA专业版工程格式**（`.eprj2` SQLite 工程）的通用只读解析工具。
-不绑定特定工程、器件、位号或网络名，可读取任何符合该格式的工程文件。
+针对**立创EDA专业版工程格式**的通用只读解析工具，支持：
+`.eprj2`（V2.2 SQLite / 新版加密）、`.epro`（V2 ZIP）、`.epro2`（V3 ZIP）、
+`.eprj3`（V4 文件夹工程）。不绑定特定工程、器件、位号或网络名。
 支持元件清单、网络连接、引脚级网络表、链路追踪、器件信息、全文搜索、
 BOM、Datasheet 等只读查询。**本工具为只读**，不修改任何工程数据。
 
-可选 PCB 几何入口：`python lceda_pcb.py <导出.epro2> list`，再以
-`extract --pcb <UUID> --profile observed-export-v1` 提取毫米制候选铜层、
-焊盘/孔、声明堆叠及来源诊断。该入口不改变旧 SCH 协议，不等于原生 eprj3
-支持或制造/热设计签核。用法、JSON Schema、可选依赖和 Gerber/钻孔核验见
-[PCB 候选几何与制造导出核验](docs/PCB候选几何与制造导出核验.md)。
+可选 PCB 入口（均为审阅用途，不等于制造/热设计签核）：
+- `python lceda_pcb.py <导出.epro2> list|extract`：从导出包提取毫米制候选
+  铜层、焊盘/孔、声明堆叠与来源诊断（见
+  [PCB 候选几何与制造导出核验](docs/PCB候选几何与制造导出核验.md)）；
+- `python -m pcb_workbench ...`：直接读 V4 `.epcb2` 源码，按网络着色的
+  区域渲染 + 网络/焊盘统计（见 [pcb_workbench](pcb_workbench/README.md)）。
 
 ## 一、使用方法
 
@@ -69,13 +71,15 @@ U1	<芯片型号>.1	<网络名>	pin[5:<引脚名>]  (d=10.0)
 
 ### 工程路径指定
 
-工具**不绑定任何工程目录结构**（无 1_sch 等硬编码）。指定要读取的 `.eprj2`：
+工具**不绑定任何工程目录结构**（无 1_sch 等硬编码）。指定要读取的工程：
 
 ```bat
 rem 方式1：显式指定（推荐，通用）
 python lceda_reader.py --eprj <路径>\工程.eprj2 list
+python lceda_reader.py --eprj <路径>\工程.epro2 list
+python lceda_reader.py --eprj <V4工程目录 或 工程.eprj3> list
 
-rem 方式2：先进入工程所在目录（自动搜索当前目录及父目录 *.eprj2）
+rem 方式2：先进入工程所在目录（自动搜索当前目录及父目录）
 cd <工程目录>
 python lceda_reader.py list
 
@@ -197,6 +201,24 @@ LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内
 - 全量验证：本机 15 个工程文件（5 官方示例 + 涡流/MCU主控/Piezo/TPS56C230）
   全部通过；同工程 .eprj2 与 .epro2 交叉对比元件数/网络集合**零差异**
   （涡流 736 元件/79 网、MCU主控 288/87）。详见 `probes/verify_all_formats.py`。
+
+### V4 文件夹工程（.eprj3，已支持 Eprj3DB）
+
+- **目录结构**：`<工程>/<工程>.eprj3`（索引 JSON）+ `sch/<板>/<页>.esch2`
+  + `pcb/<板>.epcb2` + `.ecfg`（规则）。`--eprj` 可传目录或索引文件；
+  内容校验要求实际 `sch/*.esch2` 或 `pcb/*.epcb2`（空 JSON 不会被当成工程）。
+- **记录模型**：与 V3 同为 `{type,id,ticket}||{data}|` 行式日志；同 id 取
+  ticket 最大。docType 为字符串（SCH_PAGE/SYMBOL/DEVICE/FOOTPRINT/PCB/
+  INSTANCE…），符号类型仍为 META.docType（17/18/19/22/25）。
+- **坐标/旋转标定（重要）**：实测 V4 页面与符号坐标数值与 `.epro2` 存储值
+  一致，**不做 Y 翻转、不取反旋转角**；`Eprj3DB` 用 `PAGE_Y_SIGN` /
+  `SYM_Y_SIGN` / `ROT_NEGATE` 三个类参数固化（8 组矩阵标定，见
+  `probes/verify_eprj3_backend.py`）。改这三项必须重跑 V3↔V4 全页对比。
+- **验证**：Fresnel 工程 13 页、1875 个引脚与 `.epro2` 逐引脚网络**零差异**；
+  文字坐标一致；页/元件/位号计数一致。
+- **边界**：V4 文件夹工程不含 CBB 模板页时，CBB 实例按黑盒保留（不展开，
+  与原工程一致）；`.eprj3` 的变体/PANEL/仿真文档暂不解析；PCB 走
+  `pcb_workbench`（见下文），不参与 `pcbsch` 的完整布局核对。
 
 ## 三、网络查询方法（配对/链路/跨页）
 
@@ -384,9 +406,10 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
   可扩展（参考 archive 中 sch_magic.py 的 zlib 探测思路）。
 - 引脚网络归属（pins/nets/netlist/trace/find/pinmap）统一基于**连通域精确方案**
   （实例坐标+PIN坐标+旋转/镜像 → 绝对坐标 → WIRE 端点精确匹配），非几何近似。
-- **V2.2 / V3 格式兼容（已实现）**：V2.2（.eprj2）= SQLite + 数组式 NDJSON
-  全量快照；V3（.epro2）= ZIP + `DOCHEAD||body` 对象式**增量日志**（同 uuid
-  多段按 ticket 最终一致合并）。已按"后端抽象（SchemaBackend ABC）+ 内容
+- **V2.2 / V3 / V4 格式兼容（已实现）**：V2.2（.eprj2）= SQLite + 数组式
+  NDJSON 全量快照；V3（.epro2）= ZIP + `DOCHEAD||body` 对象式**增量日志**
+  （同 uuid 多段按 ticket 最终一致合并）；V4（.eprj3）= 文件夹 + 同构行日志
+  （见上节）。已按"后端抽象（SchemaBackend ABC）+ 内容
   特征路由（detect_backend，magic/表结构嗅探，扩展名仅参考）"实现三后端，
   命令层复用全部解析逻辑；新增格式 = 实现 SchemaBackend 子类 + 登记内容
   特征。新版分支加密 .eprj2 已支持自动解密读取（AES-128-GCM → 临时

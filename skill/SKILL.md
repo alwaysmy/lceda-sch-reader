@@ -1,13 +1,14 @@
 ---
 name: lceda-sch-reader
-description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) schematic project (.eprj2 files) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool lceda_reader.py.
+description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) project (.eprj2 / .epro / .epro2 / .eprj3 files) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool lceda_reader.py. Also covers optional PCB review via lceda_pcb.py (export) and pcb_workbench (V4 .epcb2 net-colored rendering).
 ---
 
 # LCEDA 专业版原理图读取（lceda_sch_reader）
 
-读取立创EDA专业版工程（`.eprj2`，SQLite 格式）的原理图数据。工具为**通用格式
-工具**，不绑定特定工程/器件/位号；只读，核心路径仅依赖 Python 标准库
-（新版加密 .eprj2 自动解密另需 `cryptography`），位于 `lceda_reader.py`。
+读取立创EDA专业版工程（`.eprj2` SQLite / `.epro`·`.epro2` ZIP 导出 /
+`.eprj3` V4 文件夹）的原理图数据。工具为**通用格式工具**，不绑定特定工程/
+器件/位号；只读，核心路径仅依赖 Python 标准库（新版加密 .eprj2 自动解密
+另需 `cryptography`），位于 `lceda_reader.py`。
 
 ## 汇报规范（重要）
 
@@ -98,6 +99,14 @@ description: Use when the user asks to read, query, search, extract, or verify c
   （17=CBB/18=电源/19=NetPort/22=Short/25=OffPage）、引脚名键
   Pin Name/Pin Number），命令用法与 .eprj2 完全一致。`.epro2` 的 .epru 为
   增量日志（同 uuid 多段按 ticket 合并）。
+- **`.eprj3`（V4 文件夹工程）已支持（Eprj3DB）**：`--eprj` 传工程目录或
+  `.eprj3` 索引文件；目录结构 `sch/<板>/<页>.esch2` + `pcb/<板>.epcb2`，
+  记录同构（`{type,id,ticket}||{data}|`，同 id 取 ticket 最大）。实测
+  **坐标/旋转数值与 .epro2 存储值一致，不做 Y 翻转、不取反旋转角**；
+  `Eprj3DB` 的 `PAGE_Y_SIGN`/`SYM_Y_SIGN`/`ROT_NEGATE` 是标定参数，改动
+  必须重跑 V3↔V4 全页 pinmap 对比（probes/verify_eprj3_backend.py）。
+  空 JSON/无 `sch`/`pcb` 结构会被拒绝（不凭扩展名冒充支持）。V4 文件夹
+  不含 CBB 模板时实例按黑盒保留；PANEL/变体/仿真文档暂不解析。
 - **CBB（复用块，symbol_type=17）已支持展开**：黑盒实例位号 CBBn。匹配
   优先级（前三为**唯一精确映射，单文件即可，无需 --cbb-map**）：
   `--cbb-map` 显式指定 > **V3 INSTANCE 文档**（.epro2：uuid 编码
