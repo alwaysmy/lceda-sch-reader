@@ -1,0 +1,14 @@
+{
+  "net": "+3V5_TEC",
+  "voltage": 3.5,
+  "current": 0.5,
+  "source": {"designator": "L214", "pad": "2"},
+  "sinks": [{"designator": "L602", "pad": "2"}],
+  "layers": [1, 2, 16],
+  "grid_mm": 0.05,
+  "board_mm": 1.6,
+  "ambient_c": 25,
+  "convection_w_m2k": 10,
+  "copper_um": {"1": 35, "2": 35, "15": 15, "16": 15},
+  "thermal": true
+}

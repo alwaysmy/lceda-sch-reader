@@ -81,6 +81,75 @@ python -m pcb_workbench dfm "<工程目录>" --pcb PCB1 ^
 
 回归：`probes/verify_pcb_dfm.py`（松/严阈值双向断言、空网络过滤、缓存字段）。
 
+## PDN 2.5D FDM + 热力图
+
+`pdn` 子命令把选中网络的**精确铜几何**栅格化成电阻网络，解电压场，
+输出逐层电压/电流密度和总电流密度热力图；`--thermal`（默认开）再做
+一个简化的 2D 热扩散，输出温度图。
+
+```bat
+python -m pcb_workbench pdn "<工程目录>" --pcb PCB1 ^
+       --spec pcb_workbench\specs\pdn_tec_neg.json ^
+       --outdir pdn_out [--grid 0.05] [--no-thermal] [--json]
+```
+
+Spec 是 JSON（不需要 PyYAML）：
+
+```json
+{
+  "net": "TEC_NEG",
+  "voltage": 1.0,
+  "current": 0.5,
+  "source": {"designator": "U602", "pad": "2"},
+  "sinks": [{"designator": "U900", "pad": "14"}],
+  "layers": [1, 2],
+  "grid_mm": 0.05,
+  "board_mm": 1.6,
+  "ambient_c": 25,
+  "convection_w_m2k": 10,
+  "copper_um": {"1": 35, "2": 35, "15": 15, "16": 15},
+  "thermal": true
+}
+```
+
+- `source` 焊盘固定为 Dirichlet 电压，`sinks` 分担总电流；源/汇必须在
+  **同一个连通铜分量**内，否则报错并给分量编号，不会静默跨岛。
+- `layers` 用 LCEDA 层号（1=Top，2=Bottom，15=Inner1，16=Inner2）。
+  省略时用全部铜层。
+- `copper_um` 给每层铜厚；外层默认 35 µm、内层默认 15 µm。
+- `grid_mm` 默认 0.1 mm；细走线/窄颈建议 0.05 mm。
+- 过孔按镀铜桶电阻连接相邻层（默认 25 µm 镀层、板厚 `board_mm`）。
+
+输出：
+
+```
+pdn_<net>_L1_voltage.png / _current.png   # 逐层
+pdn_<net>_voltage_all.png                 # 各层取最大电位
+pdn_<net>_current_all.png                 # 各层取最大
+pdn_<net>_thermal.png                     # 简化 2D 温度
+pdn_<net>_summary.json                    # IR drop / R / Jmax / P / Tmax
+```
+
+图上深灰是**同层其他网络铜**作为上下文，彩色是选中网络的场；`SRC`/
+`SINK` 是焊盘中心。电流图默认按 99.5% 分位裁剪色标（标题保留真实最大值），
+避免单个网格热点把其余区域压成蓝色。
+
+### 模型与边界
+
+- 每层 4 邻域薄铜片，`G = σ·t`（S）；层间过孔 `R = ρL/A`。
+- 稀疏线性系统 `A·V=b`，源固定电压、汇注入负电流；只保留源汇所在
+  连通分量，孤立铜岛丢弃并在 `dropped_nodes` 计数。
+- 电流密度由边电流 `|I|/(t·h)` 得到；功率按 `I²/G` 累加（含过孔）。
+- 热模型：铜/FR4 等效面导热 + 上下表面对流（`h` 为总对流系数，两侧各
+  `h`），热源是 PDN 功率；不含 TIM、器件、风道、辐射和 3D 过孔导热。
+
+**精度校验**：单层直导线 FDM 与 `R=ρL/(wt)` 对比误差 **0.5%**
+（`probes/verify_pdn_solver.py`）。Fresnel TEC_NEG 在 0.5 A 下：
+0.1 mm 网格 IR drop 25.35 mV，0.05 mm 网格 27.35 mV（约 8% 网格差），
+对应 R≈50.7–54.7 mΩ、P≈12.6–13.6 mW；最大电流密度对网格更敏感，
+只用于 hotspot 定位。**这是设计预检，不是制造/热签核**；最终 PDN 用
+PADEN/padne 交叉验证，热用 Elmer/PrePoMax 或实测。
+
 ## 渲染为什么是「意图式」
 
 不是通用 EDA 截图，而是为审阅问题服务：
@@ -98,7 +167,10 @@ python -m pcb_workbench dfm "<工程目录>" --pcb PCB1 ^
 | `v4.py` | `.epcb2` 日志解析、器件/焊盘/网络/走线/覆铜数据模型、网络统计 |
 | `render.py` | 意图式渲染（网络配色、层过滤、圆头关节、超采样）+ `--exact` 入口 |
 | `exact.py` | Shapely 精确几何：POURED 缓存、全焊盘、孔、ARC 采样、层并集/面积 |
-| `cli.py` | `stats` / `pads` / `render` / `layers` 子命令 |
+| `pdn.py` | 2.5D FDM PDN（电压/电流密度/功率）+ 简化 2D 热 + 热力图 |
+| `cli.py` | `stats` / `pads` / `render` / `layers` / `dfm` / `pdn` 子命令 |
+| `specs/` | `pdn_tec_neg.json`、`pdn_3v5_tec.json` |
 
 回归：`probes/verify_pcb_workbench.py`（转角像素断言 + 精确面积/覆盖率/
-缓存状态 + 实板 pad 面积）。
+缓存状态 + 实板 pad 面积）；`probes/verify_pdn_solver.py`（解析直导线
+0.5% + 实板 TEC_NEG 求解/功耗/连通性 smoke）。

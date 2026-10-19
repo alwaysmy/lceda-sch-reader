@@ -208,6 +208,32 @@ def cmd_dfm(args):
                      r.get("at")))
 
 
+def cmd_pdn(args):
+    d = pick(open_designs(args.input, args.pcb), args.pcb)
+    from . import pdn as pdn_mod
+    with open(args.spec, encoding="utf-8") as f:
+        spec = json.load(f)
+    if args.grid:
+        spec["grid_mm"] = args.grid
+    summary = pdn_mod.run(d, spec, args.outdir,
+                          thermal=bool(spec.get("thermal", True))
+                          and not args.no_thermal)
+    if args.json:
+        print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
+    print("PDN: %s  net=%s  %.3fV / %.3fA  grid=%.3fmm"
+          % (d.title, summary["net"], summary["Vsrc"],
+             summary["current"], summary["h"]))
+    print("sink 电压 %.6f V  |  IR drop %.6f V (%.3f mV)"
+          % (summary["sink_v"], summary["ir_drop"],
+             summary["ir_drop"] * 1000))
+    print("max |J| %.4f A/mm2  |  总功耗 %.4f W"
+          % (summary["max_j"], summary["power_total"]))
+    print("输出目录: %s" % args.outdir)
+    for f in summary["files"]:
+        print("  ", f)
+
+
 def _num(v):
     return ("%.1f" % v).rstrip("0").rstrip(".")
 
@@ -282,6 +308,17 @@ def main(argv=None):
     dp.add_argument("--max-items", type=int, default=100)
     dp.add_argument("--json", action="store_true")
     dp.set_defaults(fn=cmd_dfm)
+
+    pp = sub.add_parser("pdn", help="2.5D FDM PDN 求解 + 热力图")
+    pp.add_argument("input")
+    pp.add_argument("--pcb")
+    pp.add_argument("--spec", required=True,
+                    help="JSON：net/voltage/current/source/sinks/...")
+    pp.add_argument("--outdir", required=True)
+    pp.add_argument("--grid", type=float, help="覆盖 spec.grid_mm（mm）")
+    pp.add_argument("--no-thermal", action="store_true")
+    pp.add_argument("--json", action="store_true")
+    pp.set_defaults(fn=cmd_pdn)
 
     args = ap.parse_args(argv)
     if hasattr(args, "input") and not args.input:
