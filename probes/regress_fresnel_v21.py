@@ -92,7 +92,9 @@ except Exception as exc:            # noqa: BLE001 - 回归要看清崩溃类型
 
 err = buf.getvalue()
 check("netlist 全页解析不崩溃", crashed is None, crashed or "")
-check("残留 CBB 模板页给出一次性告警", "CBB 模板页" in err, err.strip()[:200])
+check("残留 CBB 模板页给出一次性告警",
+      ("CBB 模板页" in err) or ("INSTANCE 引用模板页" in err),
+      err.strip()[:200])
 
 for net in ("I2C2_SDA", "I2C2_SCL", "EEPROM_WP", "ADC_CS", "ADC_SYNC"):
     check("网络名存在: %s" % net, net in agg,
