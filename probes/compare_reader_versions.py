@@ -175,7 +175,7 @@ def main():
         report.append(entry)
         print("[%3d/%3d] %-12s %s" % (i, len(files), entry["status"], path),
               flush=True)
-        if args.details and entry["status"] in ("diff", "rc-mismatch"):
+        if args.details and entry["status"] == "diff":
             print_details(entry)
     if args.json_report:
         out = os.path.abspath(args.json_report)
