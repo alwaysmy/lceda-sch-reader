@@ -7,13 +7,15 @@
 
 ## 仓库定位
 
-- **通用格式工具**：读取立创EDA 专业版工程（.eprj2/.epro/.epro2），
+- **通用格式工具**：读取立创EDA 专业版工程（.eprj2/.epro/.epro2/.eprj3），
   **不绑定**任何特定工程/器件/网络名/位号。
-- 单文件 CLI：`lceda_reader.py`（核心路径仅标准库；新版加密 .eprj2
-  解密另需 `cryptography`，懒加载）；三后端 duck-typing
-  （LcedaDB/EproDB/Epro2DB，SchemaBackend ABC），命令层复用。
+- CLI 入口 `lceda_reader.py` + 分层模块（审查层 `lceda_attrs/netgraph/
+  blocks/spice/rules`；可选 PCB `lceda_pcb`/`pcb_workbench`）。核心路径仅
+  标准库（新版加密 .eprj2 解密需 `cryptography`，PCB 精确几何需 `shapely`，
+  均按需导入）；四后端 duck-typing（LcedaDB/EproDB/Epro2DB/Eprj3DB，
+  SchemaBackend ABC），命令层复用。
 - 配套文档：`README.md`（用法）、`skill/SKILL.md`（使用规则/审查方法，
-  **未安装到 opencode**，需人工验证后按 opencode skill 规范放置）、
+  **已安装到 opencode**：`C:\Users\dell\.agents\skills\lceda-sch-reader`）、
   `docs/开发文档.md`（解析层陷阱/已知限制，**改动解析层前必读**）、
   `TODO.md`（未支持项）、`docs/变更记录*.md` 与专项文档。
 
@@ -43,13 +45,19 @@
 1. 临时/探测/调试脚本一律存放本仓库 `probes/` 并入库（随仓库版本管理，
    提交信息注明用途）——**禁止放系统临时目录**（`%TEMP%`、opencode temp）。
 2. `probes/smoke2.py` = 基础回归（LcedaDB 9 命令 + json 校验）。
-3. `probes/verify_all_formats.py` = 全盘格式验证（本机全部工程文件：
-   5 官方示例 + 涡流/MCU主控/Piezo/TPS56C230，含同工程跨格式交叉对比）。
+3. `probes/verify_all_formats.py` = 仓库样例全格式验证（`examples/` 6 个
+   工程文件：涡流/MCU主控/Piezo 三格式/TPS56C230，含 Piezo 跨格式交叉对比）。
 4. **回归纪律（改动解析层/后端后最低验证）**：
    - smoke2 ALL PASS；
    - LcedaDB 基线逐字节对比（netlist/pins/nets 至少三项；改前先保存旧输出）；
+   - 跨格式/总线/契约改动另跑 verify_all_formats / verify_bus /
+     cross_backend_contract（提交记录所称"四套回归"）；
    - 涉及 .epro/.epro2：Piezo 案例冒烟 + CBB 展开实例数（应 15）+ DNP
      R235 两脚异网；
+   - 涉及 .eprj3：verify_eprj3_backend.py ALL PASS；
+   - 涉及审查层/PCB：verify_rules / verify_layers / verify_netgraph 与
+     verify_pcb_workbench / verify_pcb_dfm / verify_pdn_solver /
+     verify_thermal_model；
    - 提交信息注明验证结论。
 
 ## 代码原则

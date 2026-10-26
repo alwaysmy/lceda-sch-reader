@@ -1,7 +1,10 @@
 # lceda_reader 文档生成脚本
 
-基于 `../lceda_reader.py`（pinmap 连通域精确方案）生成 markdown 文档的脚本。
-依赖：Python 3.8+，仅标准库；lceda_reader.py 在本目录上一级。
+基于 `../lceda_reader.py`（pinmap 连通域精确方案）生成 markdown 文档的脚本；
+另含一个可选的 PCB 导出对拍脚本。
+依赖：`gen_*.py` 仅标准库，Python 3.8+；`pcb_compare_exports.py` 另需
+`requirements-pcb-validation.txt`（shapely + gerbonara，Python ≥3.12）。
+lceda_reader.py 在本目录上一级。
 
 ## 脚本与产出
 
@@ -10,6 +13,7 @@
 | `gen_v11_md.py` | V1.1 主控板引脚关系 md | V1.1 主控板各器件引脚→网络→MCU 引脚表（每器件一个二级标题） |
 | `gen_adda_md3.py` | V1.1 主控↔ADDA 对应关系 md | 双工程：V1.1 主控 ↔ ADDA 板连接器 40pin 核对 + ADDA 各器件引脚映射 |
 | `gen_audit.py` | ADDA 板设计审计 md | 双工程：板间接线核对、悬空引脚、ADT7310 SPI 接线核对 |
+| `pcb_compare_exports.py` | PCB IR ↔ 官方导出对拍报告 | 可选只读对拍（显式提供导出文件；需安装 requirements-pcb-validation.txt） |
 
 ## 用法（工程路径必须显式指定）
 

@@ -96,6 +96,7 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | 命令 | 用途 | 关键参数 | 典型输出 |
 | --- | --- | --- | --- |
 | `list` | 板与页清单 | --json | 板(schematic)列表 + 每页 |
+| `tree` | 工程层级树 | --json | 板→原理图(页)/PCB + 游离实体 |
 | `boards` | 页标题块 | --json | 每页 @Board Name/@Page Name/Version |
 | `components [页]` | 页内元件 | --json | 设计符/型号/参数描述 |
 | `texts <页>` | 页内文本注释 | --schematic, --json | 设计意图/调试备注 |
@@ -111,6 +112,7 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `datasheets` | Datasheet URL | --json | 器件→数据手册链接 |
 | `pcbsch` | PCB↔SCH 器件核对 | --json | 反标改名/漏布局清单 |
 | `polar` | 极性器件清单 | --json | D/LED/TVS 极性网络归一（未归一附 datasheet） |
+| `review` | 电气规则审查 | --rules, --config, --table, --blocks, --blocks-cap, --netlist, --pages, --json | R1~R4 findings（ERROR/WARN/INFO）；可附端子包络表/块识别/SPICE |
 | `docs` | 文档清单 | --json | 创建/最后编辑时间/编辑人/ticket |
 | `render <页>` | 页渲染 SVG | --schematic, -o, --config, --no-labels, --no-texts, --pin-numbers | SVG（字体/文字位置取自工程存储） |
 | `attrs <页>` | 页属性 | --schematic, --json | 标题块@项 + 元件属性 |
@@ -120,6 +122,8 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 
 通用参数：`--json`（结构化输出）、`--eprj`（工程路径，可多次）、
 `--cbb-map`（CBB 实例位号=模板页名，端口自动匹配歧义时显式指定，可多次）。
+`review` 的阈值/启停在外置 `review_rules.json`（工具配置层，`--config` 可覆盖），
+依据见 `docs/电气规则层建议-2026-09-15.md`。
 
 可选 `--json-report` 隐含 `--json`，返回
 `{schema_version, query, data, diagnostics, complete, completeness_scope,
@@ -138,7 +142,7 @@ semantic_validation, query_exit_code}`；`data` 保留原查询结果。
 ## 二、文件格式（与官方规范一致）
 
 本工具基于官方《嘉立创EDA文件格式》规范实现，规范文档见 `reference/` 目录
-（V3 2025.10.21 版本 md，及 V2.2 版 PDF），在线地址：
+（V3 2025.10.21 版本 md、V2.2 版 PDF，及 V4 文件夹格式 `eprj3-format.md`），在线地址：
 https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md
 
 `.eprj2` 是 **SQLite 数据库**（不是 zip）。关键表：
@@ -182,7 +186,8 @@ dataStr = "base64" 前缀 + base64(gzip(NDJSON 文本))
 
 ### 格式识别与路由（内容特征优先）
 
-打开文件时按**内容特征**自动路由（扩展名仅参考）：ZIP 容器→按
+打开文件时按**内容特征**自动路由（扩展名仅参考）：文件夹或 `.eprj3`→
+校验 `*.eprj3` 索引与 `sch/*.esch2`/`pcb/*.epcb2` 后走 Eprj3DB；ZIP 容器→按
 `project.json`(EproDB)/`*.epru`(Epro2DB) 分派；SQLite→`documents` 表非空=
 LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内容加密）
 自动解密（AES-128-GCM）为临时 .epro2 后按 Epro2DB 读取，对用户透明
@@ -200,9 +205,10 @@ LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内
   PART 名、符号类型=META.docType（17=CBB/18=电源/19=NetPort/22=Short/
   25=OffPage）、引脚名键 Pin Name/Pin Number、DEVICE META.attributes 内联
   属性（含 Symbol 桥与 Datasheet）。CBB 链接原生精确（docType=17）。
-- 全量验证：本机 15 个工程文件（5 官方示例 + 涡流/MCU主控/Piezo/TPS56C230）
-  全部通过；同工程 .eprj2 与 .epro2 交叉对比元件数/网络集合**零差异**
-  （涡流 736 元件/79 网、MCU主控 288/87）。详见 `probes/verify_all_formats.py`。
+- 全量验证：仓库 `examples/` 的 6 个工程文件（涡流 736 元件/79 网、MCU主控
+  288/87、Piezo 三格式各 3575 元件、TPS56C230 70/9）全部 PASS；Piezo 同工程
+  .eprj2/.epro/.epro2 元件数一致（3575），网络集合差异为脚本 WARN（已知
+  epro2 孤儿旧 CBB 页问题）。详见 `probes/verify_all_formats.py`。
 
 ### V4 文件夹工程（.eprj3，已支持 Eprj3DB）
 
@@ -359,7 +365,9 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 
 ## 五、格式规范来源与逆向过程记录
 
-- 官方格式规范文档（`reference/` 目录）：V3 版 md（2025.10.21）与 V2.2 版 PDF。
+- 官方格式规范文档（`reference/` 目录）：V3 版 md（2025.10.21）与 V2.2 版 PDF；
+  V4 文件夹格式见 `reference/eprj3-format.md`（官方 EasyEDA Pro
+  Folder-Based Project Format）。
   在线获取：
   - V3: https://image.lceda.cn/files/lceda-pro-file-format-v3_2025.10.21.md
   - V2.2 zip: https://image.lceda.cn/files/lceda-pro-file-format-v2.2_2022.12.15.zip
@@ -402,7 +410,9 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 
 - 核心读取路径仅依赖 Python 标准库（sqlite3/json/base64/gzip/re/argparse），
   Python 3.8+ 可用；新版加密 .eprj2 自动解密另需第三方库 `cryptography`
-  （懒加载，仅该场景导入）。
+  （懒加载，仅该场景导入）。可选 PCB 路径另需依赖：`pcb_workbench --exact` /
+  `lceda_pcb_geometry` 用 `shapely`（Python ≥3.10），导出对拍脚本另需
+  `gerbonara`（≥3.12）——见 `requirements-pcb*.txt`。
 - 只读设计：所有连接使用 `mode=ro` URI，不会写工程文件。
 - 若立创EDA升级格式（dataStr 压缩链变化），`decompress()` 中的 gzip 回退分支
   可扩展（参考 archive 中 sch_magic.py 的 zlib 探测思路）。
@@ -412,10 +422,11 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
   NDJSON 全量快照；V3（.epro2）= ZIP + `DOCHEAD||body` 对象式**增量日志**
   （同 uuid 多段按 ticket 最终一致合并）；V4（.eprj3）= 文件夹 + 同构行日志
   （见上节）。已按"后端抽象（SchemaBackend ABC）+ 内容
-  特征路由（detect_backend，magic/表结构嗅探，扩展名仅参考）"实现三后端，
-  命令层复用全部解析逻辑；新增格式 = 实现 SchemaBackend 子类 + 登记内容
-  特征。新版分支加密 .eprj2 已支持自动解密读取（AES-128-GCM → 临时
-  .epro2 → Epro2DB，对用户透明，详见 `docs/新版eprj2格式逆向与破解.md`）。
+  特征路由（detect_backend，magic/表结构嗅探，扩展名仅参考）"实现四后端
+  （LcedaDB/EproDB/Epro2DB/Eprj3DB），命令层复用全部解析逻辑；新增格式 =
+  实现 SchemaBackend 子类 + 登记内容特征。新版分支加密 .eprj2 已支持
+  自动解密读取（AES-128-GCM → 临时 .epro2 → Epro2DB，对用户透明，详见
+  `docs/新版eprj2格式逆向与破解.md`）。
 - **pin_type 为尽力而为**：依赖符号是否标注 "Pin Type" ATTR（实测多数芯片为
   Undefined），不作为判断信号方向的依据，也不为其增加复杂度。
 - 官方 API Skill 项目（可在线调试/扩展立创EDA）：https://github.com/easyeda/easyeda-api-skill

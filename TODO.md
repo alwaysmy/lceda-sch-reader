@@ -23,8 +23,9 @@
   - Epro2DB：docType=="PCB" epru → V2 布局转换
   实测涡流 V1.0 主板 PCB1 265 元件一致 263/改名 2；epro Piezo 581 元件
   板级文档 15 个全枚举；跨格式 UID 稳定（epro2 备份 PCB2 与 SQLite 同步）。
-- **待做**：PCB 网络拓扑级审查（PCB 网络表 vs SCH 网络表逐 pin 对比，
-  需解析 PAD 几何/Footprint 引脚位置，当前仅 PAD_NET 归属清单）。
+- **待做**：PCB 网络拓扑级审查（PCB 网络表 vs SCH 网络表逐 pin 对比）。
+  PAD 几何/焊盘已在可选路径解析（`lceda_pcb.py`/`pcb_workbench`，见下文
+  V4 PCB 节），但 `pcbsch` 仍只做器件级核对，尚未做 SCH↔PCB 逐 pin 网表 diff。
 
 ## 渲染 render（✅ 基础完成 2026-08-23，含 Y 向上修正）
 

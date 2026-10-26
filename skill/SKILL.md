@@ -8,7 +8,7 @@ description: Use when the user asks to read, query, search, extract, or verify c
 读取立创EDA专业版工程（`.eprj2` SQLite / `.epro`·`.epro2` ZIP 导出 /
 `.eprj3` V4 文件夹）的原理图数据。工具为**通用格式工具**，不绑定特定工程/
 器件/位号；只读，核心路径仅依赖 Python 标准库（新版加密 .eprj2 自动解密
-另需 `cryptography`），位于 `lceda_reader.py`。
+另需 `cryptography`；PCB 精确几何另需 `shapely`），入口 `lceda_reader.py`。
 
 ## 汇报规范（重要）
 
@@ -36,8 +36,9 @@ description: Use when the user asks to read, query, search, extract, or verify c
    | 某页元件（设计符/型号/参数） | `lceda_reader.py components "页名"` |
    | 页内文本注释（设计意图/备注） | `lceda_reader.py texts "页名"` |
    | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
-   | PCB↔SCH 器件核对（反标改名/漏布局；仅旧版 .eprj2） | `lceda_reader.py pcbsch` |
+   | PCB↔SCH 器件核对（反标改名/漏布局） | `lceda_reader.py pcbsch` |
    | 极性器件清单（D/LED/TVS 阳极/阴极网络，未归一附 datasheet） | `lceda_reader.py polar` |
+   | 电气规则审查（R1~R4；可附块识别/端子包络/SPICE） | `lceda_reader.py review [--rules R1,R4] [--table] [--blocks] [--pages ...]` |
    | 文档清单（创建/最后编辑时间、编辑人、ticket——残留副本页判别） | `lceda_reader.py docs` |
    | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
@@ -64,7 +65,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
   uuid，不跨文档共享。`pcbsch` 命令基于它输出 PCB 反标改名清单/未布局器件；
   工程内多个 PCB 文档是历史快照，以匹配数最多的主板为准。
   注意 PCB ATTR 布局与 SCH 不同（key/value 在 [7]/[8]）。
-  三后端（.eprj2/.epro/.epro2）均已支持 PCB 枚举与 pcbsch。
+  四个后端（.eprj2/.epro/.epro2/.eprj3）均已支持 PCB 枚举与 pcbsch
+  （V4 的 PCB 仅属性级核对，完整几何审阅走 `pcb_workbench`，见下）。
 - **render 渲染**：**文件坐标系 Y 向上**（渲染时统一翻转，标题栏在右下才对）；
   字体字号取自 FONTSTYLE、位号/值位置取自实例 ATTR 显示坐标（X/Y=null=
   从未显示）、标题栏值走"符号模板显示位+实例值覆盖"机制——即用户在 EDA 里
@@ -109,7 +111,8 @@ description: Use when the user asks to read, query, search, extract, or verify c
   不含 CBB 模板时实例按黑盒保留；PANEL/变体/仿真文档暂不解析。
 - **V4 PCB 审阅（`pcb_workbench`）**：直接读 `pcb/*.epcb2`（`LINE/VIA/POUR` 带
   netName、`PAD_NET` 带 padNet）。默认审阅模式按网络着色、圆头线帽补转角；
-  `--exact` 用 `POURED` 实铜缓存 + 全焊盘 + 孔做 Shapely 布尔几何并给出每层
+  `--exact` 用 `POURED` 实铜缓存 + 全焊盘 + 孔做 Shapely 布尔几何（需安装
+  `shapely`，见 requirements-pcb.txt）并给出每层
   面积；`layers` 逐铜层输出 Top/Bottom/Inner1/Inner2 + 合成图。`POURED` 缓存
   ticket 落后于铜编辑时会告警（需在 LCEDA 重新覆铜才是最终铜）；无 DRC/热/
   制造签核。
@@ -203,8 +206,9 @@ description: Use when the user asks to read, query, search, extract, or verify c
   发现注释与手册/实测矛盾时，在审查结论中明确标注"注释存疑，需与设计者
   确认"，不得当作已核实事实引用。
 - `.epro2` 是 zip（内含 `project2.json` + `.epru` V3 增量日志 + IMAGE 缩略图），
-  与 `.eprj2`/`.epro` 语义一致但写法不同（详见 Epro2DB 后端）。三格式
-  （.eprj2/.epro/.epro2）均已支持，单文件即可完整读取。
+  与 `.eprj2`/`.epro` 语义一致但写法不同（详见 Epro2DB 后端）。四格式
+  （.eprj2/.epro/.epro2/.eprj3）均已支持；前三者单文件即可完整读取，
+  .eprj3 传工程目录或索引文件。
 
 ## 多工程使用（关联工程分析）
 
