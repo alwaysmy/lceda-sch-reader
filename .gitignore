@@ -7,3 +7,7 @@ __pycache__/
 
 # 示例工程文件（不入库，体积大）
 examples/
+
+# 一次性调试转储（体积大，历史中保留；2026-10-26 移出 HEAD）
+probes/full_decrypted.epru
+probes/mem_dump.json
