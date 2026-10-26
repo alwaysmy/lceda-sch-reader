@@ -5,7 +5,9 @@
     python probes\\verify_eprj3_backend.py [<工程目录或 .eprj3>] [<参考 .epro2>]
 
 工程路径也可用 LCEDA_EPRJ3 / LCEDA_EPRO2 指定。参考 .epro2 存在时，额外做
-逐页、逐引脚网络对比（V3/V4 应对齐；不一致即判失败）。
+逐页、逐引脚网络对比（V3/V4 应对齐；不一致即判失败）。参考默认用仓库自带的
+probes/data/eprj3_ref/Fresnel_V2.1_LaserDriver_EVM_2026-10-22.epro2（导出于
+工程最后修改之后）；换工程时用参数或环境变量覆盖。
 
 覆盖点（2026-10-19 新增 Eprj3DB）：
   1. 格式路由：目录 / .eprj3 索引文件都能识别为 Eprj3DB；
@@ -28,8 +30,9 @@ import lceda_reader as L  # noqa: E402
 
 DEFAULT_V4 = (r"C:\Users\dell\Documents\LCEDA-Pro\projects"
               r"\Fresnel_V2.1_LaserDriver_EVM")
-DEFAULT_EPRO2 = (r"D:\WorkDesigns\2_WorkProjects\LaserDrvFresnel\1_hw"
-                 r"\Fresnel_V2.1_LaserDriver_EVM_2026-10-16.epro2")
+DEFAULT_EPRO2 = os.path.join(
+    HERE, "data", "eprj3_ref",
+    "Fresnel_V2.1_LaserDriver_EVM_2026-10-22.epro2")
 V4 = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("LCEDA_EPRJ3", DEFAULT_V4)
 REF = sys.argv[2] if len(sys.argv) > 2 else os.environ.get("LCEDA_EPRO2",
                                                           DEFAULT_EPRO2)
