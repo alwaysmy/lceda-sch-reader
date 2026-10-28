@@ -148,6 +148,9 @@ semantic_validation, query_exit_code}`；`data` 保留原查询结果。
 - `pinmap` 的 `resolved_nets` 即该组全部名字，文本行尾标注别名；
 - 行的 `net` 字段是**显示主名**（非"引脚自动名"优先，其次出现引脚数多者，
   最后字典序），不影响查询——查任一名字都返回同一组；
+  判定"引脚自动名"只看整串是否形如 `[A-Z]{1,3}\d{1,3}`（`PD5`/`PA11`）；
+  带后缀的 `PD6_UART_TX1`、`GPIOA1`、`PD1234` 不算，`CS1`/`D1` 这类会算——
+  即使误判也只影响哪个名字排进 `net`，`aliases` 里名字齐全，查询不受影响；
 - `--json-report` 的 `completeness_scope` 含 `alias_closure`，并输出
   顶层 `alias_groups`（本次结果中出现的别名组）。
 

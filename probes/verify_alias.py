@@ -47,6 +47,21 @@ check(lr.alias_suffix(["ID_OUT", "USART2_TX"], "ID_OUT") == "（别名: USART2_T
       "别名后缀只列其它名字")
 check(lr.alias_suffix(["ID_OUT"], "ID_OUT") == "", "无别名时无后缀")
 
+# 引脚自动名判定边界：只认"整串 = 1~3 字母 + 1~3 数字"
+check(lr._is_pin_like_name("PD6") is True, "PD6 -> 引脚自动名")
+check(lr._is_pin_like_name("PA11") is True, "PA11 -> 引脚自动名")
+check(lr._is_pin_like_name("PD6_UART_TX1") is False,
+      "PD6_UART_TX1 带后缀 -> 不是引脚自动名")
+check(lr._is_pin_like_name("PD1234") is False, "PD1234 四位数字 -> 不是引脚自动名")
+check(lr._is_pin_like_name("GPIOA1") is False, "GPIOA1 四字母 -> 不是引脚自动名")
+check(lr.pick_primary_name(["PD6", "PD6_UART_TX1"]) == "PD6_UART_TX1",
+      "PD6_UART_TX1 优先于 PD6 作显示主名")
+check(lr.pick_primary_name(["CS1", "SPI_CS"]) == "SPI_CS",
+      "CS1 形似引脚名 -> 显示时让位于 SPI_CS（仅显示，不影响查询）")
+_roots3, _groups3 = lr.build_alias_groups(["PD6" + lr.NET_SEP + "PD6_UART_TX1"])
+check(set(list(_groups3.values())[0]) == {"PD6", "PD6_UART_TX1"},
+      "主名选择不丢名字（别名组保留全部）")
+
 print("[2] 端到端：同一网络的多个名字 -> 同一组连接点 / 单行")
 if not os.path.isfile(EPRJ):
     print(f"  工程不存在: {EPRJ}（可用 LCEDA_EPRJ 覆盖）")

@@ -25,7 +25,9 @@
   `（别名: …）`，JSON 仅在存在别名时新增 `aliases`；`netfind` 按别名组匹配，
   查任一名字返回整组；`pinmap` 文本标注别名、JSON 追加 `aliases`。
 - **主名规则**：`pick_primary_name`（非引脚自动名优先 → 引脚数多者 → 字典序），
-  只影响显示与 `net` 字段，不影响查询。
+  只影响显示与 `net` 字段，不影响查询。判定"引脚自动名"仅认整串
+  `[A-Z]{1,3}\d{1,3}`（`PD5`/`PA11`）；`PD6_UART_TX1`/`GPIOA1`/`PD1234` 不算，
+  `CS1`/`D1` 会算但仅影响显示；名字全集始终保留在 `aliases`，已有回归用例。
 - **报告**：`--json-report` 的 `completeness_scope` 增加 `alias_closure`，
   顶层新增 `alias_groups`。
 - **回归**：新增 `probes/verify_alias.py`（纯函数 + 端到端同集合断言）。
