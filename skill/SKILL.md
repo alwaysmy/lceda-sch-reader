@@ -1,6 +1,6 @@
 ---
 name: lceda-sch-reader
-description: Use when the user asks to read, query, search, extract, or verify content from any 立创EDA/LCEDA professional (EasyEDA Pro) project (.eprj2 / .epro / .epro2 / .eprj3 files) — component lists, net connections, pin-level netlists, trace links, device values/BOM, board/page names, Datasheet URLs, or hardware pin mapping. Runs the generic read-only tool lceda_reader.py. Also covers optional PCB review via lceda_pcb.py (export) and pcb_workbench (V4 .epcb2 net-colored rendering).
+description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA）专业版原理图与工程文件（.eprj2 / .epro / .epro2 / .eprj3）：元件清单、网络连接、引脚级网络表、链路追踪、位号/型号/BOM、板/页名、Datasheet、引脚映射、复用块 CBB、网络别名、电气规则审查 review、可选出图与 PCB 审阅。触发词：原理图、看原理图、读原理图、查原理图、原理图审查、核对原理图、查网络、网络表、引脚、引脚定义、连线、短路、断链、飞线、位号、器件清单、BOM、复用块、CBB、网络别名、ERC、电气规则、PCB 审阅、立创EDA、嘉立创EDA、EasyEDA、LCEDA、eprj2、epro、epro2、eprj3、schematic、netlist、pin mapping、net trace、review。Runs the read-only tool lceda_reader.py; optional PCB review via lceda_pcb.py / pcb_workbench.
 ---
 
 # LCEDA 专业版原理图读取（lceda_sch_reader）
@@ -9,6 +9,21 @@ description: Use when the user asks to read, query, search, extract, or verify c
 `.eprj3` V4 文件夹）的原理图数据。工具为**通用格式工具**，不绑定特定工程/
 器件/位号；只读，核心路径仅依赖 Python 标准库（新版加密 .eprj2 自动解密
 另需 `cryptography`；PCB 精确几何另需 `shapely`），入口 `lceda_reader.py`。
+
+## 何时使用（触发场景）
+
+用户提到下列任一类需求时就该用本工具，不要凭印象猜电路：
+
+- 读/看/查/核对**原理图**（含"这块板子/这个工程/原理图对不对"）；
+- **网络**相关：某网络连了谁、网络表、短路、断链、飞线、跨页/跨板是否连通；
+- **引脚**相关：引脚定义、引脚网络、位号→网络、器件连接到哪；
+- **BOM/位号/型号/Datasheet** 清单或核对；
+- **复用块 CBB** 展开与内部连接；
+- **电气规则审查**（`review`：钳位、串联件能力、电源轨、反相极性）；
+- **PCB 审阅/出图**（`lceda_pcb.py`、`pcb_workbench`）。
+
+典型说法："帮我看看这个原理图"、"查一下 XX 网络接到哪"、"这个引脚接了什么"、
+"核对一下 BOM"、"这块板的 CBB 里面是什么"、"跑一下电气规则审查"。
 
 ## 汇报规范（重要）
 
@@ -90,6 +105,12 @@ description: Use when the user asks to read, query, search, extract, or verify c
 - 引脚级网络归属（pins/nets/netlist/trace/find/pinmap）**全部基于连通域精确方案**
   （实例坐标+PIN坐标+旋转/镜像 → 绝对坐标 → 精确匹配 WIRE 端点网络名），
   不再是几何近似。经串阻/磁珠/短接符间接连接的引脚链路完整。
+- **网络别名（同一根线多个名字）**：导线 `NET`、端口 `Name`、跨页不同端口的
+  命名，只要属于同一物理连通域就是同一网络。`netfind <任一名字>` 返回**整组**
+  连接点并在标题标注 `（别名: …）`；`nets`/`netlist` 每根物理网络只占**一行**，
+  行内 `aliases` 给出全组名字；`pinmap` 文本标注别名、JSON 有 `aliases`。
+  行的 `net` 只是**显示主名**（非引脚自动名优先），不影响查询。
+  **汇报时若某行带 aliases，要说明"这些名字是同一根线"**，不要当成两个网络。
 - **`pinmap` 输出 symbol_type 与 pin_type**：元件 `symbol_type`（2=Part/18=电源/
   19=NetPort/22=Short 短接符/21=NoneElec）用于区分真实器件与框图/电源符号；
   引脚 `pin_type`（Undefined/IN/OUT/BI/Power）用于信号方向。**注意**：V2.2 数组

@@ -373,6 +373,75 @@ def net_disp(v):
     return str(v or "").replace(NET_SEP, ", ")
 
 
+# EDA 自动生成的引脚名（PD5/PB1/PA11 等）。仅用于挑"显示主名"，
+# 不参与任何电气语义判断。
+_PIN_LIKE_RE = re.compile(r"^[A-Z]{1,3}\d{1,3}$")
+
+
+def _is_pin_like_name(name):
+    return bool(_PIN_LIKE_RE.match(str(name or "").upper()))
+
+
+def pick_primary_name(names, counts=None):
+    """同一物理网络有多个名字时挑显示主名（确定性）：
+    1) 非"引脚自动名"优先；2) 出现引脚数多者优先；3) 字典序兜底。"""
+    uniq = sorted({n for n in names if n})
+    if not uniq:
+        return ""
+    counts = counts or {}
+
+    def key(n):
+        return (1 if _is_pin_like_name(n) else 0, -int(counts.get(n, 0)), n)
+
+    return sorted(uniq, key=key)[0]
+
+
+def build_alias_groups(net_values):
+    """别名闭包：把"同一连通域里共同出现的网络名"并成一组。
+
+    入参为若干网络串（NET_SEP/历史逗号分隔的多值）。返回 ``(root_of, groups)``：
+    ``root_of`` 为 name -> root，``groups`` 为 root -> 该组全部名字（有序）。
+    网络名是工程级全局的，因此跨页共用同名会把两页的组自然合并。
+    """
+    parent = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    for v in net_values:
+        toks = [t for t in net_tokens(v) if t]
+        for t in toks:
+            find(t)
+        for t in toks[1:]:
+            union(toks[0], t)
+    groups = {}
+    for n in list(parent):
+        groups.setdefault(find(n), []).append(n)
+    root_of = {}
+    out = {}
+    for root, names in groups.items():
+        names = sorted(set(names))
+        for n in names:
+            root_of[n] = root
+        out[root] = names
+    return root_of, out
+
+
+def alias_suffix(names, primary):
+    """文本输出用的别名后缀；无别名返回空串。"""
+    others = [n for n in names if n and n != primary]
+    return f"（别名: {', '.join(others)}）" if others else ""
+
+
 class LcedaDB(SchemaBackend):
     """立创EDA 专业版 .eprj2（V2.2 SQLite，旧版保存格式）后端。"""
 
@@ -3063,9 +3132,8 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
     for (des, pin), pts in pin_hit.items():
         for pt in pts:
             d = domain_of_pt[pt]
-            nm = endp_net.get(pt)
-            if nm:
-                dom_nets.setdefault(d, set()).add(nm)
+            for tok in net_tokens(endp_net.get(pt)):
+                dom_nets.setdefault(d, set()).add(tok)
     # 引脚命中点自身所在域的已知网络（若命中点非命名端点）
     for (des, pin), pts in pin_hit.items():
         for pt in pts:
@@ -3076,7 +3144,8 @@ def resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp,
                         for px, py in n["points"]:
                             np_ = norm_pt((px, py))
                             if np_ in parent and find(np_) == d:
-                                dom_nets.setdefault(d, set()).add(n["net"])
+                                for tok in net_tokens(n["net"]):
+                                    dom_nets.setdefault(d, set()).add(tok)
 
     # 5) 网络名传播：两脚无源器件桥
     #    器件两脚分属两域，若一脚所在域有名，则另一域继承（仅限两脚器件）
@@ -3717,10 +3786,11 @@ def _collect_pinmap_data(db, sheet, page_name):
         if nm:
             port_nets[cid] = nm
     if port_nets:
-        # 端口命名向触点上的**未命名导线**传播（实测：API 建的电源符号
-        # 压在 stub 线端点上，stub 可能无 NET 属性——符号名即为网络名）。
-        # 传播需同时写入 net_of / sheet["nets"] / endp（resolve 从
-        # sheet["nets"] 取域内命名点）。
+        # 端口命名传播到触点所在的导线：
+        #   - 导线**未命名** -> 直接以端口名命名（原行为）；
+        #   - 导线**已有 NET** -> 端口名作为**别名**并入（多值 NET_SEP），
+        #     否则"同一根线两个名字"会只保留一个，netfind/netlist 被拆成两份。
+        # 同步写 net_of / sheet["nets"] / endp（resolve 从这三处取命名点）。
         for (des, cid), plist in comp_pins.items():
             nm = port_nets.get(cid)
             if not nm:
@@ -3730,9 +3800,6 @@ def _collect_pinmap_data(db, sheet, page_name):
                     continue
                 pt = (round(p["x"], 1), round(p["y"], 1))
                 for wid2 in pt_wires.get(pt, ()):
-                    if net_of.get(wid2):
-                        continue
-                    net_of[wid2] = nm
                     segs2 = next((s for ww, s in wires if ww == wid2), None)
                     if not segs2:
                         continue
@@ -3740,9 +3807,32 @@ def _collect_pinmap_data(db, sheet, page_name):
                                    in _norm_segs(segs2)}
                                   | {np_((x2, y2)) for x1, y1, x2, y2
                                      in _norm_segs(segs2)})
+                    cur = net_of.get(wid2)
+                    if cur:
+                        toks = net_tokens(cur)
+                        if nm in toks:
+                            continue
+                        merged = NET_SEP.join(sorted(set(toks) | {nm}))
+                        net_of[wid2] = merged
+                        # 覆盖同一段几何的既有 net 条目 -> 多值（nets 输出用）
+                        for n in sheet["nets"]:
+                            if not n.get("net"):
+                                continue
+                            nt = net_tokens(n["net"])
+                            if nm in nt:
+                                continue
+                            npts = {(round(px, 1), round(py, 1))
+                                    for px, py in (n.get("points") or [])}
+                            if npts & set(spts):
+                                n["net"] = NET_SEP.join(
+                                    sorted(set(nt) | {nm}))
+                        for spt in spts:
+                            endp[spt] = merged
+                        continue
+                    net_of[wid2] = nm
                     sheet["nets"].append({"net": nm, "points": sorted(spts)})
                     for spt in spts:
-                        endp.setdefault(spt, nm)
+                        endp[spt] = nm
         have = set()
         for n in sheet["nets"]:
             have.update((round(px, 1), round(py, 1)) for px, py in n["points"])
@@ -3877,6 +3967,9 @@ def cmd_pinmap(db, args):
                 key = (row["designator"], pm["pin"])
                 pm["resolved_nets"] = ([] if pm["not_connected"] else
                                        net_tokens(dom.get(key, "")))
+                if len(pm["resolved_nets"]) > 1:
+                    # 同一物理网络的其它名字（导线 NET / 端口 Name 别名）
+                    pm["aliases"] = pm["resolved_nets"]
                 if pm["not_connected"]:
                     continue
                 if not pm["net"]:
@@ -3894,8 +3987,9 @@ def cmd_pinmap(db, args):
                 wp = f"  [wire: {','.join(pm['wire_peers'])}]" if pm["wire_peers"] else ""
                 tag = "*" if pm.get("net_inferred") else ""
                 nc = " [X]" if pm["not_connected"] else ""
+                al = alias_suffix(pm.get("resolved_nets") or [], pm["net"])
                 number = str(pm["number"]) if pm["number"] is not None else "?"
-                out(f"  {pm['pin']:12s} (#{number:>3})  {net_disp(pm['net']) or '(未命名)'}{tag}{nc}{peer}{wp}")
+                out(f"  {pm['pin']:12s} (#{number:>3})  {net_disp(pm['net']) or '(未命名)'}{tag}{nc}{al}{peer}{wp}")
     if args.json:
         outj(rows)
 
@@ -3978,26 +4072,41 @@ def cmd_nets(db, args):
         sys.exit(2)
     comp_pins, wires, pt_wires, endp = pinc
     dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+    # 同一物理网络的多个名字先做别名闭包，输出按"网络组"聚合（不再重复成多行）
+    root_of, groups = build_alias_groups(
+        list(dom.values()) + [n["net"] for n in sheet["nets"] if n.get("net")])
     # 网络 -> 元件（designator 去重合并）
-    net_comps = {}
+    counts, net_comps = {}, {}
     for (des, pin), net in dom.items():
-        if net:
-            for tok in net_tokens(net):
-                net_comps.setdefault(tok, set()).add(des)
-    # 网络 -> 端点坐标
+        if not net:
+            continue
+        for tok in net_tokens(net):
+            counts[tok] = counts.get(tok, 0) + 1
+            net_comps.setdefault(tok, set()).add(des)
+    # 网络 -> 端点坐标（按别名组合并）
     net_pts = {}
     for n in sheet["nets"]:
         if n["net"]:
-            for px, py in n["points"]:
-                net_pts.setdefault(n["net"], set()).add((px, py))
+            for tok in net_tokens(n["net"]):
+                for px, py in n["points"]:
+                    net_pts.setdefault(root_of.get(tok, tok), set()).add((px, py))
+    comps_by_root = {}
+    for tok, comps in net_comps.items():
+        comps_by_root.setdefault(root_of.get(tok, tok), set()).update(comps)
     rows = []
-    for net in sorted(net_comps):
-        comps = ",".join(sorted(net_comps[net]))
-        pts = " ".join(f"({x},{y})" for x, y in sorted(net_pts.get(net, []))[:8])
-        rows.append({"net": net, "components": sorted(net_comps[net]),
-                     "points": sorted(net_pts.get(net, []))})
+    for root, comps in comps_by_root.items():
+        names = groups.get(root, [root])
+        net = pick_primary_name(names, counts)
+        pts = " ".join(f"({x},{y})" for x, y in sorted(net_pts.get(root, []))[:8])
+        row = {"net": net, "components": sorted(comps),
+               "points": sorted(net_pts.get(root, []))}
+        if len(names) > 1:
+            row["aliases"] = names
+        rows.append(row)
         if not args.json:
-            out(f"{net:20s} <- {comps:24s} {pts}")
+            label = f"{net}{alias_suffix(names, net)}"
+            out(f"{label:20s} <- {','.join(sorted(comps)):24s} {pts}")
+    rows.sort(key=lambda r: r["net"])
     if args.json:
         outj(rows)
 
@@ -4311,9 +4420,12 @@ def _trace_multi(dbs, args):
 
 
 def cmd_netlist(db, args):
-    """跨页网络归并：网络名 -> 出现的页与归属元件（连通域精确方案）。"""
+    """跨页网络归并：网络名 -> 出现的页与归属元件（连通域精确方案）。
+    同一物理网络的多个名字（导线 NET / 端口 Name 别名）合并为一行，
+    行内 ``aliases`` 给出全部名字；主名选取见 pick_primary_name。"""
     sn = db.schem_map()
-    agg = {}
+    pages = []
+    counts = {}
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
@@ -4325,22 +4437,38 @@ def cmd_netlist(db, args):
             continue
         comp_pins, wires, pt_wires, endp = pinc
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+        pages.append((title, dom))
+        for net in dom.values():
+            for tok in net_tokens(net):
+                counts[tok] = counts.get(tok, 0) + 1
+    root_of, groups = build_alias_groups(
+        v for _t, d in pages for v in d.values())
+    agg = {}
+    for title, dom in pages:
         for (des, pin), net in dom.items():
             if not net:
                 continue
             for tok in net_tokens(net):
-                e = agg.setdefault(tok, {"sheets": [], "components": []})
+                e = agg.setdefault(root_of.get(tok, tok),
+                                  {"sheets": [], "components": []})
                 if title not in e["sheets"]:
                     e["sheets"].append(title)
                 if des not in e["components"]:
                     e["components"].append(des)
     rows = []
-    for net in sorted(agg, key=lambda k: k or ""):
-        e = agg[net]
-        rows.append({"net": net, "sheets": e["sheets"],
-                     "components": sorted([c or "" for c in e["components"]], key=natkey)})
+    for root, e in agg.items():
+        names = groups.get(root, [root])
+        net = pick_primary_name(names, counts)
+        row = {"net": net, "sheets": e["sheets"],
+               "components": sorted([c or "" for c in e["components"]], key=natkey)}
+        if len(names) > 1:
+            row["aliases"] = names
+        rows.append(row)
         if not args.json:
-            out(f"{str(net or '(未命名)'):24s}  {','.join(e['sheets']):28s}  {','.join(sorted([c or '' for c in e['components']], key=natkey))}")
+            label = f"{net}{alias_suffix(names, net)}"
+            out(f"{str(label or '(未命名)'):24s}  {','.join(e['sheets']):28s}  "
+                f"{','.join(sorted([c or '' for c in e['components']], key=natkey))}")
+    rows.sort(key=lambda r: r["net"] or "")
     if args.json:
         outj(rows)
 
@@ -4398,50 +4526,53 @@ def cmd_find(db_or_dbs, args):
 def cmd_netfind(db_or_dbs, args):
     """全局同网络查询（引脚级）：网络名 -> 所有页的 (器件, 引脚)。
     与立创EDA"网络高亮"等效——遍历全工程连通域解析，输出该网络的全部连接点。
+    同一物理网络可能有多个名字（导线 NET / 端口 Name 别名）：按别名组匹配，
+    查任一名字都返回整组连接点，并在标题/JSON 标注同组名字。
     支持多工程（--eprj 多次）：每个工程独立查询，输出标注工程来源，不跨工程合并。
     --json 输出结构化。"""
     dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
     multi = len(dbs) > 1
-    if args.json and multi:
-        rows_all = []
-        for di, db in enumerate(dbs):
-            for r in _netfind_one(db, args.net):
-                r["eprj"] = di
-                rows_all.append(r)
-        outj(_multi_json(dbs, rows_all))
-        return
-    rows_all = []
+    results = []
     for di, db in enumerate(dbs):
-        rows = _netfind_one(db, args.net)
-        if multi:
-            for r in rows:
+        rows, names = _netfind_one(db, args.net)
+        for r in rows:
+            if multi:
                 r["eprj"] = di
-            rows_all.extend(rows)
-        else:
-            rows_all = rows
+        results.append((di, names, rows))
+    rows_all = [r for _di, _n, rs in results for r in rs]
     if not rows_all:
         out(f"未找到网络: {args.net}")
         sys.exit(2)
     if args.json:
-        outj(rows_all)
+        outj(_multi_json(dbs, rows_all) if multi else rows_all)
         return
-    n = len(rows_all)
-    out(f"== 网络 {args.net} ({n} 个连接点" + (", 多工程" if len(dbs) > 1 else "") + ") ==")
-    cur = None
-    for r in rows_all:
-        key = (r.get("eprj"), r["sheet"], r["schematic"])
-        if key != cur:
-            cur = key
-            tag = f"工程{r['eprj']} " if r.get("eprj") else ""
-            out(f"  [{tag}{r['sheet']} (sch={r['schematic']})]")
-        out(f"    {r['designator']}.{r['pin']}")
+    for di, names, rows in results:
+        if not rows:
+            continue
+        hit = next((n for n in names if n.upper() == args.net.upper()), args.net)
+        tag = f"工程{di} " if multi else ""
+        al = alias_suffix(names, hit)
+        out(f"== {tag}网络 {args.net}{al} ({len(rows)} 个连接点" +
+            (", 多工程" if multi else "") + ") ==")
+        cur = None
+        for r in rows:
+            key = (r.get("eprj"), r["sheet"], r["schematic"])
+            if key != cur:
+                cur = key
+                tag2 = f"工程{r['eprj']} " if r.get("eprj") else ""
+                out(f"  [{tag2}{r['sheet']} (sch={r['schematic']})]")
+            out(f"    {r['designator']}.{r['pin']}")
 
 
 def _netfind_one(db, net_name):
-    """单工程网络查询，返回 rows。"""
+    """单工程网络查询。返回 ``(rows, alias_names)``。
+
+    先建全工程别名闭包，再按目标名所在组匹配——只按单个名字匹配会把
+    "同一根线两个名字"拆成互不包含的两份结果。
+    """
     sn = db.schem_map()
     target = net_name.upper()
-    found = {}
+    pages = []
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
             continue
@@ -4454,16 +4585,33 @@ def _netfind_one(db, net_name):
         comp_pins, wires, pt_wires, endp = pinc
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
         d, n = sn.get(sch, ("?", "?"))
+        pages.append((title, d, dom))
+    root_of, groups = build_alias_groups(
+        v for _t, _d, dom in pages for v in dom.values())
+    hit_root = None
+    for name, root in root_of.items():
+        if name.upper() == target:
+            hit_root = root
+            break
+    if hit_root is None:
+        return [], []
+    names = groups.get(hit_root, [])
+    found = {}
+    for title, d, dom in pages:
         for (des, pin), net in dom.items():
-            if net and target in [t.upper() for t in net_tokens(net)]:
-                key = (title, d)
-                found.setdefault(key, []).append((des, pin))
+            if not net:
+                continue
+            if any(root_of.get(t, t) == hit_root for t in net_tokens(net)):
+                found.setdefault((title, d), []).append((des, pin))
     rows = []
     for (sheet, d) in sorted(found):
         for des, pin in sorted(found[(sheet, d)], key=lambda x: (x[0], str(x[1]))):
-            rows.append({"sheet": sheet, "schematic": d,
-                         "designator": des, "pin": pin})
-    return rows
+            r = {"sheet": sheet, "schematic": d,
+                 "designator": des, "pin": pin}
+            if len(names) > 1:
+                r["aliases"] = names
+            rows.append(r)
+    return rows, names
 
 
 def cmd_link_check(dbs, args):
@@ -6133,9 +6281,29 @@ def main():
                            "affects_completeness": True, "message": raw_output.strip()})
             query_exit = query_exit or 1
         complete = query_exit == 0 and not issues
+        # 报告里显式写出"同一物理网络的多个名字"（别名组），供下游核对；
+        # 别名闭包已纳入本次查询范围（见 completeness_scope）。
+        alias_seen = {}
+
+        def _walk_alias(o):
+            if isinstance(o, dict):
+                al = o.get("aliases") or o.get("resolved_nets")
+                if isinstance(al, list) and len(al) > 1:
+                    names = sorted({str(x) for x in al if x})
+                    if len(names) > 1:
+                        alias_seen[tuple(names)] = names
+                for v in o.values():
+                    _walk_alias(v)
+            elif isinstance(o, list):
+                for v in o:
+                    _walk_alias(v)
+
+        _walk_alias(data)
         outj({"schema_version": 1, "query": args.cmd, "data": data,
               "diagnostics": issues, "complete": complete,
-              "completeness_scope": "observed_query_errors_and_cbb_reference_coverage",
+              "completeness_scope":
+                  "observed_query_errors_cbb_reference_coverage_and_alias_closure",
+              "alias_groups": [list(k) for k in sorted(alias_seen)],
               "semantic_validation": "not_assessed", "query_exit_code": query_exit})
         if query_exit:
             sys.exit(query_exit)

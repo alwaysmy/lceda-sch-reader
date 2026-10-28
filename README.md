@@ -139,6 +139,18 @@ semantic_validation, query_exit_code}`；`data` 保留原查询结果。
 完整别名集合。原 `net/nets` 仍表示既有直标/补名结果，不改写工程内线名；
 `--no-domain` 不计算或输出该派生字段，NC 引脚的 `resolved_nets` 为空。
 
+**网络别名（同一根线多个名字）**：导线 `NET`、端口符号 `Name`、跨页不同
+端口的命名，只要属于同一物理连通域即视为同一网络：
+
+- `netfind <任一名字>` 返回**整组**连接点，标题标注 `（别名: A, B）`；
+- `nets` / `netlist` 按别名组合并为**一行**，JSON 行内新增 `aliases`
+  （仅当存在别名时出现，含全部名字）；
+- `pinmap` 的 `resolved_nets` 即该组全部名字，文本行尾标注别名；
+- 行的 `net` 字段是**显示主名**（非"引脚自动名"优先，其次出现引脚数多者，
+  最后字典序），不影响查询——查任一名字都返回同一组；
+- `--json-report` 的 `completeness_scope` 含 `alias_closure`，并输出
+  顶层 `alias_groups`（本次结果中出现的别名组）。
+
 ## 二、文件格式（与官方规范一致）
 
 本工具基于官方《嘉立创EDA文件格式》规范实现，规范文档见 `reference/` 目录
@@ -362,6 +374,10 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
     `components.device` 字段。工程中
     可能出现非标准位号（如电阻标为 U），也可能同号位器件跨板重复——**汇报器件时
     必须说明所在板与页**（如"ADDA 板四路低速DA 页 U4（DAC7562）"）。
+15. **网络别名按物理网络合并**：同一根线有多个名字（导线 `NET`、端口 `Name`、
+    跨页不同端口命名）时，`netfind` 按整组匹配，`nets`/`netlist` 合并为一行。
+    因此行数是**按物理网络**计，不是按名字计；要逐个名字核对时用
+    `netfind <名字>`，需要全部名字时读行内 `aliases`。
 
 ## 五、格式规范来源与逆向过程记录
 
@@ -430,3 +446,10 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 - **pin_type 为尽力而为**：依赖符号是否标注 "Pin Type" ATTR（实测多数芯片为
   Undefined），不作为判断信号方向的依据，也不为其增加复杂度。
 - 官方 API Skill 项目（可在线调试/扩展立创EDA）：https://github.com/easyeda/easyeda-api-skill
+
+## 八、变更记录
+
+全部变更流水统一维护在仓库根 [`CHANGELOG.md`](CHANGELOG.md)（按日期分节，
+最新在上）；此前分散的 `docs/变更记录-<日期>.md` 已并入该文件。
+专项分析（缺陷溯源、格式调研、实现说明）仍在 `docs/` 下独立维护，
+`CHANGELOG.md` 对每条只留摘要与链接。
