@@ -52,7 +52,7 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    | 页内文本注释（设计意图/备注） | `lceda_reader.py texts "页名"` |
    | 工程层级树（板→原理图/PCB+游离） | `lceda_reader.py tree` |
    | PCB↔SCH 器件核对（反标改名/漏布局） | `lceda_reader.py pcbsch` |
-   | 极性器件清单（D/LED/TVS 阳极/阴极网络，未归一附 datasheet） | `lceda_reader.py polar` |
+   | 极性器件清单（阳极/阴极网络 + A→K 方向 + 同网连接点） | `lceda_reader.py polar` |
    | 电气规则审查（R1~R4；可附块识别/端子包络/SPICE） | `lceda_reader.py review [--rules R1,R4] [--table] [--blocks] [--pages ...]` |
    | 文档清单（创建/最后编辑时间、编辑人、ticket——残留副本页判别） | `lceda_reader.py docs` |
    | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
@@ -65,7 +65,7 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    | 多工程链路(经连接器桥跨工程) | `lceda_reader.py trace U1 --link "0:H2<->1:H2"` |
    | 链路追踪（沿网络BFS多跳，跨页） | `lceda_reader.py trace U1 [--no-power] [--depth N]` |
    | Designator 反查（页/板/型号/网络） | `lceda_reader.py find U1` |
-   | 跨页搜器件/关键字 | `lceda_reader.py search "正则"` |
+   | 跨页搜器件/关键字（命中 Name 附所在网络与连接点） | `lceda_reader.py search "正则"` |
    | 全工程 BOM（按板过滤） | `lceda_reader.py bom [--board 板名] [--bom-only]` |
    | Datasheet URL 清单 | `lceda_reader.py datasheets` |
    | 页全部属性（@Board Name 等） | `lceda_reader.py attrs "页名"` |
@@ -194,6 +194,9 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
   schematic1_2 是历史版本，其中器件多为残留——常伴空 Unique ID/
   不规范位号，核对以当前版本页为准）；每器件各引脚的极性归一
   （阳极/阴极）与所在网络；
+  **现同时输出 `A→K` 正偏方向、两端网络的连接点（含别名），未命名一侧
+  给出"同线"对象**——这是核对"是否多驱/是否对顶"的事实输入，但结论仍需
+  结合手册与驱动能力判断，工具不替你做电气裁决；
   引脚名不可归一（数字名如 BAV70 的 1/2/3、TVS 阵列功能名）的标"⚠需查手册"
   并附 Datasheet URL。**agents 核对要点**：
   - LED：阳极应接限流电阻/驱动高边，阴极接 GND/低边驱动——核对 A/K 网络

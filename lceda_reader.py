@@ -442,6 +442,133 @@ def alias_suffix(names, primary):
     return f"（别名: {', '.join(others)}）" if others else ""
 
 
+def _parse_name_attr(line):
+    """搜索命中行 -> ``(parent_cid, key, value)``。
+
+    只识别 ``Name`` / ``Global Net Name`` 的 ATTR 记录（端口/电源符号/网络标签
+    的命名属性）；其它记录返回 None。用于 search 命中时补充"所在网络"。
+    """
+    try:
+        a = json.loads(line)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(a, list) or len(a) < 5 or a[0] != "ATTR":
+        return None
+    if a[3] not in ("Name", "Global Net Name"):
+        return None
+    return str(a[2]), str(a[3]), str(a[4])
+
+
+def _page_net_context(db, sheet, uuid):
+    """页内网络上下文：``(dom, root_of, groups, cid_names)``。
+
+    仅在需要补充网络信息时调用（search 命中、polar 等），避免每条命令都建。
+    """
+    pinc = _collect_pinmap_data(db, sheet, uuid)
+    if not pinc:
+        return None
+    comp_pins, wires, pt_wires, endp = pinc
+    dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+    root_of, groups = build_alias_groups(
+        list(dom.values()) + [n["net"] for n in sheet["nets"] if n.get("net")])
+    cid_names = {}
+    for (des, cid), plist in comp_pins.items():
+        names = set()
+        for p in plist:
+            names.update(net_tokens(
+                dom.get((des, p.get("key") or p["pin"]), "")))
+        cid_names[cid] = names
+    return dom, root_of, groups, cid_names
+
+
+def _net_members(dom, root_of, names):
+    """给定一组网络名，返回该物理网络的连接点 ``designator.pin``（有序）。"""
+    roots = {root_of.get(n, n) for n in names}
+    got = set()
+    for (des, pin), net in dom.items():
+        if any(root_of.get(t, t) in roots for t in net_tokens(net)):
+            got.add(f"{des}.{pin}")
+    return sorted(got, key=natkey)
+
+
+def _global_context(db):
+    """全工程网络上下文：``(root_of, groups, members_by_root, cid_names)``。
+
+    代价等同一次 netlist 扫描（parse + collect + resolve）。只在确实需要
+    补充"名字所在网络"时调用（如 search 命中 Name 属性）。
+    """
+    pages = []
+    cid_names = {}
+    for uuid, title, sch, dt in db.sheets():
+        if dt != 1:
+            continue
+        sh = parse_sheet(db, uuid)
+        if sh is None:
+            continue
+        pinc = _collect_pinmap_data(db, sh, uuid)
+        if not pinc:
+            continue
+        cp, ws, pw, ep = pinc
+        dom = resolve_nets_by_domain(db, sh, cp, ws, pw, ep)
+        pages.append((title, dom))
+        for (des, cid), plist in cp.items():
+            names = set()
+            for p in plist:
+                names.update(net_tokens(
+                    dom.get((des, p.get("key") or p["pin"]), "")))
+            cid_names.setdefault(cid, set()).update(names)
+    root_of, groups, members_by_root = _global_net_index(pages)
+    return root_of, groups, members_by_root, cid_names
+
+
+def _wire_peers_for_pin(p, comp_pins, wires, pt_wires):
+    """未命名网络上，与该引脚同导线记录（或同端点）的其它引脚。
+
+    网络名为空不代表悬空：串阻/有源器件之间常是无名中间线段，需要靠
+    "同线"关系说明它连着谁（polar 的连通性展示用）。
+    """
+    pt = (round(p.get("x", 0), 1), round(p.get("y", 0), 1))
+    wids = set(pt_wires.get(pt) or ())
+    if p.get("x2") is not None:
+        pt2 = (round(p["x2"], 1), round(p["y2"], 1))
+        wids |= set(pt_wires.get(pt2) or ())
+    if not wids:
+        return []
+    pts = set()
+    for wid, segs in wires:
+        if wid in wids:
+            for x1, y1, x2, y2 in _norm_segs(segs):
+                pts.add((round(x1, 1), round(y1, 1)))
+                pts.add((round(x2, 1), round(y2, 1)))
+    got = set()
+    for (odes, ocid), plist in comp_pins.items():
+        for op in plist:
+            if op is p:
+                continue
+            cand = {(round(op.get("x", 0), 1), round(op.get("y", 0), 1))}
+            if op.get("x2") is not None:
+                cand.add((round(op["x2"], 1), round(op["y2"], 1)))
+            if cand & pts:
+                got.add(f"{odes}.{op.get('key') or op['pin']}")
+    return sorted(got, key=natkey)
+
+
+def _global_net_index(pages):
+    """``pages=[(页名, dom)]`` -> ``(root_of, groups, members_by_root)``。
+
+    跨页别名闭包 + 全局连接点索引（供 polar 的方向/多驱核对使用）。
+    """
+    root_of, groups = build_alias_groups(
+        v for _t, d in pages for v in d.values())
+    members = {}
+    for title, d in pages:
+        for (des, pin), net in d.items():
+            for tok in net_tokens(net):
+                members.setdefault(root_of.get(tok, tok), set()).add(
+                    f"{des}.{pin}")
+    return root_of, groups, members
+
+
 class LcedaDB(SchemaBackend):
     """立创EDA 专业版 .eprj2（V2.2 SQLite，旧版保存格式）后端。"""
 
@@ -4712,7 +4839,12 @@ def _conn_pairs(db_a, db_b):
     return pairs
 
 def cmd_search(db_or_dbs, args):
-    """跨页正则搜索。支持多工程（--eprj 多次），json 顶层含 projects 映射。"""
+    """跨页正则搜索。支持多工程（--eprj 多次），json 顶层含 projects 映射。
+
+    命中 ``Name`` / ``Global Net Name`` 属性时，补充该名字**所在网络**
+    （全局别名闭包）与连接点——端口名往往只是排查入口，只看属性行
+    无法知道它连了谁。该补充需要一次全工程扫描（代价同 netlist）。
+    """
     dbs = db_or_dbs if isinstance(db_or_dbs, list) else [db_or_dbs]
     multi = len(dbs) > 1
     try:
@@ -4723,6 +4855,8 @@ def cmd_search(db_or_dbs, args):
     rows = []
     for di, db in enumerate(dbs):
         sn = db.schem_map()
+        pages = []
+        need_ctx = False
         for uuid, title, sch, dt in db.sheets():
             if dt != 1:
                 continue
@@ -4733,16 +4867,60 @@ def cmd_search(db_or_dbs, args):
             for ln in text.splitlines():
                 if pat.search(ln):
                     hits.add(ln.strip()[:200])
-            if hits:
-                d, n = sn.get(sch, ("?", "?"))
-                if args.json:
-                    rows.append({"eprj": di, "sheet": title, "schematic": d,
-                                 "hits": sorted(hits)})
-                else:
-                    tag = f"[工程{di}] " if multi else ""
-                    out(f"{tag}== {title} (sch={d}) ==")
-                    for h in sorted(hits):
-                        out(f"  {h}")
+            if not hits:
+                continue
+            d, n = sn.get(sch, ("?", "?"))
+            hits = sorted(hits)
+            pages.append((title, d, hits))
+            if not need_ctx and any(_parse_name_attr(h) for h in hits):
+                need_ctx = True
+        ctx = _global_context(db) if need_ctx else None
+        for title, d, hits in pages:
+            hints = []
+            if ctx:
+                root_of, groups, members_by_root, cid_names = ctx
+                for h in hits:
+                    pr = _parse_name_attr(h)
+                    if not pr:
+                        continue
+                    cid, key, val = pr
+                    names = cid_names.get(cid) or set()
+                    if not names:
+                        continue
+                    roots = {root_of.get(x, x) for x in names}
+                    all_names = sorted({y for r in roots
+                                        for y in groups.get(r, [r])})
+                    members = sorted({m for r in roots
+                                      for m in members_by_root.get(r, set())},
+                                     key=natkey)
+                    hint = {"attr_key": key, "attr_value": val,
+                            "net": pick_primary_name(all_names),
+                            "aliases": all_names,
+                            "member_count": len(members),
+                            "members": members[:50]}
+                    if len(members) > 50:
+                        hint["members_truncated"] = True
+                    if hint not in hints:
+                        hints.append(hint)
+            row = {"eprj": di, "sheet": title, "schematic": d, "hits": hits}
+            if hints:
+                row["net_hints"] = hints
+            if args.json:
+                rows.append(row)
+            else:
+                tag = f"[工程{di}] " if multi else ""
+                out(f"{tag}== {title} (sch={d}) ==")
+                for h in hits:
+                    out(f"  {h}")
+                for hh in hints:
+                    shown = ", ".join(hh["members"][:8])
+                    extra = (f" …(+{hh['member_count'] - 8})"
+                             if hh["member_count"] > 8 else "")
+                    al = alias_suffix(hh["aliases"], hh["net"])
+                    tail = f": {shown}{extra}" if shown else ""
+                    out(f"     → {hh['attr_key']}={hh['attr_value']} "
+                        f"所在网络: {hh['net']}{al}"
+                        f"（{hh['member_count']} 个连接点）{tail}")
     if args.json:
         outj(_multi_json(dbs, rows) if multi else rows)
 
@@ -4863,16 +5041,15 @@ def cmd_polar(db, args):
 
     rows = []
     schem_disp = db.schem_map()   # {sch_uuid: (display, name)}
+    # 两遍：先收齐各页域，再做全局别名闭包；随后补"两端网络 + 方向 +
+    # 同网连接点"，供人工核对是否存在多个驱动源。极性判定口径不变。
+    pages = []
     for u, t, s, dt in db.sheets():
         if dt != 1:
             continue
         sh = parse_sheet(db, u)
         if sh is None:
             continue
-        # 页所属图（SKILL 汇报规范：必须说明所在图与页——重名副本页
-        # 如 schematic1/schematic1_2 靠它区分，历史残留件才不会张冠李戴）
-        sd = schem_disp.get(s, (s, s))
-        sch_name = sd[0] or sd[1] or s
         pinc = _collect_pinmap_data(db, sh, u)
         if not pinc:
             continue
@@ -4886,6 +5063,13 @@ def cmd_polar(db, args):
                 print(f"[lceda_reader] 警告: polar 在页 {t!r} 连通域解析失败，"
                       f"该页极性器件网络列为空", file=sys.stderr)
             dom = {}
+        sd = schem_disp.get(s, (s, s))
+        pages.append((t, sh, cp, dom, sd[0] or sd[1] or s, ws, pw))
+
+    root_of, groups, members_by_root = _global_net_index(
+        [(t, dom) for t, _sh, _cp, dom, _n, _ws, _pw in pages])
+
+    for t, sh, cp, dom, sch_name, ws, pw in pages:
         for c in sh["components"]:
             des = _synth_designator(db, c)
             if not des:
@@ -4904,23 +5088,50 @@ def cmd_polar(db, args):
             dtitle, ddisp, ddesc = dmap.get(du, ("", "", ""))
             mpn = ddisp or dtitle or c.get("title") or ""
             pins_out = []
+            anode = cathode = None
             for pol, p in pin_pol:
-                net = dom.get((des, p["key"]))
-                pins_out.append({
-                    "pin": p.get("pin"), "number": p.get("number"),
-                    "polarity": pol,
-                    "net": net if net else "",
-                    "no_connect": bool(p.get("no_connect"))})
+                net = dom.get((des, p["key"])) or ""
+                names = set(net_tokens(net))
+                roots = {root_of.get(x, x) for x in names}
+                aliases = sorted({y for r in roots
+                                  for y in groups.get(r, [r])})
+                members = sorted({m for r in roots
+                                  for m in members_by_root.get(r, set())},
+                                 key=natkey)
+                entry = {"pin": p.get("pin"), "number": p.get("number"),
+                         "polarity": pol, "net": net,
+                         "no_connect": bool(p.get("no_connect"))}
+                if not names:
+                    peers = _wire_peers_for_pin(p, cp, ws, pw)
+                    if peers:
+                        entry["wire_peers"] = peers
+                if len(aliases) > 1:
+                    entry["net_aliases"] = aliases
+                if members:
+                    entry["net_member_count"] = len(members)
+                    entry["net_members"] = members[:50]
+                    if len(members) > 50:
+                        entry["net_members_truncated"] = True
+                pins_out.append(entry)
+                if pol == "阳极":
+                    anode = entry
+                elif pol == "阴极":
+                    cathode = entry
             unresolved = any(pol is None for pol, _ in pin_pol)
             url = ds_url.get(mpn) or ds_url.get(dtitle) or ""
-            rows.append({
+            row = {
                 "designator": des, "page": t, "schematic": sch_name,
                 "device": mpn, "title": c.get("title") or "",
                 "matched_by": "prefix" if hit_prefix else "pin-names",
                 "pins": pins_out,
                 "polarity_resolved": not unresolved,
                 "designator_std": bool(_DESIG_STD.match(des)),
-                "datasheet": url})
+                "datasheet": url}
+            if anode and cathode:
+                row["direction"] = "A→K"
+                row["anode_net"] = anode["net"]
+                row["cathode_net"] = cathode["net"]
+            rows.append(row)
 
     rows.sort(key=lambda r: (natkey(r["designator"]), r["page"]))
     if getattr(args, "json", False):
@@ -4932,15 +5143,30 @@ def cmd_polar(db, args):
         f"需查手册 {len(rows) - n_ok}）"
         + (f"；⚠不规范位号 {n_bad} 个" if n_bad else ""))
     for r in rows:
-        out(f"\n{r['designator']}  {r['device'][:32]}  "
-            f"[{r['schematic']}::{r['page']}]"
+        loc = str(r["page"])
+        if not loc.startswith(str(r["schematic"]) + "::"):
+            loc = f"{r['schematic']}::{loc}"
+        out(f"\n{r['designator']}  {r['device'][:32]}  [{loc}]"
             + ("" if r["polarity_resolved"] else "  ⚠需查手册")
             + ("" if r["designator_std"] else "  ⚠位号不规范(应为字母+数字)"))
         for p in r["pins"]:
             pol = p["polarity"] or "?"
             nc = " [X]" if p["no_connect"] else ""
-            out(f"   {pol}  {p['pin']}(#{p['number']}) = {p['net'] or '(空)'}"
-                f"{nc}")
+            names = p.get("net_aliases") or net_tokens(p.get("net"))
+            if names:
+                disp = pick_primary_name(names)
+                al = alias_suffix(names, disp)
+            else:
+                disp, al = "(空)", ""
+            cnt = p.get("net_member_count")
+            tail = f"  [{cnt} 个连接点]" if cnt else ""
+            wp = p.get("wire_peers") or []
+            wpt = f"（同线: {', '.join(wp)}）" if wp else ""
+            out(f"   {pol}  {p['pin']}(#{p['number']}) = {disp}{al}{nc}{tail}{wpt}")
+            if cnt and cnt <= 12:
+                out(f"        同网: {', '.join(p.get('net_members') or [])}")
+        if r.get("direction"):
+            out("   方向: A(阳极) → K(阴极)，正偏 A→K 导通")
         if not r["polarity_resolved"] and r["datasheet"]:
             out(f"   datasheet: {r['datasheet']}")
 

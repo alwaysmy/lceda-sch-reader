@@ -107,11 +107,11 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `netfind <网络>` | 全局同网络(引脚级) | --json, 多工程 | 页/板/器件.引脚 全连接点 |
 | `trace <器件>` | 链路追踪 | --depth, --no-power, --link(多工程), --json | BFS 边 + 到达元件 |
 | `find <器件>` | 反查 | --raw, --json | 页/板/型号/网络 |
-| `search <正则>` | 全文搜索 | --case, --json | 页内命中行 |
+| `search <正则>` | 全文搜索 | --case, --json | 页内命中行；命中 `Name` 时附所在网络/连接点 |
 | `bom` | 物料清单 | --board, --bom-only, --json | 器件→值/供应商/板/页 |
 | `datasheets` | Datasheet URL | --json | 器件→数据手册链接 |
 | `pcbsch` | PCB↔SCH 器件核对 | --json | 反标改名/漏布局清单 |
-| `polar` | 极性器件清单 | --json | D/LED/TVS 极性网络归一（未归一附 datasheet） |
+| `polar` | 极性器件清单 | --json | 极性归一 + 方向(A→K) + 两端网络连接点（未归一附 datasheet） |
 | `review` | 电气规则审查 | --rules, --config, --table, --blocks, --blocks-cap, --netlist, --pages, --json | R1~R4 findings（ERROR/WARN/INFO）；可附端子包络表/块识别/SPICE |
 | `docs` | 文档清单 | --json | 创建/最后编辑时间/编辑人/ticket |
 | `render <页>` | 页渲染 SVG | --schematic, -o, --config, --no-labels, --no-texts, --pin-numbers | SVG（字体/文字位置取自工程存储） |
@@ -381,6 +381,13 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
     跨页不同端口命名）时，`netfind` 按整组匹配，`nets`/`netlist` 合并为一行。
     因此行数是**按物理网络**计，不是按名字计；要逐个名字核对时用
     `netfind <名字>`，需要全部名字时读行内 `aliases`。
+16. **`search` 命中 `Name` 会补网络**：端口/标签的命名属性只是排查入口，
+    命中后附带"所在网络 + 别名 + 连接点"（`--json` 的 `net_hints`）。
+    该补充需要一次全工程扫描（代价同 `netlist`）。
+17. **`polar` 给出方向与连通性**：每个极性器件标注 `A→K` 正偏方向、
+    两端网络名与同网连接点；未命名一侧给出"同线"对象（`wire_peers`）。
+    这些只是**事实陈列**——"是否存在多个驱动源/是否对顶"仍需结合手册与
+    驱动能力判断，工具不做电气结论（见 `docs/电气规则层建议` 与 R1 规则）。
 
 ## 五、格式规范来源与逆向过程记录
 
