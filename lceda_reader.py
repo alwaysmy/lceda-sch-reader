@@ -497,6 +497,9 @@ def _global_context(db):
     代价等同一次 netlist 扫描（parse + collect + resolve）。只在确实需要
     补充"名字所在网络"时调用（如 search 命中 Name 属性）。
     """
+    cached = getattr(db, "_alias_ctx", None)
+    if cached is not None:
+        return cached
     pages = []
     cid_names = {}
     for uuid, title, sch, dt in db.sheets():
@@ -517,8 +520,14 @@ def _global_context(db):
                 names.update(net_tokens(
                     dom.get((des, p.get("key") or p["pin"]), "")))
             cid_names.setdefault(cid, set()).update(names)
-    root_of, groups, members_by_root = _global_net_index(pages)
-    return root_of, groups, members_by_root, cid_names
+    (root_of, groups, members_by_root, pages_by_root,
+     counts) = _global_net_index(pages)
+    ctx = (root_of, groups, members_by_root, pages_by_root, counts, cid_names)
+    try:
+        db._alias_ctx = ctx
+    except Exception:
+        pass
+    return ctx
 
 
 def _wire_peers_for_pin(p, comp_pins, wires, pt_wires):
@@ -561,12 +570,16 @@ def _global_net_index(pages):
     root_of, groups = build_alias_groups(
         v for _t, d in pages for v in d.values())
     members = {}
+    pages_by_root = {}
+    counts = {}
     for title, d in pages:
         for (des, pin), net in d.items():
             for tok in net_tokens(net):
-                members.setdefault(root_of.get(tok, tok), set()).add(
-                    f"{des}.{pin}")
-    return root_of, groups, members
+                r = root_of.get(tok, tok)
+                members.setdefault(r, set()).add(f"{des}.{pin}")
+                pages_by_root.setdefault(r, set()).add(title)
+                counts[tok] = counts.get(tok, 0) + 1
+    return root_of, groups, members, pages_by_root, counts
 
 
 class LcedaDB(SchemaBackend):
@@ -4086,17 +4099,32 @@ def cmd_pinmap(db, args):
         rows.append({"designator": des, "symbol": c["title"],
                      "symbol_type": sym_t, "dnp": _is_unpopulated(c),
                      "pins": pinmap})
-    # 连通域网络名解析：为 net 为空的引脚推断网络名（走线拓扑，无启发式噪声）
+    # 连通域网络名解析：为 net 为空的引脚推断网络名（走线拓扑，无启发式噪声）。
+    # 默认**跨页**合并别名，并标注该网络出现在哪些页（同一根线跨页很常见）；
+    # --no-global 退回只在当前页合并（大工程提速用）。
     if not args.no_domain:
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+        ctx = None if getattr(args, "no_global", False) else _global_context(db)
         for row in rows:
             for pm in row["pins"]:
                 key = (row["designator"], pm["pin"])
-                pm["resolved_nets"] = ([] if pm["not_connected"] else
-                                       net_tokens(dom.get(key, "")))
-                if len(pm["resolved_nets"]) > 1:
-                    # 同一物理网络的其它名字（导线 NET / 端口 Name 别名）
-                    pm["aliases"] = pm["resolved_nets"]
+                local = ([] if pm["not_connected"]
+                         else net_tokens(dom.get(key, "")))
+                if ctx:
+                    (root_of, groups, _m, pages_by_root,
+                     counts, _cn) = ctx
+                    roots = {root_of.get(x, x) for x in local}
+                    names = sorted({y for r in roots
+                                    for y in groups.get(r, [r])})
+                    pages = sorted({p for r in roots
+                                    for p in pages_by_root.get(r, set())})
+                else:
+                    names, pages = local, []
+                pm["resolved_nets"] = names
+                if len(names) > 1:
+                    pm["aliases"] = names
+                if pages:
+                    pm["net_sheets"] = pages
                 if pm["not_connected"]:
                     continue
                 if not pm["net"]:
@@ -4114,9 +4142,20 @@ def cmd_pinmap(db, args):
                 wp = f"  [wire: {','.join(pm['wire_peers'])}]" if pm["wire_peers"] else ""
                 tag = "*" if pm.get("net_inferred") else ""
                 nc = " [X]" if pm["not_connected"] else ""
-                al = alias_suffix(pm.get("resolved_nets") or [], pm["net"])
+                names = pm.get("aliases") or net_tokens(pm.get("net"))
+                disp = (pick_primary_name(names, counts)
+                        if names else "")
+                al = alias_suffix(names, disp) if names else ""
+                pgs = pm.get("net_sheets") or []
+                if len(pgs) > 4:
+                    pg = (f"  [跨页: {', '.join(pgs[:4])} …(+{len(pgs) - 4})]")
+                elif len(pgs) > 1:
+                    pg = f"  [跨页: {', '.join(pgs)}]"
+                else:
+                    pg = ""
                 number = str(pm["number"]) if pm["number"] is not None else "?"
-                out(f"  {pm['pin']:12s} (#{number:>3})  {net_disp(pm['net']) or '(未命名)'}{tag}{nc}{al}{peer}{wp}")
+                out(f"  {pm['pin']:12s} (#{number:>3})  {disp or '(未命名)'}"
+                    f"{tag}{nc}{al}{pg}{peer}{wp}")
     if args.json:
         outj(rows)
 
@@ -4878,7 +4917,7 @@ def cmd_search(db_or_dbs, args):
         for title, d, hits in pages:
             hints = []
             if ctx:
-                root_of, groups, members_by_root, cid_names = ctx
+                root_of, groups, members_by_root, _pgs, _cnts, cid_names = ctx
                 for h in hits:
                     pr = _parse_name_attr(h)
                     if not pr:
@@ -5066,7 +5105,7 @@ def cmd_polar(db, args):
         sd = schem_disp.get(s, (s, s))
         pages.append((t, sh, cp, dom, sd[0] or sd[1] or s, ws, pw))
 
-    root_of, groups, members_by_root = _global_net_index(
+    root_of, groups, members_by_root, _pages_by_root, counts = _global_net_index(
         [(t, dom) for t, _sh, _cp, dom, _n, _ws, _pw in pages])
 
     for t, sh, cp, dom, sch_name, ws, pw in pages:
@@ -5154,7 +5193,7 @@ def cmd_polar(db, args):
             nc = " [X]" if p["no_connect"] else ""
             names = p.get("net_aliases") or net_tokens(p.get("net"))
             if names:
-                disp = pick_primary_name(names)
+                disp = pick_primary_name(names, counts)
                 al = alias_suffix(names, disp)
             else:
                 disp, al = "(空)", ""
@@ -6333,6 +6372,8 @@ def main():
     p.add_argument("--schematic", default=None, help="指定板名解决同名页")
     p.add_argument("--no-domain", action="store_true",
                    help="不做连通域网络名推断(仅原始网络名)")
+    p.add_argument("--no-global", action="store_true",
+                   help="别名只按本页合并(默认跨页全局合并，较慢)")
     p.set_defaults(fn=cmd_pinmap)
 
     p = sub.add_parser("pins", help="引脚级网络表(designator→网络,连通域精确方案)")

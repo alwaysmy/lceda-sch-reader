@@ -57,7 +57,7 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    | 文档清单（创建/最后编辑时间、编辑人、ticket——残留副本页判别） | `lceda_reader.py docs` |
    | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
    | 某页网络连接 | `lceda_reader.py nets "页名"` |
-   | 精确引脚网络表（推荐，含同网络关联引脚） | `lceda_reader.py pinmap "页名" [--designator U1]` |
+   | 精确引脚网络表（推荐，含同网络关联引脚、全局别名、跨页标注） | `lceda_reader.py pinmap "页名" [--designator U1] [--no-global]` |
    | 引脚级网络表（designator→网络+引脚名） | `lceda_reader.py pins "页名"` |
    | 跨页网络归并 | `lceda_reader.py netlist` |
    | 全局同网络查询(引脚级,等效网络高亮) | `lceda_reader.py netfind <网络名>` |
@@ -72,6 +72,22 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    | uuid 反查器件 | `lceda_reader.py devmap` |
    | 原始 NDJSON（调试） | `lceda_reader.py raw "页名" [-o 文件]` |
    | 结构化 JSON（供脚本） | `--json` 前缀，如 `lceda_reader.py --json bom` |
+
+## 常用排查路径（先 search，再精确查询）
+
+不知道从哪查起时，**先 `search` 再精确查询**，不要凭印象猜：
+
+1. 只有关键词（端口名/网络名/型号/注释）→ `search "<关键字>"`；
+   命中 `Name` / `Global Net Name` 时会直接给出**所在网络 + 别名 + 连接点**
+   （`--json` 的 `net_hints`）。
+2. 拿到网络名 → `netfind <名字>`；查任一别名都返回整组连接点。
+3. 拿到位号 → `pinmap <页> --designator <位号>`：精确引脚表，含全局别名与
+   该网络出现的页（`net_sheets` / `[跨页: …]`）。
+4. 要沿串阻/磁珠看链路 → `trace <位号>`，或对两脚器件另一端再做 `pinmap`。
+5. 二极管/LED/TVS 的方向与两端网络 → `polar`（`A→K`、两端连接点、未命名侧同线对象）。
+
+> `pinmap` 默认做一次全工程扫描（为了跨页别名与页标注），大工程会慢；
+> 只需要本页信息时加 `--no-global`。
 
 ## 关键格式事实（勿重新猜测，官方规范为准）
 

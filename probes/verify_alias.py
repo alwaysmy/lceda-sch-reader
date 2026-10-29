@@ -10,7 +10,9 @@
 可用环境变量 LCEDA_EPRJ 覆盖。
 """
 import io
+import json
 import os
+import subprocess
 import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
@@ -111,6 +113,39 @@ if multi:
     reps = [k for k in grouped if len(k) > 1]
     check(len(reps) == len({root_of.get(k[0], k[0]) for k in reps}),
           "多个名字的域合并为同一聚合键（无重复行）")
+
+print("[3] pinmap：全局别名 + 跨页标注")
+if multi:
+    names = sorted(multi[0])
+    rows_nf, _names = lr._netfind_one(db, names[0])
+    pages = sorted({r["sheet"] for r in rows_nf})
+    if rows_nf:
+        pins = []
+        for tgt in rows_nf:
+            proc = subprocess.run(
+                [sys.executable, os.path.join(ROOT, "lceda_reader.py"),
+                 "--eprj", EPRJ, "--json", "pinmap", tgt["sheet"],
+                 "--designator", tgt["designator"],
+                 "--schematic", tgt["schematic"]],
+                capture_output=True, text=True, encoding="utf-8",
+                env=dict(os.environ, PYTHONIOENCODING="utf-8",
+                         PYTHONUTF8="1"),
+                cwd=ROOT)
+            try:
+                cand = json.loads(proc.stdout)[0]["pins"]
+            except (ValueError, IndexError, KeyError):
+                continue
+            hit = [p for p in cand
+                   if p.get("aliases") and set(p["aliases"]) >= set(names)]
+            if hit:
+                pins = hit
+                break
+        check(bool(pins), f"pinmap 引脚带全组别名 {names}")
+        if pins:
+            check(set(pins[0].get("net_sheets") or []) == set(pages),
+                  f"pinmap 跨页标注与 netfind 页集合一致（{len(pages)} 页）")
+            check(len(pins[0]["aliases"]) > 1, "aliases 为多名字")
+            check(bool(pins[0].get("resolved_nets")), "resolved_nets 非空")
 
 db.close()
 print("ALL: " + ("PASS" if ok else "FAIL"))

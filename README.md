@@ -101,7 +101,7 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `components [页]` | 页内元件 | --json | 设计符/型号/参数描述 |
 | `texts <页>` | 页内文本注释 | --schematic, --json | 设计意图/调试备注 |
 | `nets <页>` | 页网络 | --schematic, --json | 网络名 → 归属元件 |
-| `pinmap <页>` | 精确引脚网络表 | --designator, --schematic, --no-domain, --json | 引脚→网络(peers/wire_peers/symbol_type/pin_type) |
+| `pinmap <页>` | 精确引脚网络表 | --designator, --schematic, --no-domain, --no-global, --json | 引脚→网络(peers/wire_peers/symbol_type/pin_type)；**全局别名 + 跨页标注** |
 | `pins <页>` | 引脚级网络 | --schematic, --json | 设计符.引脚 → 网络 |
 | `netlist` | 跨页网络归并 | --json | 网络名 → 页/元件 |
 | `netfind <网络>` | 全局同网络(引脚级) | --json, 多工程 | 页/板/器件.引脚 全连接点 |
@@ -146,6 +146,8 @@ semantic_validation, query_exit_code}`；`data` 保留原查询结果。
 - `nets` / `netlist` 按别名组合并为**一行**，JSON 行内新增 `aliases`
   （仅当存在别名时出现，含全部名字）；
 - `pinmap` 的 `resolved_nets` 即该组全部名字，文本行尾标注别名；
+  默认**跨页**合并（`--no-global` 退回只按本页），并给出 `net_sheets`
+  / 文本 `[跨页: …]` 说明该网络出现在哪些页；该命令因此会做一次全工程扫描；
 - 行的 `net` 字段是**显示主名**（非"引脚自动名"优先，其次出现引脚数多者，
   最后字典序），不影响查询——查任一名字都返回同一组；
   判定"引脚自动名"只看整串是否形如 `[A-Z]{1,3}\d{1,3}`（`PD5`/`PA11`）；
@@ -336,6 +338,9 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
 6. **网络归属全部基于连通域精确方案**（pins/nets/netlist/trace/find/pinmap 同源）：
    实例坐标 + PIN 相对坐标 + 旋转/镜像 → 引脚绝对坐标 → 精确匹配 WIRE 端点网络名。
    经串阻/磁珠/短接符间接连接的引脚链路完整，无几何近似的遗漏或噪声。
+   **注意 `netfind` 只返回"同一网络"的成员，不跨串阻/磁珠/二极管**——
+   要沿中间器件看链路请用 `trace` 或对另一端再做 `pinmap`；"某网络没有某电源"
+   这类结论用 `netfind` 是充分的，不要因为看不到另一端而怀疑工具。
 7. **`pinmap` 输出 peers/wire_peers**：对网络名为空的引脚输出 `peers`（同物理连接点
    引脚）与 `wire_peers`（同导线记录的其他引脚），用于识别串阻/耦合电容/
    晶体管链路，如：`LED1.A <- R8.1`、`LED1.K [wire: BUZZER1.2,D2.+,Q1.D]`。
