@@ -64,7 +64,7 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    | 多工程连接器对核对(候选) | `lceda_reader.py link-check` |
    | 多工程链路(经连接器桥跨工程) | `lceda_reader.py trace U1 --link "0:H2<->1:H2"` |
    | 链路追踪（沿网络BFS多跳，跨页） | `lceda_reader.py trace U1 [--no-power] [--depth N]` |
-   | Designator 反查（页/板/型号/网络） | `lceda_reader.py find U1` |
+   | Designator 反查（页/板/型号/网络；别名分组+跨页） | `lceda_reader.py find U1` |
    | 跨页搜器件/关键字（命中 Name 附所在网络与连接点） | `lceda_reader.py search "正则"` |
    | 全工程 BOM（按板过滤） | `lceda_reader.py bom [--board 板名] [--bom-only]` |
    | Datasheet URL 清单 | `lceda_reader.py datasheets` |
@@ -81,7 +81,8 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    命中 `Name` / `Global Net Name` 时会直接给出**所在网络 + 别名 + 连接点**
    （`--json` 的 `net_hints`）。
 2. 拿到网络名 → `netfind <名字>`；查任一别名都返回整组连接点。
-3. 拿到位号 → `pinmap <页> --designator <位号>`：精确引脚表，含全局别名与
+3. 拿到位号 → 先 `find <位号>`：定位所在页/板 + 所属网络（按别名分组、标跨页）；
+   需要逐脚细节再 `pinmap <页> --designator <位号>`：精确引脚表，含全局别名与
    该网络出现的页（`net_sheets` / `[跨页: …]`）。
 4. 要沿串阻/磁珠看链路 → `trace <位号>`，或对两脚器件另一端再做 `pinmap`。
 5. 二极管/LED/TVS 的方向与两端网络 → `polar`（`A→K`、两端连接点、未命名侧同线对象）。

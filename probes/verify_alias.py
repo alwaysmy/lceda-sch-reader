@@ -147,6 +147,24 @@ if multi:
             check(len(pins[0]["aliases"]) > 1, "aliases 为多名字")
             check(bool(pins[0].get("resolved_nets")), "resolved_nets 非空")
 
+        # find 也应给出同一别名组与页集合
+        proc = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "lceda_reader.py"),
+             "--eprj", EPRJ, "--json", "find", tgt["designator"]],
+            capture_output=True, text=True, encoding="utf-8",
+            env=dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1"),
+            cwd=ROOT)
+        try:
+            found = json.loads(proc.stdout)[0]
+        except (ValueError, IndexError, KeyError):
+            found = {}
+        fg = [g for g in (found.get("net_groups") or [])
+              if set(g.get("aliases") or [g.get("net")]) >= set(names)]
+        check(bool(fg), "find 的 net_groups 含同一别名组")
+        if fg:
+            check(set(fg[0].get("sheets") or []) == set(pages),
+                  "find 的 sheets 与 netfind 页集合一致")
+
 db.close()
 print("ALL: " + ("PASS" if ok else "FAIL"))
 sys.exit(0 if ok else 1)

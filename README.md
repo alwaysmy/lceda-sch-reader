@@ -32,7 +32,7 @@ python lceda_reader.py pins <页名>           rem 引脚级网络表（designat
 python lceda_reader.py netlist              rem 跨页网络归并（网络名→页/元件）
 python lceda_reader.py netfind <网络名>      rem 全局同网络查询（引脚级，等效"网络高亮"）
 python lceda_reader.py trace <设计符> [--no-power] [--depth N]   rem 链路追踪：从器件沿网络BFS跨页展开
-python lceda_reader.py find <设计符>         rem Designator 反查（页/板/型号/网络）
+python lceda_reader.py find <设计符>         rem Designator 反查（页/板/型号/网络，别名分组）
 python lceda_reader.py search <正则>         rem 跨全部页全文搜索
 python lceda_reader.py bom [--board 板名] [--bom-only]   rem 全工程物料清单（按器件uuid归并）
 python lceda_reader.py datasheets           rem 从 attributes 表导出 Datasheet URL 清单
@@ -106,7 +106,7 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `netlist` | 跨页网络归并 | --json | 网络名 → 页/元件 |
 | `netfind <网络>` | 全局同网络(引脚级) | --json, 多工程 | 页/板/器件.引脚 全连接点 |
 | `trace <器件>` | 链路追踪 | --depth, --no-power, --link(多工程), --json | BFS 边 + 到达元件 |
-| `find <器件>` | 反查 | --raw, --json | 页/板/型号/网络 |
+| `find <器件>` | 反查 | --raw, --json | 页/板/型号/网络（`net_groups`：别名+跨页） |
 | `search <正则>` | 全文搜索 | --case, --json | 页内命中行；命中 `Name` 时附所在网络/连接点 |
 | `bom` | 物料清单 | --board, --bom-only, --json | 器件→值/供应商/板/页 |
 | `datasheets` | Datasheet URL | --json | 器件→数据手册链接 |
@@ -249,8 +249,8 @@ LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内
 
 **1. 找某器件连接到哪里（单点）**
 ```
-python lceda_reader.py find U1        # 反查：页/板/型号 + 全部网络名
-python lceda_reader.py find U1 --json # 结构化输出
+python lceda_reader.py find U1        # 反查：页/板/型号 + 网络（别名分组、标跨页）
+python lceda_reader.py find U1 --json # 结构化输出（net_groups 含 aliases/sheets）
 ```
 
 **2. 查某网络连了哪些器件（配对，跨页归并）**

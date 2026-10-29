@@ -4649,6 +4649,7 @@ def cmd_find(db_or_dbs, args):
     for di, db in enumerate(dbs):
         sn = db.schem_map()
         dev = db.device_map()
+        page_doms = []
         for uuid, title, sch, dt in db.sheets():
             if dt != 1:
                 continue
@@ -4664,6 +4665,7 @@ def cmd_find(db_or_dbs, args):
                 if pinc:
                     comp_pins, wires, pt_wires, endp = pinc
                     dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+                    page_doms.append((title, dom))
             for c in sheet["components"]:
                 if (c.get("designator") or "").upper() == des:
                     d, n = sn.get(sch, ("?", "?"))
@@ -4675,6 +4677,28 @@ def cmd_find(db_or_dbs, args):
                                 nets.append(net)
                     hits.append({"eprj": di, "sheet": title, "schematic": d,
                                  **fr, "nets": nets})
+        # 同一物理网络的多个名字：按全局别名分组（与 netfind/netlist 同源）
+        if not args.raw and page_doms:
+            (root_of, groups, _members, pages_by_root,
+             counts) = _global_net_index(page_doms)
+            for h in hits:
+                if h.get("eprj") != di:
+                    continue
+                toks = {t for n in h.get("nets") or [] for t in net_tokens(n)}
+                roots = {root_of.get(t, t) for t in toks}
+                gs = []
+                for r in roots:
+                    names = groups.get(r, [r])
+                    g = {"net": pick_primary_name(names, counts)}
+                    if len(names) > 1:
+                        g["aliases"] = names
+                    pgs = sorted(pages_by_root.get(r, set()))
+                    if pgs:
+                        g["sheets"] = pgs
+                    gs.append(g)
+                gs.sort(key=lambda x: x["net"])
+                if gs:
+                    h["net_groups"] = gs
     if not hits:
         out(f"未找到 {des}")
         sys.exit(2)
@@ -4684,7 +4708,17 @@ def cmd_find(db_or_dbs, args):
     for h in hits:
         tag = f"工程{h['eprj']} " if multi else ""
         out(f"{tag}{des}: {h['sheet']} (sch={h['schematic']})  {h['title']}  {h['device']}")
-        if h.get("nets"):
+        if h.get("net_groups"):
+            out("    nets:")
+            for g in h["net_groups"]:
+                item = g["net"] + alias_suffix(g.get("aliases") or [], g["net"])
+                pgs = g.get("sheets") or []
+                if len(pgs) > 3:
+                    item += f"  [跨页: {', '.join(pgs[:3])} …(+{len(pgs) - 3})]"
+                elif len(pgs) > 1:
+                    item += f"  [跨页: {', '.join(pgs)}]"
+                out(f"      {item}")
+        elif h.get("nets"):
             uniq = sorted({t for n in h["nets"] for t in net_tokens(n)})
             out(f"    nets: {','.join(uniq)}")
 

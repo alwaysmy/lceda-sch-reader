@@ -25,6 +25,10 @@
 - 主名改用全局"名字出现引脚数"，避免 `AGND/GND` 这类误选。
 - 回归：`verify_alias.py` 增加 pinmap 全局/跨页断言。实测 MMC-110
   `H400.30 = ID_IN（别名: PD6, USART2_RX）`，跨 4 页。
+- **`find` 同步按全局别名分组**：JSON 新增 `net_groups`
+  （`{net, aliases?, sheets?}`），原 `nets` 字段保留；文本改为逐条列出
+  `主名（别名: …）[跨页: …]`，不再把同一根线拆成多个名字平铺。
+  回归：`verify_alias.py` 增加 find 分组/页集合与 netfind 一致的断言。
 
 ### 核对记录（netfind 是否可靠）
 
