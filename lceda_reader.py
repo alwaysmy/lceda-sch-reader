@@ -442,6 +442,15 @@ def alias_suffix(names, primary):
     return f"（别名: {', '.join(others)}）" if others else ""
 
 
+def net_names_label(names):
+    """文本显示：该物理网络的全部名字（逗号分隔）。
+
+    官方约定网络名不含逗号，因此"逗号分隔"即表示同一根线的多个名字；
+    不再只显示主名，避免读者以为只有一个名字。
+    """
+    return ", ".join(sorted({n for n in names if n}))
+
+
 def _parse_name_attr(line):
     """搜索命中行 -> ``(parent_cid, key, value)``。
 
@@ -4143,9 +4152,8 @@ def cmd_pinmap(db, args):
                 tag = "*" if pm.get("net_inferred") else ""
                 nc = " [X]" if pm["not_connected"] else ""
                 names = pm.get("aliases") or net_tokens(pm.get("net"))
-                disp = (pick_primary_name(names, counts)
-                        if names else "")
-                al = alias_suffix(names, disp) if names else ""
+                disp = net_names_label(names) if names else ""
+                al = ""
                 pgs = pm.get("net_sheets") or []
                 if len(pgs) > 4:
                     pg = (f"  [跨页: {', '.join(pgs[:4])} …(+{len(pgs) - 4})]")
@@ -4282,7 +4290,7 @@ def cmd_nets(db, args):
             row["net_sheets"] = pgs
         rows.append(row)
         if not args.json:
-            label = f"{net}{alias_suffix(names, net)}"
+            label = net_names_label(names)
             if len(pgs) > 3:
                 label += f" [跨页: {', '.join(pgs[:3])} …(+{len(pgs) - 3})]"
             elif len(pgs) > 1:
@@ -4342,8 +4350,8 @@ def cmd_pins(db, args):
             row["net_sheets"] = pages
         rows.append(row)
         if not args.json:
-            out(f"{des:10s} {pin:12s} "
-                f"{(primary + alias_suffix(names, primary)) if primary else '(未命名)'}")
+            label = net_names_label(names) if names else ""
+            out(f"{des:10s} {pin:12s} {label or '(未命名)'}")
     # NO_CONNECT 引脚：不参与连通域，单独列出（标记 X，net 恒为空）
     for (des, cid), plist in sorted(comp_pins.items()):
         for p in plist:
@@ -4468,6 +4476,9 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
     def _label(r):
         return pick_primary_name(groups.get(r, [r]), counts)
 
+    def _names(r):
+        return net_names_label(groups.get(r, [r]))
+
     rows = [{"designator": d,
              "hops": hops[d],
              "nets": sorted({_label(nm) for nm, f, t in edges
@@ -4480,7 +4491,7 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
         return
     out(f"== {args.designator} 链路追踪 (BFS, 最大{args.depth}跳) ==")
     for nm, f, t in edges:
-        out(f"  [{_label(nm):22s}] {f:8s} -> {t}")
+        out(f"  [{_names(nm)}] {f} -> {t}")
     out("== 到达的元件 ==")
     for r in rows:
         locs = ",".join(f"{s}({sn.get(sch, ('?','?'))[1]})"
@@ -4586,8 +4597,7 @@ def _trace_multi(dbs, args):
                         continue
                     visited.add(k)
                     hops[k] = hop + 1
-                    _lbl = pick_primary_name(
-                        p["groups"].get(nm, [nm]), p["counts"])
+                    _lbl = net_names_label(p["groups"].get(nm, [nm]))
                     edges.append((f"工程{di}:{_lbl}", f"{cur}", f"{nxt}"))
                     frontier.append((k, hop + 1))
         # 跨工程桥（双向：当前侧可能是 des_a 或 des_b，--link 写法两种都支持）
@@ -4629,12 +4639,10 @@ def _trace_multi(dbs, args):
                                         continue
                                     visited.add(k)
                                     hops[k] = hop + 1
-                                    _l1 = pick_primary_name(
-                                        per[src_i]["groups"].get(nm, [nm]),
-                                        per[src_i]["counts"])
-                                    _l2 = pick_primary_name(
-                                        per[dst_i]["groups"].get(nm2, [nm2]),
-                                        per[dst_i]["counts"])
+                                    _l1 = net_names_label(
+                                        per[src_i]["groups"].get(nm, [nm]))
+                                    _l2 = net_names_label(
+                                        per[dst_i]["groups"].get(nm2, [nm2]))
                                     edges.append(
                                         (f"桥{_l1}->{_l2}",
                                          f"工程{src_i}:{src_des}", f"{nxt}"))
@@ -4647,7 +4655,7 @@ def _trace_multi(dbs, args):
         return
     out(f"== {args.designator} 链路追踪（多工程, 最大{args.depth}跳） ==")
     for nm, f, t in edges:
-        out(f"  [{nm:26s}] {f:8s} -> {t}")
+        out(f"  [{nm}] {f} -> {t}")
     out("== 到达的元件 ==")
     for r in rows:
         out(f"  工程{r['eprj']} 跳{r['hops']}  {r['designator']}")
@@ -4699,7 +4707,7 @@ def cmd_netlist(db, args):
             row["aliases"] = names
         rows.append(row)
         if not args.json:
-            label = f"{net}{alias_suffix(names, net)}"
+            label = net_names_label(names)
             out(f"{str(label or '(未命名)'):24s}  {','.join(e['sheets']):28s}  "
                 f"{','.join(sorted([c or '' for c in e['components']], key=natkey))}")
     rows.sort(key=lambda r: r["net"] or "")
@@ -4779,7 +4787,7 @@ def cmd_find(db_or_dbs, args):
         if h.get("net_groups"):
             out("    nets:")
             for g in h["net_groups"]:
-                item = g["net"] + alias_suffix(g.get("aliases") or [], g["net"])
+                item = net_names_label(g.get("aliases") or [g["net"]])
                 pgs = g.get("sheets") or []
                 if len(pgs) > 3:
                     item += f"  [跨页: {', '.join(pgs[:3])} …(+{len(pgs) - 3})]"
@@ -4817,10 +4825,8 @@ def cmd_netfind(db_or_dbs, args):
     for di, names, rows in results:
         if not rows:
             continue
-        hit = next((n for n in names if n.upper() == args.net.upper()), args.net)
         tag = f"工程{di} " if multi else ""
-        al = alias_suffix(names, hit)
-        out(f"== {tag}网络 {args.net}{al} ({len(rows)} 个连接点" +
+        out(f"== {tag}网络 {net_names_label(names)} ({len(rows)} 个连接点" +
             (", 多工程" if multi else "") + ") ==")
         cur = None
         for r in rows:
@@ -5295,8 +5301,8 @@ def cmd_polar(db, args):
             nc = " [X]" if p["no_connect"] else ""
             names = p.get("net_aliases") or net_tokens(p.get("net"))
             if names:
-                disp = pick_primary_name(names, counts)
-                al = alias_suffix(names, disp)
+                disp = net_names_label(names)
+                al = ""
             else:
                 disp, al = "(空)", ""
             cnt = p.get("net_member_count")

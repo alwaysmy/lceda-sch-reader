@@ -124,9 +124,9 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
   不再是几何近似。经串阻/磁珠/短接符间接连接的引脚链路完整。
 - **网络别名（同一根线多个名字）**：导线 `NET`、端口 `Name`、跨页不同端口的
   命名，只要属于同一物理连通域就是同一网络。`netfind <任一名字>` 返回**整组**
-  连接点并在标题标注 `（别名: …）`；`nets`/`netlist` 每根物理网络只占**一行**，
-  行内 `aliases` 给出全组名字；`pinmap` 文本标注别名、JSON 有 `aliases`。
-  行的 `net` 只是**显示主名**（非引脚自动名优先），不影响查询。
+  连接点，标题**并列全部名字**（`A, B, C`）；`nets`/`netlist` 每根物理网络
+  只占**一行**，行内 `aliases` 给出全组名字；`pinmap` 文本并列全部名字、JSON 有 `aliases`。
+  JSON 的 `net` 只是单一主名（非引脚自动名优先），文本始终并列全部名字；主名不影响查询。
   **汇报时若某行带 aliases，要说明"这些名字是同一根线"**，不要当成两个网络。
 - **`pinmap` 输出 symbol_type 与 pin_type**：元件 `symbol_type`（2=Part/18=电源/
   19=NetPort/22=Short 短接符/21=NoneElec）用于区分真实器件与框图/电源符号；

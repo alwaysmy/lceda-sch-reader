@@ -20,20 +20,19 @@
 ### 修复 / 增强（pinmap / find）
 
 - 修复 `pinmap` 文本重复别名：此前用已拼接的 `net` 串去比对名字列表，
-  导致同一网络的两个名字被重复列出；现改为「主名 + 其余名字」。
-  示例：`ID_IN, USART2_RX（别名: ID_IN, USART2_RX）`
-  → `ID_IN（别名: PD6, USART2_RX）`。
+  导致同一网络的两个名字被重复列出；现文本直接**并列全部名字**。
+  示例：`ID_IN, USART2_RX（别名: ID_IN, USART2_RX）` → `ID_IN, PD6, USART2_RX`。
 - `pinmap` 默认**跨页**别名：`resolved_nets` / `aliases` 为全局名字集，
   新增 `net_sheets`（该网络出现的页；文本 `[跨页: …]`，超过 4 页折叠计数）。
-  示例：`ID_IN（别名: PD6, USART2_RX）[跨页: 内部通信总线, 外部通信接口, 控制器 …]`。
+  示例：`ID_IN, PD6, USART2_RX  [跨页: 内部通信总线, 外部通信接口, 控制器 …]`。
 - 新增 `--no-global`（退回只按本页合并，大工程提速）；全局上下文按 db 缓存。
 - 主名改用全局"名字出现引脚数"，避免 `AGND/GND` 这类误选。
 - **`find` 同步按全局别名分组**：JSON 新增 `net_groups`
   （`{net, aliases?, sheets?}`），原 `nets` 字段保留；文本改为逐条列出
-  `主名（别名: …）[跨页: …]`，不再把同一根线拆成多个名字平铺。
-  示例：`ID_OUT（别名: PD5, USART2_TX）`。
+  `全部名字（逗号分隔）[跨页: …]`，不再把同一根线拆成多个名字平铺。
+  示例：`ID_OUT, PD5, USART2_TX`。
 - **`nets` / `pins` / `trace` 同步按别名组处理**：`nets`、`pins` 默认跨页闭包
-  （`--no-global` 退回按页），输出主名 + 别名，JSON 增 `aliases` / `net_sheets`；
+  （`--no-global` 退回按页），文本并列全部名字，JSON 增 `aliases` / `net_sheets`；
   `trace` 以别名组为边，不再把同一物理网络拆成多条边（此前 `PD5` 与
   `USART2_TX` 会各算一条）。
 - `polar` 的方向措辞加限定：`A→K` 是符号极性/正向；TVS、稳压管等
@@ -64,11 +63,11 @@
   多值并入 `net_of` / `sheet["nets"]` / `endp`（原为直接 `continue`）。
 - **全局别名闭包**：新增 `build_alias_groups()`（并查集），跨页按名字共现合并
   （A≡B、B≡C → 一组）；`resolve_nets_by_domain` 收集域名时按 token 拆分。
-- **输出按物理网络聚合**：`nets` / `netlist` 合并为一行，文本标注
-  `（别名: …）`，JSON 仅在存在别名时新增 `aliases`；`netfind` 按别名组匹配，
-  查任一名字返回整组；`pinmap` 文本标注别名、JSON 追加 `aliases`。
+- **输出按物理网络聚合**：`nets` / `netlist` 合并为一行，文本并列全部名字，
+  JSON 仅在存在别名时新增 `aliases`；`netfind` 按别名组匹配，
+  查任一名字返回整组；`pinmap` 文本并列全部名字、JSON 追加 `aliases`。
 - **主名规则**：`pick_primary_name`（非引脚自动名优先 → 引脚数多者 → 字典序），
-  只影响显示与 `net` 字段，不影响查询。判定"引脚自动名"仅认整串
+  只影响 JSON 的 `net` 与排序，文本始终并列全名，不影响查询。判定"引脚自动名"仅认整串
   `[A-Z]{1,3}\d{1,3}`（`PD5`/`PA11`）；`PD6_UART_TX1`/`GPIOA1`/`PD1234` 不算，
   `CS1`/`D1` 会算但仅影响显示；名字全集始终保留在 `aliases`，已有回归用例。
 - **报告**：`--json-report` 的 `completeness_scope` 增加 `alias_closure`，
