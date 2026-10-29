@@ -41,13 +41,13 @@ check(all_names == {"A", "B", "C"}, f"传递闭包 A-B, B-C -> {sorted(all_names
 check(len({root_of[n] for n in ("A", "B", "C")}) == 1, "三个名字同属一组")
 root2, _g2 = lr.build_alias_groups(["X", "Y"])
 check(root2["X"] != root2["Y"], "无共现的名字不合并")
-check(lr.pick_primary_name(["PD5", "USART2_TX"]) == "USART2_TX",
+check(lr.pick_primary_name(["PA0", "SPI1_MOSI"]) == "SPI1_MOSI",
       "非引脚自动名优先")
 check(lr.pick_primary_name(["GND", "AGND"], {"GND": 100, "AGND": 2}) == "GND",
       "同名条件下引脚多者优先")
-check(lr.alias_suffix(["ID_OUT", "USART2_TX"], "ID_OUT") == "（别名: USART2_TX）",
+check(lr.alias_suffix(["NET_A", "SPI1_MOSI"], "NET_A") == "（别名: SPI1_MOSI）",
       "别名后缀只列其它名字")
-check(lr.alias_suffix(["ID_OUT"], "ID_OUT") == "", "无别名时无后缀")
+check(lr.alias_suffix(["NET_A"], "NET_A") == "", "无别名时无后缀")
 
 # 引脚自动名判定边界：只认"整串 = 1~3 字母 + 1~3 数字"
 check(lr._is_pin_like_name("PD6") is True, "PD6 -> 引脚自动名")

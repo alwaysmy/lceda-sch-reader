@@ -14,6 +14,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 READER = os.path.join(ROOT, "lceda_reader.py")
 EPRJ = os.environ.get("LCEDA_EPRJ") or os.path.normpath(
     os.path.join(ROOT, "..", "examples", "涡流传感器.eprj2"))
+# 默认样例工程里的端口 Name（可用 LCEDA_SEARCH_TERM 覆盖为其它工程的词）
+SEARCH_TERM = os.environ.get("LCEDA_SEARCH_TERM") or "VREF2.5V"
 ENV = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
 
 ok = True
@@ -40,7 +42,7 @@ if not os.path.isfile(EPRJ):
 print(f"工程: {EPRJ}")
 
 print("[1] search 命中 Name -> 所在网络提示")
-rc, out, err = run(["--json", "search", "VREF2.5V"])
+rc, out, err = run(["--json", "search", SEARCH_TERM])
 check(rc == 0, f"search rc={rc}")
 try:
     rows = json.loads(out)
@@ -52,7 +54,7 @@ check(bool(hints), f"至少一条 net_hints（{len(hints)}）")
 if hints:
     h = hints[0]
     check(h.get("member_count", 0) > 1, f"成员数 > 1（{h.get('member_count')}）")
-    check("VREF2.5V" in (h.get("aliases") or []), "aliases 含命中的名字")
+    check(SEARCH_TERM in (h.get("aliases") or []), "aliases 含命中的名字")
     check(bool(h.get("net")), f"net 非空（{h.get('net')}）")
     check(len(h.get("members") or []) > 0, "members 非空")
 
