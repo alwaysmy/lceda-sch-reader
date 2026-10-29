@@ -32,6 +32,12 @@
   （`{net, aliases?, sheets?}`），原 `nets` 字段保留；文本改为逐条列出
   `主名（别名: …）[跨页: …]`，不再把同一根线拆成多个名字平铺。
   示例：`ID_OUT（别名: PD5, USART2_TX）`。
+- **`nets` / `pins` / `trace` 同步按别名组处理**：`nets`、`pins` 默认跨页闭包
+  （`--no-global` 退回按页），输出主名 + 别名，JSON 增 `aliases` / `net_sheets`；
+  `trace` 以别名组为边，不再把同一物理网络拆成多条边（此前 `PD5` 与
+  `USART2_TX` 会各算一条）。
+- `polar` 的方向措辞加限定：`A→K` 是符号极性/正向；TVS、稳压管等
+  保护器件的工作方向需按手册确认，避免把"正向导通"当成功能结论。
 - 回归：`verify_alias.py` 增加 pinmap 全局/跨页、find 分组与页集合断言。
 
 ### 核对记录（netfind 的适用边界）

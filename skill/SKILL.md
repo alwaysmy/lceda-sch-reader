@@ -56,14 +56,14 @@ description: 读取/查询/核对立创EDA（嘉立创EDA、EasyEDA Pro、LCEDA�
    | 电气规则审查（R1~R4；可附块识别/端子包络/SPICE） | `lceda_reader.py review [--rules R1,R4] [--table] [--blocks] [--pages ...]` |
    | 文档清单（创建/最后编辑时间、编辑人、ticket——残留副本页判别） | `lceda_reader.py docs` |
    | 页渲染为 SVG（字体/文字位置取自工程存储） | `lceda_reader.py render "页名" [-o out.svg] [--no-texts] [--pin-numbers]` |
-   | 某页网络连接 | `lceda_reader.py nets "页名"` |
+   | 某页网络连接（别名分组+跨页） | `lceda_reader.py nets "页名" [--no-global]` |
    | 精确引脚网络表（推荐，含同网络关联引脚、全局别名、跨页标注） | `lceda_reader.py pinmap "页名" [--designator U1] [--no-global]` |
-   | 引脚级网络表（designator→网络+引脚名） | `lceda_reader.py pins "页名"` |
-   | 跨页网络归并 | `lceda_reader.py netlist` |
+   | 引脚级网络表（designator→网络，别名） | `lceda_reader.py pins "页名" [--no-global]` |
+   | 跨页网络归并（别名分组） | `lceda_reader.py netlist` |
    | 全局同网络查询(引脚级,等效网络高亮) | `lceda_reader.py netfind <网络名>` |
    | 多工程连接器对核对(候选) | `lceda_reader.py link-check` |
    | 多工程链路(经连接器桥跨工程) | `lceda_reader.py trace U1 --link "0:H2<->1:H2"` |
-   | 链路追踪（沿网络BFS多跳，跨页） | `lceda_reader.py trace U1 [--no-power] [--depth N]` |
+   | 链路追踪（沿网络BFS多跳，跨页；同一别名组只算一条边） | `lceda_reader.py trace U1 [--no-power] [--depth N]` |
    | Designator 反查（页/板/型号/网络；别名分组+跨页） | `lceda_reader.py find U1` |
    | 跨页搜器件/关键字（命中 Name 附所在网络与连接点） | `lceda_reader.py search "正则"` |
    | 全工程 BOM（按板过滤） | `lceda_reader.py bom [--board 板名] [--bom-only]` |

@@ -165,6 +165,41 @@ if multi:
             check(set(fg[0].get("sheets") or []) == set(pages),
                   "find 的 sheets 与 netfind 页集合一致")
 
+        # nets / pins / trace 也应使用同一全局别名组
+        def _json_run(argv):
+            pp = subprocess.run(
+                [sys.executable, os.path.join(ROOT, "lceda_reader.py"),
+                 "--eprj", EPRJ] + argv,
+                capture_output=True, text=True, encoding="utf-8",
+                env=dict(os.environ, PYTHONIOENCODING="utf-8",
+                         PYTHONUTF8="1"),
+                cwd=ROOT)
+            try:
+                return json.loads(pp.stdout)
+            except (ValueError, TypeError):
+                return None
+
+        nr = _json_run(["--json", "nets", tgt["sheet"],
+                        "--schematic", tgt["schematic"]]) or []
+        nrow = [r for r in nr
+                if set(r.get("aliases") or [r.get("net")]) >= set(names)]
+        check(bool(nrow), "nets 行含同一别名组")
+        if nrow:
+            check(set(nrow[0].get("net_sheets") or []) == set(pages),
+                  "nets 的 net_sheets 与 netfind 页集合一致")
+
+        pr = _json_run(["--json", "pins", tgt["sheet"],
+                        "--schematic", tgt["schematic"]]) or []
+        prow = [r for r in pr
+                if set(r.get("aliases") or [r.get("net")]) >= set(names)]
+        check(bool(prow), "pins 行含同一别名组")
+
+        tr = _json_run(["--json", "trace", tgt["designator"],
+                        "--no-power", "--depth", "1"]) or {}
+        labels = {e.get("net") for e in (tr.get("edges") or [])}
+        check(len(labels & set(names)) <= 1,
+              "trace 不把同一别名组拆成多条边")
+
 db.close()
 print("ALL: " + ("PASS" if ok else "FAIL"))
 sys.exit(0 if ok else 1)

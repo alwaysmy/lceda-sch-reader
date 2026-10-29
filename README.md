@@ -100,12 +100,12 @@ set LCEDA_EPRJ=<路径>\工程.eprj2
 | `boards` | 页标题块 | --json | 每页 @Board Name/@Page Name/Version |
 | `components [页]` | 页内元件 | --json | 设计符/型号/参数描述 |
 | `texts <页>` | 页内文本注释 | --schematic, --json | 设计意图/调试备注 |
-| `nets <页>` | 页网络 | --schematic, --json | 网络名 → 归属元件 |
+| `nets <页>` | 页网络 | --schematic, --no-global, --json | 网络名（别名+跨页）→ 归属元件 |
 | `pinmap <页>` | 精确引脚网络表 | --designator, --schematic, --no-domain, --no-global, --json | 引脚→网络(peers/wire_peers/symbol_type/pin_type)；**全局别名 + 跨页标注** |
-| `pins <页>` | 引脚级网络 | --schematic, --json | 设计符.引脚 → 网络 |
-| `netlist` | 跨页网络归并 | --json | 网络名 → 页/元件 |
+| `pins <页>` | 引脚级网络 | --schematic, --no-global, --json | 设计符.引脚 → 网络（别名） |
+| `netlist` | 跨页网络归并 | --json | 网络名（别名）→ 页/元件 |
 | `netfind <网络>` | 全局同网络(引脚级) | --json, 多工程 | 页/板/器件.引脚 全连接点 |
-| `trace <器件>` | 链路追踪 | --depth, --no-power, --link(多工程), --json | BFS 边 + 到达元件 |
+| `trace <器件>` | 链路追踪 | --depth, --no-power, --link(多工程), --json | BFS 边（按别名组，不重复）+ 到达元件 |
 | `find <器件>` | 反查 | --raw, --json | 页/板/型号/网络（`net_groups`：别名+跨页） |
 | `search <正则>` | 全文搜索 | --case, --json | 页内命中行；命中 `Name` 时附所在网络/连接点 |
 | `bom` | 物料清单 | --board, --bom-only, --json | 器件→值/供应商/板/页 |
@@ -148,6 +148,8 @@ semantic_validation, query_exit_code}`；`data` 保留原查询结果。
 - `pinmap` 的 `resolved_nets` 即该组全部名字，文本行尾标注别名；
   默认**跨页**合并（`--no-global` 退回只按本页），并给出 `net_sheets`
   / 文本 `[跨页: …]` 说明该网络出现在哪些页；该命令因此会做一次全工程扫描；
+- `nets` / `pins` / `find` / `trace` 同样按**别名组**处理：同一根线只算一个网络，
+  不因多个名字重复成多行/多条边（`nets`/`pins` 也可用 `--no-global` 退回按页）；
 - 行的 `net` 字段是**显示主名**（非"引脚自动名"优先，其次出现引脚数多者，
   最后字典序），不影响查询——查任一名字都返回同一组；
   判定"引脚自动名"只看整串是否形如 `[A-Z]{1,3}\d{1,3}`（`PD5`/`PA11`）；

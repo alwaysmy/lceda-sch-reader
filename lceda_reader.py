@@ -4238,16 +4238,25 @@ def cmd_nets(db, args):
         sys.exit(2)
     comp_pins, wires, pt_wires, endp = pinc
     dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
-    # 同一物理网络的多个名字先做别名闭包，输出按"网络组"聚合（不再重复成多行）
-    root_of, groups = build_alias_groups(
-        list(dom.values()) + [n["net"] for n in sheet["nets"] if n.get("net")])
+    # 同一物理网络的多个名字先做别名闭包，输出按"网络组"聚合（不再重复成多行）。
+    # 默认**全局**（跨页）闭包，与 pinmap/netlist/netfind 一致；--no-global 退回按页。
+    if getattr(args, "no_global", False):
+        root_of, groups = build_alias_groups(
+            list(dom.values()) + [n["net"] for n in sheet["nets"] if n.get("net")])
+        pages_by_root = {}
+        counts = {}
+        for (des, pin), net in dom.items():
+            for tok in net_tokens(net):
+                counts[tok] = counts.get(tok, 0) + 1
+    else:
+        (root_of, groups, _members, pages_by_root,
+         counts, _cn) = _global_context(db)
     # 网络 -> 元件（designator 去重合并）
-    counts, net_comps = {}, {}
+    net_comps = {}
     for (des, pin), net in dom.items():
         if not net:
             continue
         for tok in net_tokens(net):
-            counts[tok] = counts.get(tok, 0) + 1
             net_comps.setdefault(tok, set()).add(des)
     # 网络 -> 端点坐标（按别名组合并）
     net_pts = {}
@@ -4268,9 +4277,16 @@ def cmd_nets(db, args):
                "points": sorted(net_pts.get(root, []))}
         if len(names) > 1:
             row["aliases"] = names
+        pgs = sorted(pages_by_root.get(root, set()))
+        if pgs:
+            row["net_sheets"] = pgs
         rows.append(row)
         if not args.json:
             label = f"{net}{alias_suffix(names, net)}"
+            if len(pgs) > 3:
+                label += f" [跨页: {', '.join(pgs[:3])} …(+{len(pgs) - 3})]"
+            elif len(pgs) > 1:
+                label += f" [跨页: {', '.join(pgs)}]"
             out(f"{label:20s} <- {','.join(sorted(comps)):24s} {pts}")
     rows.sort(key=lambda r: r["net"])
     if args.json:
@@ -4294,6 +4310,14 @@ def cmd_pins(db, args):
         sys.exit(2)
     comp_pins, wires, pt_wires, endp = pinc
     dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
+    # 默认全局（跨页）别名，与 netfind/pinmap/netlist 一致；--no-global 退回按页
+    if getattr(args, "no_global", False):
+        root_of, groups, pages_by_root, counts = {}, {}, {}, {}
+        use_global = False
+    else:
+        (root_of, groups, _members, pages_by_root,
+         counts, _cn) = _global_context(db)
+        use_global = True
     rows = []
     seen = set()
     for (des, pin), net in sorted(dom.items()):
@@ -4301,9 +4325,25 @@ def cmd_pins(db, args):
         if key in seen:
             continue
         seen.add(key)
-        rows.append({"designator": des, "pin": pin, "net": net_disp(net)})
+        local = net_tokens(net)
+        if use_global:
+            roots = {root_of.get(x, x) for x in local}
+            names = sorted({y for r in roots for y in groups.get(r, [r])})
+            pages = sorted({p for r in roots
+                            for p in pages_by_root.get(r, set())})
+        else:
+            names, pages = local, []
+        primary = pick_primary_name(names, counts) if names else ""
+        row = {"designator": des, "pin": pin,
+               "net": primary or "", "nets": names}
+        if len(names) > 1:
+            row["aliases"] = names
+        if pages:
+            row["net_sheets"] = pages
+        rows.append(row)
         if not args.json:
-            out(f"{des:10s} {pin:12s} {net_disp(net) or '(未命名)'}")
+            out(f"{des:10s} {pin:12s} "
+                f"{(primary + alias_suffix(names, primary)) if primary else '(未命名)'}")
     # NO_CONNECT 引脚：不参与连通域，单独列出（标记 X，net 恒为空）
     for (des, cid), plist in sorted(comp_pins.items()):
         for p in plist:
@@ -4358,7 +4398,7 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
     """单工程链路追踪（原 cmd_trace 逻辑）。"""
     sn = db.schem_map()
     dev = db.device_map()
-    net_index = {}   # net -> {sheet: set(designators)}
+    page_doms = []
     des_locs = {}    # designator -> [(sheet, schematic)]
     for uuid, title, sch, dt in db.sheets():
         if dt != 1:
@@ -4372,19 +4412,23 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
             continue
         comp_pins, wires, pt_wires, endp = pinc
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
-        # 引脚 -> 网络 反查：建 网络 -> 元件（designator 统一大写）
-        pin_net_of = {}
-        for (des, pin), net in dom.items():
-            if net:
-                for tok in net_tokens(net):
-                    pin_net_of.setdefault(tok, set()).add(des.upper())
-        for net, des_set in pin_net_of.items():
-            e = net_index.setdefault(net, {})
-            e.setdefault(title, set()).update(des_set)
+        page_doms.append((title, dom))
         for c in sheet["components"]:
             if c.get("designator"):
                 des_locs.setdefault(c["designator"].upper(),
                                     []).append((title, sch))
+    # 按**别名组**建索引：同一物理网络多个名字只算一条边（此前每个名字各算一条，
+    # 看起来像多条网络）。root -> {sheet: set(designators)}
+    root_of, groups, _members, _pages, counts = _global_net_index(page_doms)
+    net_index = {}
+    for title, dom in page_doms:
+        for (des, pin), net in dom.items():
+            if not net:
+                continue
+            for tok in net_tokens(net):
+                r = root_of.get(tok, tok)
+                net_index.setdefault(r, {}).setdefault(
+                    title, set()).add(des.upper())
 
     start = args.designator.upper()
     if start not in des_locs:
@@ -4408,7 +4452,8 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
         for nm in sorted(cur_nets):
             if nm in visited_net:
                 continue
-            if args.no_power and is_power_net(nm):
+            if args.no_power and any(is_power_net(t)
+                                     for t in groups.get(nm, [nm])):
                 continue
             visited_net.add(nm)
             for sheet_title, des_set in net_index[nm].items():
@@ -4420,18 +4465,22 @@ def _trace_one(db, args, eprj_idx=0, link_map=None):
                     edges.append((nm, cur, nxt.upper()))
                     frontier.append(nxt.upper())
 
+    def _label(r):
+        return pick_primary_name(groups.get(r, [r]), counts)
+
     rows = [{"designator": d,
              "hops": hops[d],
-             "nets": [nm for nm, f, t in edges if t == d or f == d]}
+             "nets": sorted({_label(nm) for nm, f, t in edges
+                             if t == d or f == d})}
             for d in sorted(visited_des, key=lambda x: (hops[x], x))]
     if args.json:
         outj({"start": start, "edges": [
-            {"net": nm, "from": f, "to": t} for nm, f, t in edges],
+            {"net": _label(nm), "from": f, "to": t} for nm, f, t in edges],
             "designators": rows})
         return
     out(f"== {args.designator} 链路追踪 (BFS, 最大{args.depth}跳) ==")
     for nm, f, t in edges:
-        out(f"  [{nm:22s}] {f:8s} -> {t}")
+        out(f"  [{_label(nm):22s}] {f:8s} -> {t}")
     out("== 到达的元件 ==")
     for r in rows:
         locs = ",".join(f"{s}({sn.get(sch, ('?','?'))[1]})"
@@ -4447,7 +4496,7 @@ def _trace_multi(dbs, args):
     # 1) 各工程建索引
     per = []   # [{net_index, des_locs, sn}]
     for di, db in enumerate(dbs):
-        net_index = {}
+        page_doms = []
         des_locs = {}
         for uuid, title, sch, dt in db.sheets():
             if dt != 1:
@@ -4460,19 +4509,23 @@ def _trace_multi(dbs, args):
                 continue
             comp_pins, wires, pt_wires, endp = pinc
             dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
-            pin_net_of = {}
-            for (des, pin), net in dom.items():
-                if net:
-                    for tok in net_tokens(net):
-                        pin_net_of.setdefault(tok, set()).add(des.upper())
-            for net, des_set in pin_net_of.items():
-                e = net_index.setdefault(net, {})
-                e.setdefault(title, set()).update(des_set)
+            page_doms.append((title, dom))
             for c in sheet["components"]:
                 if c.get("designator"):
                     des_locs.setdefault(c["designator"].upper(), []).append((title, sch))
+        root_of, groups, _members, _pages, counts = _global_net_index(page_doms)
+        net_index = {}
+        for title, dom in page_doms:
+            for (des, pin), net in dom.items():
+                if not net:
+                    continue
+                for tok in net_tokens(net):
+                    r = root_of.get(tok, tok)
+                    net_index.setdefault(r, {}).setdefault(
+                        title, set()).add(des.upper())
         per.append({"net_index": net_index, "des_locs": des_locs,
-                    "sn": db.schem_map()})
+                    "sn": db.schem_map(), "groups": groups,
+                    "counts": counts})
 
     # 2) --link 解析连接器对（工程索引:设计符）
     bridges = []   # (di_a, des_a, di_b, des_b)
@@ -4521,7 +4574,9 @@ def _trace_multi(dbs, args):
             nk = (di, nm)
             if nk in visited_net:
                 continue
-            if args.no_power and is_power_net(nm):
+            if args.no_power and any(
+                    is_power_net(t)
+                    for t in per[dst_i]["groups"].get(nm2, [nm2])):
                 continue
             visited_net.add(nk)
             for sheet_title, des_set in p["net_index"][nm].items():
@@ -4531,7 +4586,9 @@ def _trace_multi(dbs, args):
                         continue
                     visited.add(k)
                     hops[k] = hop + 1
-                    edges.append((f"工程{di}:{nm}", f"{cur}", f"{nxt}"))
+                    _lbl = pick_primary_name(
+                        p["groups"].get(nm, [nm]), p["counts"])
+                    edges.append((f"工程{di}:{_lbl}", f"{cur}", f"{nxt}"))
                     frontier.append((k, hop + 1))
         # 跨工程桥（双向：当前侧可能是 des_a 或 des_b，--link 写法两种都支持）
         for (di_a, des_a, di_b, des_b) in bridges:
@@ -4550,10 +4607,13 @@ def _trace_multi(dbs, args):
                     if sheet_title in e and src_des in e[sheet_title]:
                         b_net.add(nm)
             for nm in b_net:
-                # 连接器桥只导通同名网络（引脚对齐：TEMP_IN_SCLK<->TEMP_IN_SCLK）
+                src_names = set(per[src_i]["groups"].get(nm, [nm]))
+                # 连接器桥只导通同名网络（引脚对齐：TEMP_IN_SCLK<->TEMP_IN_SCLK）；
+                # 有别名时按"组内名字有交集"判断。
                 for sheet_title, sch in per[dst_i]["des_locs"].get(dst_des, []):
                     for nm2, e in per[dst_i]["net_index"].items():
-                        if nm2 != nm:
+                        if not (set(per[dst_i]["groups"].get(nm2, [nm2]))
+                                & src_names):
                             continue
                         if sheet_title in e and dst_des in e[sheet_title]:
                             nk = (dst_i, nm2)
@@ -4569,7 +4629,15 @@ def _trace_multi(dbs, args):
                                         continue
                                     visited.add(k)
                                     hops[k] = hop + 1
-                                    edges.append((f"桥{nm}->{nm2}", f"工程{src_i}:{src_des}", f"{nxt}"))
+                                    _l1 = pick_primary_name(
+                                        per[src_i]["groups"].get(nm, [nm]),
+                                        per[src_i]["counts"])
+                                    _l2 = pick_primary_name(
+                                        per[dst_i]["groups"].get(nm2, [nm2]),
+                                        per[dst_i]["counts"])
+                                    edges.append(
+                                        (f"桥{_l1}->{_l2}",
+                                         f"工程{src_i}:{src_des}", f"{nxt}"))
                                     frontier.append((k, hop + 1))
 
     rows = [{"designator": d, "eprj": di, "hops": hops[(di, d)]}
@@ -5239,7 +5307,7 @@ def cmd_polar(db, args):
             if cnt and cnt <= 12:
                 out(f"        同网: {', '.join(p.get('net_members') or [])}")
         if r.get("direction"):
-            out("   方向: A(阳极) → K(阴极)，正偏 A→K 导通")
+            out("   极性: A(阳极) → K(阴极)；正向 A→K 导通（TVS/稳压管按手册确认工作方向）")
         if not r["polarity_resolved"] and r["datasheet"]:
             out(f"   datasheet: {r['datasheet']}")
 
@@ -6398,6 +6466,8 @@ def main():
     p = sub.add_parser("nets", help="页内网络连接(stub端点归属元件)")
     p.add_argument("sheet")
     p.add_argument("--schematic", default=None, help="指定板名解决同名页")
+    p.add_argument("--no-global", action="store_true",
+                   help="别名只按本页合并(默认跨页全局合并，较慢)")
     p.set_defaults(fn=cmd_nets)
 
     p = sub.add_parser("pinmap", help="精确引脚网络表(实例坐标+PIN坐标精确匹配)")
@@ -6413,6 +6483,8 @@ def main():
     p = sub.add_parser("pins", help="引脚级网络表(designator→网络,连通域精确方案)")
     p.add_argument("sheet")
     p.add_argument("--schematic", default=None, help="指定板名解决同名页")
+    p.add_argument("--no-global", action="store_true",
+                   help="别名只按本页合并(默认跨页全局合并，较慢)")
     p.set_defaults(fn=cmd_pins)
 
     sub.add_parser("netlist", help="跨页网络归并").set_defaults(fn=cmd_netlist)
