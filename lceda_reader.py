@@ -4835,7 +4835,16 @@ def cmd_netfind(db_or_dbs, args):
                 cur = key
                 tag2 = f"工程{r['eprj']} " if r.get("eprj") else ""
                 out(f"  [{tag2}{r['sheet']} (sch={r['schematic']})]")
-            out(f"    {r['designator']}.{r['pin']}")
+            _o = r.get("other_side")
+            _hint = ""
+            if _o:
+                _on = _o.get("net") or "(未命名)"
+                _wp = _o.get("wire_peers") or []
+                _hint = f"  [两脚件·另一脚 {_o['pin']}={_on}"
+                if _wp:
+                    _hint += f" 同线: {', '.join(_wp)}"
+                _hint += "]"
+            out(f"    {r['designator']}.{r['pin']}{_hint}")
 
 
 def _netfind_one(db, net_name):
@@ -4859,9 +4868,9 @@ def _netfind_one(db, net_name):
         comp_pins, wires, pt_wires, endp = pinc
         dom = resolve_nets_by_domain(db, sheet, comp_pins, wires, pt_wires, endp)
         d, n = sn.get(sch, ("?", "?"))
-        pages.append((title, d, dom))
+        pages.append((title, d, dom, comp_pins, wires, pt_wires))
     root_of, groups = build_alias_groups(
-        v for _t, _d, dom in pages for v in dom.values())
+        v for _t, _d, dom, _cp, _ws, _pw in pages for v in dom.values())
     hit_root = None
     for name, root in root_of.items():
         if name.upper() == target:
@@ -4871,19 +4880,49 @@ def _netfind_one(db, net_name):
         return [], []
     names = groups.get(hit_root, [])
     found = {}
-    for title, d, dom in pages:
+    for title, d, dom, cp, ws, pw in pages:
         for (des, pin), net in dom.items():
             if not net:
                 continue
             if any(root_of.get(t, t) == hit_root for t in net_tokens(net)):
                 found.setdefault((title, d), []).append((des, pin))
     rows = []
-    for (sheet, d) in sorted(found):
-        for des, pin in sorted(found[(sheet, d)], key=lambda x: (x[0], str(x[1]))):
-            r = {"sheet": sheet, "schematic": d,
+    for title, d, dom, cp, ws, pw in pages:
+        key = (title, d)
+        if key not in found:
+            continue
+        # 该页每个位号的引脚表（两脚件 -> 另一脚，供"是否要继续追"提示）
+        pmap = {}
+        for (des, _cid), plist in cp.items():
+            pmap.setdefault(des, []).extend(
+                (p.get("key") or p["pin"],
+                 dom.get((des, p.get("key") or p["pin"]), ""), p)
+                for p in plist)
+        for des, pin in sorted(found[key], key=lambda x: (x[0], str(x[1]))):
+            r = {"sheet": title, "schematic": d,
                  "designator": des, "pin": pin}
             if len(names) > 1:
                 r["aliases"] = names
+            plist = pmap.get(des) or []
+            _pre = re.match(r"^[A-Z]+", des.upper())
+            _prefix = _pre.group(0) if _pre else ""
+            # 只对"串联类"两脚件提示（电阻/电感/磁珠/短接/二极管等）；
+            # 电容多为去耦，另一脚是 GND，提示只会造成噪声。
+            if len(plist) == 2 and _prefix != "C":
+                other = next((x for x in plist if x[0] != pin), None)
+                if other:
+                    opin, onet, pobj = other
+                    same_net = bool(onet) and any(
+                        root_of.get(t, t) == hit_root
+                        for t in net_tokens(onet))
+                    if not same_net:
+                        o = {"pin": opin,
+                             "net": net_disp(onet) if onet else ""}
+                        peers = _wire_peers_for_pin(pobj, cp, ws, pw) \
+                            if not onet else []
+                        if peers:
+                            o["wire_peers"] = peers
+                        r["other_side"] = o
             rows.append(r)
     return rows, names
 

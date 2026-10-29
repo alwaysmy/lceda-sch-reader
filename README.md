@@ -342,6 +342,9 @@ python lceda_reader.py --eprj A.eprj2 --eprj B.eprj2 trace U1 --link "0:H2<->1:H
    **注意 `netfind` 只返回"同一网络"的成员，不跨串阻/磁珠/二极管**——
    要沿中间器件看链路请用 `trace` 或对另一端再做 `pinmap`；"某网络没有某电源"
    这类结论用 `netfind` 是充分的，不要因为看不到另一端而怀疑工具。
+   `netfind` 对**串联类两脚件**（R/L/磁珠/短接符/二极管；电容 C\* 除外）
+   会标注 `other_side` / 文本 `[两脚件·另一脚 …]`：另一脚有网络名就给出名字，
+   没有就给出"同线"对象——看到这个标记说明该继续追，不要停在当前网络。
 7. **`pinmap` 输出 peers/wire_peers**：对网络名为空的引脚输出 `peers`（同物理连接点
    引脚）与 `wire_peers`（同导线记录的其他引脚），用于识别串阻/耦合电容/
    晶体管链路，如：`LED1.A <- R8.1`、`LED1.K [wire: BUZZER1.2,D2.+,Q1.D]`。
