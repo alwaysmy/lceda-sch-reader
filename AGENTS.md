@@ -57,7 +57,8 @@
      cross_backend_contract（提交记录所称"四套回归"）；
    - 涉及 .epro/.epro2：Piezo 案例冒烟 + CBB 展开实例数（应 15）+ DNP
      R235 两脚异网；
-   - 涉及 .eprj3：verify_eprj3_backend.py ALL PASS；
+   - 涉及 .eprj3：verify_eprj3_backend.py + verify_eprj3_cbb /
+     verify_eprj3_tombstone / verify_eprj3_title / verify_eprj3_bus ALL PASS；
    - 涉及审查层/PCB：verify_rules / verify_layers / verify_netgraph 与
      verify_pcb_workbench / verify_pcb_dfm / verify_pdn_solver /
      verify_thermal_model；

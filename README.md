@@ -240,10 +240,18 @@ LcedaDB。**新版立创EDA 分支加密格式 .eprj2**（documents 表空、内
   一致，**不做 Y 翻转、不取反旋转角**；`Eprj3DB` 用 `PAGE_Y_SIGN` /
   `SYM_Y_SIGN` / `ROT_NEGATE` 三个类参数固化（8 组矩阵标定，见
   `probes/verify_eprj3_backend.py`）。改这三项必须重跑 V3↔V4 全页对比。
+- **CBB 展开**：`.eprj3` 的 `INSTANCE` 文档会按
+  `<sch>_$<母图页>~<实例cid>_$<模板页>` 解析，`INSTANCE_ATTR.Designator`
+  作为母图位号；模板页存在时展开为 `CBB200.U200` 这类条目。模板页缺失/
+  INSTANCE 失效时保留黑盒并输出 `CBB_*` 诊断，不再静默当成普通符号。
+- **元件名**：官方生成器把 `COMPONENT.partId` 固定为 `pid...` 占位时，
+  `components`/`find`/`pinmap` 回退显示 `DeviceName.name` 或 DEVICE 标题；
+  真实客户端的可读 partId（如 `CL05B104KB54PNC.1`）保持不变。
+- **总线**：`BUS.busEntry` 归一化为 `BUSENTRY`，总线 LINE 合成 WIRE 组，
+  `parse_sheet` 按 `BUS[0:5]` + order 展开为 `BUS0` 等具体网络。
 - **验证**：Fresnel 工程 13 页、1875 个引脚与 `.epro2` 逐引脚网络**零差异**；
-  文字坐标一致；页/元件/位号计数一致。
-- **边界**：V4 文件夹工程不含 CBB 模板页时，CBB 实例按黑盒保留（不展开，
-  与原工程一致）；`.eprj3` 的变体/PANEL/仿真文档暂不解析；PCB 走
+  CBB 展开后 netlist 81/81 网络与 `.epro2` 一致；MMC 96/96 网络一致。
+- **边界**：`.eprj3` 的变体/PANEL/仿真文档暂不解析；PCB 走
   `pcb_workbench`（见下文），不参与 `pcbsch` 的完整布局核对。
 
 ## 三、网络查询方法（配对/链路/跨页）

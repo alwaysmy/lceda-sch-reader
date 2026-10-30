@@ -15,6 +15,45 @@
    本文件只留摘要 + 指向该文档的链接。
 4. **索引**：`README.md`、`AGENTS.md`、`docs/开发文档.md` 均指向本文件。
 
+## 2026-10-30
+
+### 修复（.eprj3 官方格式适配）
+
+- **CBB 展开**：`Eprj3DB` 新增 `cbb_instances()` / `cbb_symbol_board_map()`，
+  按 `INSTANCE` uuid `<sch>_$<母图页>~<实例cid>_$<模板页>` 和
+  `INSTANCE_ATTR.Designator` 精确展开。修复 Fresnel 4 个 CBB 全部
+  “未找到端口集匹配的模板页”的问题；netlist 由 85 行恢复为与 `.epro2`
+  一致的 81 行，`EN/SYNC` 成员 3→29（含 `CBB200.U200`），`GND` 468→497。
+- **墓碑 / DELETE_DOC**：`_scan_file` 把空 body 归一为 `None` 并参与 ticket
+  判优；`sheet_records` / `symbol_pins` / `cbb_instances` 跳过墓碑；
+  `WIRE`/`BUS` 墓碑不再声明导线组，避免孤儿 `LINE` 复活；`DELETE_DOC`
+  的 `isDelete:true` 从 `_docs` 移除，`false` 可撤销。修复 blink 的
+  `DIFF_PAIR` 空 PIN 被读成 `(0,0)` 幽灵引脚。
+- **元件可读名**：`partId` 为官方生成器占位（`pid...`）或 16hex 哈希时，
+  `components` / `find` / `pinmap` / `polar` 回退显示
+  `DeviceName.name` / DEVICE 标题；真实客户端可读 `partId` 不变。
+- **BUS/BUSENTRY**：`BUS.busEntry` 归一化为 `BUSENTRY`，总线 `LINE` 合成
+  `WIRE` 组；`BUS[0:5]` + order 可展开为 `BUS0`。当前只有合成样本，
+  真实客户端 BUS 页待补样本。
+- **列表/判优/注释**：`list` 的“非原理图文档”改用 `pcb_docs()`，可显示
+  `.epcb2`/PCB；跨文件重复文档平票加入 client 字典序（大者胜）；
+  修正 `Eprj3DB` 类注释里“Y 取反”的旧描述（实测不翻转）。
+
+### 回归
+
+- 新增 `probes/verify_eprj3_cbb.py`（Fresnel/MMC netlist 逐网络对齐
+  `.epro2`，含 CBB 位号与诊断检查）。
+- 新增 `probes/verify_eprj3_tombstone.py`（PIN/WIRE/COMPONENT/DELETE_DOC
+  合成用例）。
+- 新增 `probes/verify_eprj3_title.py`（blink/真实导出/MMC/Fresnel 命名）。
+- 新增 `probes/verify_eprj3_bus.py`（BUS/BUSENTRY 合成用例）。
+- 通过：`smoke2`、`verify_eprj3_backend`、`verify_eprj3_cbb`、
+  `verify_eprj3_tombstone`、`verify_eprj3_title`、`verify_eprj3_bus`、
+  `verify_alias`、`verify_search_polar`、`verify_bus`、`verify_all_formats`、
+  `cross_backend_contract`。`verify_bom.py` 因依赖缺失的
+  `%TEMP%\opencode\lceda_probe\base\bom_new.json` 未运行（环境缺 fixture，
+  与本次改动无关）。
+
 ## 2026-10-29
 
 ### 修复 / 增强（pinmap / find）

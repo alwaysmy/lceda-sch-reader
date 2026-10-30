@@ -62,8 +62,13 @@
   `pcb/*.epcb2` 的 PCB 文档枚举；Fresnel 工程与 `.epro2` 全 13 页、1875
   引脚零差异。细节见 README「V4 文件夹工程」与
   `docs/eprj3与V4格式调研-2026-10-01.md` 的状态更新。
-  **仍未做**：PANEL/变体/仿真文档、V4 CBB 模板缺失时的展开、`.epcj3` 等
-  其他 V4 工程子格式。
+  **仍未做**：PANEL/变体/仿真文档、V4 CBB 模板页/INSTANCE 失效时的黑盒
+  降级诊断、`.epcj3` 等其他 V4 工程子格式。
+- **2026-10-30 已补**：V4 CBB 精确展开（`INSTANCE`/`INSTANCE_ATTR`）、
+  空 body 墓碑与 `DELETE_DOC`、官方生成器 `pid...` 元件的可读名回退、
+  `BUS/BUSENTRY` 合成、`list` 的 PCB 文档枚举。回归见
+  `probes/verify_eprj3_cbb.py` / `verify_eprj3_tombstone.py` /
+  `verify_eprj3_title.py` / `verify_eprj3_bus.py`。
 
 - **V4 PCB 几何/制造**：官方 `lceda_pcb.py` 只吃 `.epro2` 导出且在本工程
   撞到 `UNSUPPORTED_MULTI_CUTOUT`（MULTI 层矩形挖孔）。审阅用途改用
