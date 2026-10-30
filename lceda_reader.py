@@ -2013,9 +2013,10 @@ class Eprj3DB(SchemaBackend):
     目录：``<root>/<name>.eprj3``（工程索引 JSON）+ ``sch/<板>/<页>.esch2``
     + ``pcb/<板>.epcb2``。记录仍为 ``{type,id,ticket}||{data}|`` 行式 JSON。
 
-    坐标：V4 页面 Y 向上（CANVAS.yAxisDirection=up），统一减 CANVAS 原点后
-    取反，归一化为 V2 的 Y 向下语义（与 Epro2DB 同规则）；PCB 坐标单位 mil，
-    只服务 pcbsch 属性核对，不参与 SCH 几何。
+    坐标：实测 V4 页面/符号坐标数值与 .epro2 存储值一致，减 CANVAS 原点后
+    不取反、不取反旋转角（与 Epro2DB 的 Y 翻转规则不同，见类参数与
+    probes/verify_eprj3_backend.py）；PCB 坐标单位 mil，只服务 pcbsch
+    属性核对，不参与 SCH 几何。
 
     与 V3 的差异按 docs/eprj3与V4格式调研-2026-10-01.md 处理：
     docType 为字符串（SCH_PAGE/SYMBOL/DEVICE/FOOTPRINT/PCB/INSTANCE）、
@@ -2067,7 +2068,9 @@ class Eprj3DB(SchemaBackend):
         head = doc.get("head") or {}
         tickets = [h.get("ticket") or 0 for h, _b in doc.get("records") or []]
         tickets.extend(m[0] for m in doc.get("delete_marks") or [])
-        return (head.get("updateTime") or 0, max(tickets, default=0))
+        # 官方 V4 平票规则：ticket 相同取 client 字典序更大者。
+        return (head.get("updateTime") or 0, max(tickets, default=0),
+                str(head.get("client") or ""))
 
     @staticmethod
     def _merge_records(records):
@@ -2334,6 +2337,7 @@ class Eprj3DB(SchemaBackend):
         comps, attrs, texts = [], [], []
         wires = {}       # wire id -> [[x1,y1,x2,y2],...]
         wire_order = []
+        bus_entries = []
         for h, b in d["records"]:
             if b is None:           # 删除墓碑（PIN/COMPONENT/WIRE/...）
                 continue
@@ -2355,6 +2359,29 @@ class Eprj3DB(SchemaBackend):
                 wid = h.get("id")
                 wires.setdefault(wid, [])
                 wire_order.append(wid)
+            elif t == "BUS":
+                # V4 总线与 V3 同语义：BUS.busEntry 是嵌在 body 里的入口表，
+                # bus id 同时是总线图形 LINE 的 lineGroup；合成同 id 的 WIRE
+                # 记录，parse_sheet 再用 ATTR NET（如 BUS[0:5]）命名。
+                bid = h.get("id")
+                wires.setdefault(bid, [])
+                wire_order.append(bid)
+                be = b.get("busEntry")
+                if isinstance(be, dict):
+                    for eid, e in be.items():
+                        if not isinstance(e, dict):
+                            continue
+                        ex = e.get("pointX")
+                        if ex is None:
+                            ex = e.get("x")
+                        ey = e.get("pointY")
+                        if ey is None:
+                            ey = e.get("y")
+                        bus_entries.append([
+                            "BUSENTRY", eid, bid, e.get("order") or 0,
+                            (ex or 0) - ox,
+                            ((ey or 0) - oy) * self.PAGE_Y_SIGN,
+                            e.get("rotation") or 0])
             elif t == "LINE":
                 gid = b.get("lineGroup")
                 if gid in wires:
@@ -2382,6 +2409,7 @@ class Eprj3DB(SchemaBackend):
             if segs:
                 out.append(["WIRE", wid, segs, None, 0])
         out.extend(texts)
+        out.extend(bus_entries)
         self._rec_cache[ck] = out
         return out
 
@@ -3151,10 +3179,8 @@ def cmd_list(db, args):
         d, n = sn.get(sch, ("?", "?"))
         out(f"  [sch={d:12s}] {title}")
     out("\n== 非原理图文档 ==")
-    for uuid, title, sch, dt in db.sheets():
-        if dt == 1:
-            continue
-        out(f"  [docType={dt}] {title}")
+    for uuid, title in db.pcb_docs():
+        out(f"  [docType=3] {title}")
 
 
 def cmd_boards(db, args):
