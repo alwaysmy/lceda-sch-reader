@@ -72,6 +72,14 @@ def shape(rows):
     }
 
 
+def check_list(db, name):
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        L.cmd_list(db, SimpleNamespace(json=False))
+    check("%s list 含 PCB 文档" % name, "[docType=3]" in buf.getvalue(),
+          buf.getvalue()[-160:])
+
+
 def compare(name, path3, path2):
     print("\n%s" % name)
     if not (os.path.exists(path3) and os.path.exists(path2)):
@@ -92,6 +100,7 @@ def compare(name, path3, path2):
            if str(d.get("code", "")).startswith("CBB_")
            and d.get("affects_completeness")]
     check("无 CBB 展开缺口诊断", not bad, str(bad[:3]))
+    check_list(db3, name)
 
 
 def check_fresnel_cbb():
