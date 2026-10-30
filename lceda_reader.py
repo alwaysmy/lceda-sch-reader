@@ -2056,6 +2056,7 @@ class Eprj3DB(SchemaBackend):
         self._sym_cache = {}
         self._rec_cache = {}
         self._sym_title_idx = None
+        self._cbb_inst_idx = None
         self._pcb_loaded = False
         self._load_sch()
 
@@ -2195,6 +2196,54 @@ class Eprj3DB(SchemaBackend):
 
     def pcb_docs(self):
         return [(u, t) for u, t, _b, _dt in self.sheets(3)]
+
+    # ---------------------------------------------------------- CBB
+    def cbb_instances(self):
+        """V4 复用块实例映射（INSTANCE 文档）。
+
+        INSTANCE uuid 编码与 V3 相同：
+        ``<sch>_$<母图页>~<实例cid>_$<模板页>``；
+        INSTANCE_ATTR.id = 模板页内元件 cid，
+        INSTANCE_ATTR.Designator = 母图位号。
+        返回 ``{(母图页uuid, 实例cid): {"src": 模板页uuid,
+        "members": {模板元件cid: 母图位号}}}``。
+        """
+        if self._cbb_inst_idx is not None:
+            return self._cbb_inst_idx
+        idx = {}
+        for u, d in self._docs.items():
+            if d["docType"] != "INSTANCE":
+                continue
+            parts = u.split("_$")
+            if len(parts) < 3 or "~" not in parts[1]:
+                continue
+            page, inst_cid = parts[1].split("~", 1)
+            src = parts[2]
+            if not src:
+                continue
+            members = {}
+            for h, b in d["records"]:
+                if h.get("type") != "INSTANCE_ATTR":
+                    continue
+                if isinstance(b, dict) and b.get("Designator"):
+                    members[h.get("id")] = b["Designator"]
+            idx[(page, inst_cid)] = {"src": src, "members": members}
+        self._cbb_inst_idx = idx
+        return idx
+
+    def cbb_symbol_board_map(self):
+        """CBB 黑盒符号（SYMBOL META docType=17）：title 即模板板名。"""
+        if self._cbb_sym_map is None:
+            m = {}
+            for u, d in self._docs.items():
+                if d["docType"] != "SYMBOL":
+                    continue
+                mt = d["meta"] or {}
+                if mt.get("docType") == 17 and mt.get("title"):
+                    m[u] = mt["title"]
+                    m.setdefault(mt["title"], mt["title"])
+            self._cbb_sym_map = m
+        return self._cbb_sym_map
 
     # ---------------------------------------------------------- 记录转换
     def _origin(self, d):
