@@ -3087,6 +3087,31 @@ def parse_value(description):
 
 # ---------------------------------------------------------------- 输出层
 
+_GENERIC_PART_RE = re.compile(r"^(?:pid[0-9a-f]{8,}|[0-9a-f]{16})$", re.I)
+
+
+def _display_title(c, dev):
+    """元件可读名：官方生成器用固定/哈希 16hex partId 占位，
+    真实名字在 COMPONENT.attrs.DeviceName 或 DEVICE META.title；
+    真实客户端的 partId（如 ``CL05B104KB54PNC.1``）保持原样。"""
+    title = c.get("title") or ""
+    if not title or not _GENERIC_PART_RE.match(title):
+        return title
+    raw = (c.get("attrs") or {}).get("DeviceName")
+    if raw:
+        try:
+            obj = json.loads(raw) if isinstance(raw, str) else raw
+        except (TypeError, ValueError):
+            obj = None
+        if isinstance(obj, dict) and obj.get("name"):
+            return str(obj["name"])
+    d = dev.get(c.get("device_uuid") or c.get("symbol_uuid") or "",
+                ("", "", ""))
+    if d and d[0]:
+        return str(d[0])
+    return title
+
+
 def _fmt_comp(c, dev, with_value=True):
     # 器件信息优先按 Device uuid 查（devices 表是型号/描述真源）；
     # Symbol uuid 仅作无 Device 属性实例的兜底——同一符号可被多个器件复用，
@@ -3095,7 +3120,7 @@ def _fmt_comp(c, dev, with_value=True):
                 ("", "", ""))
     row = {
         "designator": c.get("designator"),
-        "title": c["title"],
+        "title": _display_title(c, dev),
         "symbol_uuid": c.get("symbol_uuid"),
         "device_uuid": c.get("device_uuid"),
     }
@@ -4110,6 +4135,7 @@ def cmd_pinmap(db, args):
         sys.exit(2)
     comp_pins, wires, pt_wires, endp = _collect_pinmap_data(
         db, sheet, page)
+    dev = db.device_map()
 
     # 每个引脚 -> 最近 WIRE 端点（容差2）-> net + 同 wire 的其他引脚
     rows = []
@@ -4193,7 +4219,7 @@ def cmd_pinmap(db, args):
         sym_t = None
         if comp_pins.get((des, c["cid"])):
             sym_t = comp_pins[(des, c["cid"])][0].get("sym_type")
-        rows.append({"designator": des, "symbol": c["title"],
+        rows.append({"designator": des, "symbol": _display_title(c, dev),
                      "symbol_type": sym_t, "dnp": _is_unpopulated(c),
                      "pins": pinmap})
     # 连通域网络名解析：为 net 为空的引脚推断网络名（走线拓扑，无启发式噪声）。
@@ -5395,7 +5421,7 @@ def cmd_polar(db, args):
             url = ds_url.get(mpn) or ds_url.get(dtitle) or ""
             row = {
                 "designator": des, "page": t, "schematic": sch_name,
-                "device": mpn, "title": c.get("title") or "",
+                "device": mpn, "title": _display_title(c, dmap),
                 "matched_by": "prefix" if hit_prefix else "pin-names",
                 "pins": pins_out,
                 "polarity_resolved": not unresolved,
