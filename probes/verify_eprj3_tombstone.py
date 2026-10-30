@@ -94,6 +94,14 @@ def build():
     rows.append(line("META", {"title": "Deleted", "docType": 1}, 2, "META"))
     rows.append(line("DELETE_DOC", {"isDelete": True}, 3))
 
+    # 先删后撤销：更高 ticket 的 isDelete=false 应让文档保留。
+    rows.append(line("DOCHEAD", {"docType": "SCH_PAGE", "uuid": "revive1",
+                                 "client": "0000000000000001",
+                                 "updateTime": 4, "version": "4"}, 1))
+    rows.append(line("META", {"title": "Revived", "docType": 1}, 2, "META"))
+    rows.append(line("DELETE_DOC", {"isDelete": True}, 3))
+    rows.append(line("DELETE_DOC", {"isDelete": False}, 4))
+
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.writelines(rows)
 
@@ -113,6 +121,8 @@ def main():
         titles = [r[1] for r in db.sheets()]
         check("DELETE_DOC 文档不出现在 sheets()",
               not any("Deleted" in t for t in titles), str(titles))
+        check("DELETE_DOC isDelete=false 可撤销",
+              any("Revived" in t for t in titles), str(titles))
     finally:
         shutil.rmtree(TMP, ignore_errors=True)
     print()
