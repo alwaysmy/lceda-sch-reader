@@ -2066,12 +2066,17 @@ class Eprj3DB(SchemaBackend):
         """文档新旧排序依据：DOCHEAD.updateTime，其次最大 ticket。"""
         head = doc.get("head") or {}
         tickets = [h.get("ticket") or 0 for h, _b in doc.get("records") or []]
+        tickets.extend(m[0] for m in doc.get("delete_marks") or [])
         return (head.get("updateTime") or 0, max(tickets, default=0))
 
     @staticmethod
     def _merge_records(records):
         """同 id 多记录按 ticket 取最大（V4 判优键=文档+归一化 id，type 不参与；
-        平票按后出现者优先，足够覆盖本地保存的单文件场景）。"""
+        平票按后出现者优先，足够覆盖本地保存的单文件场景）。
+
+        body 为 None 表示官方“空 body=删除”墓碑：它参与 ticket 竞争，
+        消费点必须跳过；不能把它当空对象继续解析。
+        """
         best = {}
         order = []
         for i, (h, b) in enumerate(records):
@@ -2101,31 +2106,59 @@ class Eprj3DB(SchemaBackend):
                     h = json.loads(head)
                 except ValueError:
                     continue
-                try:
-                    b = json.loads(body.rstrip("|") or "{}")
-                except ValueError:
-                    b = {}
+                # 行尾只允许一个记录终止符 '|'，不能用 rstrip 把 JSON 字符串
+                # 末尾的字面 '|' 一并吃掉。空 body / 非对象载荷按墓碑处理。
+                raw = body[:-1] if body.endswith("|") else body
+                raw = raw.strip()
+                if not raw:
+                    b = None
+                else:
+                    try:
+                        b = json.loads(raw)
+                    except ValueError:
+                        b = None
+                    if b is not None and not isinstance(b, dict):
+                        b = None
                 t = h.get("type")
                 if t == "DOCHEAD":
+                    if b is None:
+                        cur = None
+                        continue
                     cur = {"uuid": b.get("uuid"), "docType": b.get("docType"),
                            "head": dict(b), "records": [], "meta": {},
                            "canvas": {}, "file": str(path), "kind": kind,
-                           "board": Path(path).parent.name}
+                           "board": Path(path).parent.name,
+                           "delete_marks": []}
                     if cur["uuid"]:
                         docs.append(cur)
                     continue
                 if cur is None:
                     continue
                 if t == "META":
-                    cur["meta"] = b
+                    # 官方规定 META 不能用空 body 删除；空载荷时保留旧值。
+                    if b is not None:
+                        cur["meta"] = b
                 elif t == "CANVAS":
-                    cur["canvas"] = b
+                    if b is not None:
+                        cur["canvas"] = b
+                elif t == "DELETE_DOC":
+                    # 文档删除标记：isDelete=false 可撤销；按 ticket 最高者生效。
+                    if b is not None:
+                        cur["delete_marks"].append(
+                            (h.get("ticket") or 0, bool(b.get("isDelete"))))
                 else:
                     cur["records"].append((h, b))
         for d in docs:
             d["records"] = self._merge_records(d["records"])
+            marks = d.get("delete_marks") or []
+            d["deleted"] = bool(marks and max(marks)[1])
+            rank = self._rank(d)
             old = self._docs.get(d["uuid"])
-            if old is not None and self._rank(old) >= self._rank(d):
+            if old is not None and self._rank(old) >= rank:
+                continue
+            if d["deleted"]:
+                self._docs.pop(d["uuid"], None)
+                self._doc_file.pop(d["uuid"], None)
                 continue
             self._docs[d["uuid"]] = d
             self._doc_file[d["uuid"]] = Path(path)
@@ -2266,6 +2299,8 @@ class Eprj3DB(SchemaBackend):
         if doc_type == 3:
             out = []
             for h, b in d["records"]:
+                if b is None:       # 删除墓碑
+                    continue
                 t = h.get("type")
                 if t == "COMPONENT":
                     out.append(["COMPONENT", h.get("id"), 0,
@@ -2300,6 +2335,8 @@ class Eprj3DB(SchemaBackend):
         wires = {}       # wire id -> [[x1,y1,x2,y2],...]
         wire_order = []
         for h, b in d["records"]:
+            if b is None:           # 删除墓碑（PIN/COMPONENT/WIRE/...）
+                continue
             t = h.get("type")
             if t == "COMPONENT":
                 # 页面/符号/旋转换算由类参数标定（见类头部注释）。
@@ -2390,6 +2427,8 @@ class Eprj3DB(SchemaBackend):
         pins, names, numbers, ptypes, parts = {}, {}, {}, {}, []
         bbox = None
         for h, b in d["records"]:
+            if b is None:           # 删除墓碑
+                continue
             t = h.get("type")
             if t == "PART":
                 parts.append(h.get("id"))
